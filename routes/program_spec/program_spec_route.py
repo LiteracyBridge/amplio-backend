@@ -13,7 +13,7 @@ from amplio.utils import (
     BinBody,
     JsonBody,
 )
-from program_spec import (
+from routes.program_spec import (
     read_from_xlsx,
     read_from_s3,
     read_from_db,

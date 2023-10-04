@@ -16,6 +16,7 @@ from jwt_verifier import CognitoAuthenticator
 import models
 from config import settings
 
+from routes.program_spec import program_spec_route
 # from routes import survey_route, data_service_route, analysis_route, uf_messages_route
 
 if settings.sentry_dsn is not None:
@@ -102,12 +103,12 @@ if not settings.is_local:
 #   Routers configuration                                                     #
 ###############################################################################
 
-# app.include_router(
-#     survey_route.router,
-#     prefix="/surveys",
-#     tags=["surveys"],
-#     dependencies=[Depends(models.get_db)],
-# )
+app.include_router(
+    program_spec_route.router,
+    prefix="/program-spec",
+    tags=["program-spec"],
+    dependencies=[Depends(models.get_db)],
+)
 # app.include_router(
 #     analysis_route.router,
 #     prefix="/analysis",

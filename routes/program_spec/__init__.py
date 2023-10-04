@@ -6,7 +6,7 @@ __all__ = [
 ]
 
 from .db import get_db_connection, get_db_engine
-from .spec import ProgramSpec, General, Deployment, Playlist, Message, Recipient
+from routes.program_spec.spec import ProgramSpec, General, Deployment, Playlist, Message, Recipient
 from .XlsxReaderWriter import read_from_xlsx, write_to_xlsx, path_for_csv, write_to_csv
 from .JsonReaderWriter import read_from_json, write_to_json
 from .DbReader import read_from_db

@@ -9,7 +9,7 @@ from openpyxl.styles import Alignment, Font
 from openpyxl.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from spec import ProgramSpec, Deployment, Playlist, Message, Recipient, General
+from routes.program_spec.spec import ProgramSpec, Deployment, Playlist, Message, Recipient, General
 
 ARTIFACTS = ['general', 'deployments', 'content', 'recipients']
 

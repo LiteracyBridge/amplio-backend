@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from spec import ProgramSpec, Deployment, Playlist, Message, Recipient
+from routes.program_spec.spec import ProgramSpec, Deployment, Playlist, Message, Recipient
 
 
 def _pr_val(x) -> str:

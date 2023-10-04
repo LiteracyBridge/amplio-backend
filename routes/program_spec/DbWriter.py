@@ -3,8 +3,8 @@ from collections import namedtuple
 from typing import List, Optional, Dict, Any, Tuple
 
 import boto3
-import program_spec.db as db
-from program_spec import (
+import routes.program_spec.db as db
+from routes.program_spec import (
     ProgramSpec,
     Deployment,
     get_db_engine,

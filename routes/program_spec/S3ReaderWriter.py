@@ -5,8 +5,8 @@ from typing import Tuple, List, Dict
 import boto3
 from botocore.client import BaseClient
 
-from spec import ProgramSpec
-from XlsxReaderWriter import write_to_csv, write_to_xlsx, ARTIFACTS as CSV_ARTIFACTS
+from routes.program_spec.spec import ProgramSpec
+from routes.program_spec.XlsxReaderWriter import write_to_csv, write_to_xlsx, ARTIFACTS as CSV_ARTIFACTS
 
 _s3 = None
 

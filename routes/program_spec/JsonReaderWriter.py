@@ -1,7 +1,7 @@
 import json
 from typing import Union, Dict, Tuple, Optional, List
 
-from spec import ProgramSpec, Deployment, Playlist
+from routes.program_spec.spec import ProgramSpec, Deployment, Playlist
 
 
 class _JsonWriter:

@@ -3,8 +3,8 @@ from typing import Union, Tuple, Optional, List
 from sqlalchemy import text
 from sqlalchemy.engine import Engine, Connection
 
-from program_spec.db import get_db_engine, get_db_connection
-from program_spec.spec import ProgramSpec
+from routes.program_spec.db import get_db_engine, get_db_connection
+from routes.program_spec.spec import ProgramSpec
 
 
 # noinspection SqlNoDataSourceInspection
