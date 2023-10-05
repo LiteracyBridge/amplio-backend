@@ -1,6 +1,3 @@
-import base64
-import json
-import time
 from contextlib import contextmanager
 from typing import Optional, Any
 
@@ -9,60 +6,10 @@ from botocore.exceptions import ClientError
 from sqlalchemy import Connection, create_engine, text, MetaData, Table
 from sqlalchemy.engine import Engine
 from sqlalchemy.sql import TableClause
+from config import config
 
 _engine: Optional[Engine] = None
 _args: Optional[Any] = None
-
-
-# Get the user name and password that we need to sign into the SQL database. Configured through AWS console.
-def _get_secret() -> dict:
-    secret_name = "lb_stats_access2"
-    region_name = "us-west-2"
-
-    if _args and _args.verbose >= 2:
-        print("    Getting credentials for database connection. v2.")
-    start = time.time()
-
-    # Create a Secrets Manager client
-    try:
-        session = boto3.session.Session()
-        client = session.client(service_name="secretsmanager", region_name=region_name)
-    except Exception as e:
-        print(
-            "    Exception getting session client: {}, elapsed: {}".format(
-                str(e), time.time() - start
-            )
-        )
-        raise e
-
-    # In this sample we only handle the specific exceptions for the 'GetSecretValue' API.
-    # See https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
-    # We rethrow the exception by default.
-
-    try:
-        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
-    except ClientError as e:
-        if _args and _args.verbose >= 2:
-            print(
-                "    Exception getting credentials: {}, elapsed: {}".format(
-                    e.response["Error"]["code"], time.time() - start
-                )
-            )
-        raise e
-    else:
-        # Decrypts secret using the associated KMS CMK.
-        # Depending on whether the secret is a string or binary, one of these fields will be populated.
-        if "SecretString" in get_secret_value_response:
-            secret = get_secret_value_response["SecretString"]
-            result = json.loads(secret)
-        else:
-            decoded_binary_secret = base64.b64decode(
-                get_secret_value_response["SecretBinary"]
-            )
-            result = decoded_binary_secret
-
-    # Your code goes here.
-    return result
 
 
 def _ensure_content_view(engine=None, connection: Optional[Connection] = None):
@@ -220,27 +167,37 @@ def get_db_connection(*, close_with_result=None, engine=None):
 
 # lazy initialized db connection
 
+
 # Make a connection to the SQL database
 def get_db_engine(args=None) -> Engine:
     global _engine, _args
 
     if _engine is not None:
-        print('Reusing db engine.')
+        print("Reusing db engine.")
         _ensure_content_view(_engine)
     elif _engine is None:
         _args = args
-        secret = _get_secret()
+        # secret = _get_secret()
 
-        parms = {'database': 'dashboard', 'user': secret['username'], 'password': secret['password'],
-                 'host': secret['host'], 'port': secret['port']}
-        for prop in ['host', 'port', 'user', 'password', 'database']:
-            if hasattr(args, f'db_{prop}'):
-                if (val := getattr(args, f'db_{prop}')) is not None:
+        parms = {
+            "database": config.db_name,
+            "user": config.db_user,
+            "password": config.db_password,
+            "host": config.db_host,
+            "port": config.db_port,
+        }
+        for prop in ["host", "port", "user", "password", "database"]:
+            if hasattr(args, f"db_{prop}"):
+                if (val := getattr(args, f"db_{prop}")) is not None:
                     parms[prop] = val
 
         # dialect + driver: // username: password @ host:port / database
         # postgresql+pg8000://dbuser:kx%25jj5%2Fg@pghost10/appdb
-        engine_connection_string = 'postgresql+pg8000://{user}:{password}@{host}:{port}/{database}'.format(**parms)
+        engine_connection_string = (
+            "postgresql+pg8000://{user}:{password}@{host}:{port}/{database}".format(
+                **parms
+            )
+        )
         _engine = create_engine(engine_connection_string, echo=False)
 
         _ensure_content_view()

@@ -10,7 +10,7 @@ from os import getenv
 AWS_REGION = "us-west-2"
 
 
-class Settings:
+class Config:
     db_name: str
     db_host: str
     db_password: str
@@ -72,4 +72,4 @@ class Settings:
         return f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
 
 
-settings = Settings()
+config = Config()

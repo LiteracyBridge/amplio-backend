@@ -33,7 +33,6 @@ class _DbReader:
 
         result = query_table(['*'], 'content')
         for row in result:
-            program_spec.add_content(dict(row))
             program_spec.add_content(dict(row._mapping))
 
         result = query_table(['*'], 'recipients')
