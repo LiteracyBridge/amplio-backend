@@ -34,20 +34,21 @@ class _DbReader:
         result = query_table(['*'], 'content')
         for row in result:
             program_spec.add_content(dict(row))
+            program_spec.add_content(dict(row._mapping))
 
         result = query_table(['*'], 'recipients')
         for row in result:
-            program_spec.add_recipient(dict(row))
+            program_spec.add_recipient(dict(row._mapping))
 
         # 'program_id' is unique in the programs table, so there will be at most one row. But maybe none, if the
         # program hasn't been fully initialized yet.
         result = query_table(['*'], 'programs', programid_column='program_id')
-        program_rows = [dict(row) for row in result.all()]
+        program_rows = [dict(row._mapping) for row in result.all()]
         if len(program_rows) == 1:
             program_spec.add_general(program_rows[0])
         # similarly for projects table.
         result = query_table(['*'], 'projects', programid_column='projectcode')
-        program_rows = [dict(row) for row in result.all()]
+        program_rows = [dict(row._mapping) for row in result.all()]
         if len(program_rows) == 1:
             name = program_rows[0].get('project')
             program_spec.general.name = name

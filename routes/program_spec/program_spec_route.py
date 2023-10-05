@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, File, HTTPException
+from sqlalchemy.orm import Session
 import binascii
 import datetime
 from typing import Annotated, Any, Dict, Optional
-
+from models import get_db
 import boto3 as boto3
 
 from amplio.utils import (
@@ -24,6 +25,7 @@ from routes.program_spec import (
     write_to_json,
     compare_program_specs,
 )
+from routes.program_spec.db import _ensure_content_view
 
 
 router = APIRouter()
@@ -163,13 +165,14 @@ def publish(
 
 
 # @handler
+#! TODO: Add decorate to retrieve email from token [or possible patching amplio package to support fastapi?].
 @router.get("/download")
 def download(
     programid: str,
     artifact: str,
     aslink: bool,
-    # email: Claim,
-    email: str,
+    email: Claim,
+    # email: str,
 ):
     """
     Returns a program spec artifact as the bytes of a file or a link to a file in S3.
@@ -308,14 +311,15 @@ def accept(
 
 
 @router.get("/content")
-def get_content(programid: str):
+def get_content(programid: str, db: Session = Depends(get_db)):
     """
     Retrieves the current db program spec ss a JSON string.
     :param programid: The program whose spec is to be retrieved.
     :param email: The user requesting the data.
     :return: a JSON string with the current program spec.
     """
-    db_spec, errors = read_from_db(programid)
+    _ensure_content_view(engine=None, connection=db.connection())
+    db_spec, errors = read_from_db(programid, engine=None, connection=db.connection())
     json_spec = write_to_json(db_spec, to_string=False)
     return json_spec
 

@@ -6,7 +6,7 @@ from typing import Optional, Any
 
 import boto3 as boto3
 from botocore.exceptions import ClientError
-from sqlalchemy import create_engine, text, MetaData, Table
+from sqlalchemy import Connection, create_engine, text, MetaData, Table
 from sqlalchemy.engine import Engine
 from sqlalchemy.sql import TableClause
 
@@ -65,7 +65,7 @@ def _get_secret() -> dict:
     return result
 
 
-def _ensure_content_view(engine=None):
+def _ensure_content_view(engine=None, connection: Optional[Connection] = None):
     v3 = """
         create or replace temp view content as
             select depl.project as project
@@ -187,8 +187,11 @@ def _ensure_content_view(engine=None):
     is_new = table_has_column("messages", "audience", engine=engine)
     content_view = v3_new if is_new else v3
     try:
-        with engine.connect() as conn:
-            result = conn.execute(text(content_view))
+        if connection is not None:
+            result = connection.execute(text(content_view))
+        else:
+            with engine.connect() as conn:
+                result = conn.execute(text(content_view))
         print(f"(Re)established content view, is_new: {is_new}, {result}.")
     except Exception as ex:
         print(ex)

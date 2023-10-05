@@ -31,3 +31,4 @@ pnpm-debug.log*
 
 # Test files
 *.xlsx
+.python-version

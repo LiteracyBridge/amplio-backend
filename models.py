@@ -15,14 +15,14 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.sql import func
-from sqlalchemy_easy_softdelete.mixin import generate_soft_delete_mixin_class
+# from sqlalchemy_easy_softdelete.mixin import generate_soft_delete_mixin_class
 from datetime import datetime
 from database import Base, SessionLocal, engine
 from config import settings
 
 
-class SoftDeleteMixin(generate_soft_delete_mixin_class()):
-    deleted_at: datetime
+# class SoftDeleteMixin(generate_soft_delete_mixin_class()):
+#     deleted_at: datetime
 
 
 class Project(Base):
