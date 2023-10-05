@@ -1,0 +1,26 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+boto3 = "*"
+mangum = "*"
+sentry-sdk = "*"
+sqlalchemy = "*"
+pydantic = "1.10.7"
+python-jose = "3.3.0"
+uvicorn = "*"
+fastapi = "*"
+python-json-logger = "*"
+psycopg2 = "*"
+python-dotenv = "*"
+openpyxl = "*"
+python-multipart = "*"
+pg8000 = "*"
+
+[dev-packages]
+black = "*"
+
+[requires]
+python_version = "^3.9"

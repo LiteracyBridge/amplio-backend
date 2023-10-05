@@ -20,18 +20,19 @@ def _get_secret() -> dict:
     region_name = "us-west-2"
 
     if _args and _args.verbose >= 2:
-        print('    Getting credentials for database connection. v2.')
+        print("    Getting credentials for database connection. v2.")
     start = time.time()
 
     # Create a Secrets Manager client
     try:
         session = boto3.session.Session()
-        client = session.client(
-            service_name='secretsmanager',
-            region_name=region_name
-        )
+        client = session.client(service_name="secretsmanager", region_name=region_name)
     except Exception as e:
-        print('    Exception getting session client: {}, elapsed: {}'.format(str(e), time.time() - start))
+        print(
+            "    Exception getting session client: {}, elapsed: {}".format(
+                str(e), time.time() - start
+            )
+        )
         raise e
 
     # In this sample we only handle the specific exceptions for the 'GetSecretValue' API.
@@ -42,17 +43,22 @@ def _get_secret() -> dict:
         get_secret_value_response = client.get_secret_value(SecretId=secret_name)
     except ClientError as e:
         if _args and _args.verbose >= 2:
-            print('    Exception getting credentials: {}, elapsed: {}'.format(e.response['Error']['code'],
-                                                                              time.time() - start))
+            print(
+                "    Exception getting credentials: {}, elapsed: {}".format(
+                    e.response["Error"]["code"], time.time() - start
+                )
+            )
         raise e
     else:
         # Decrypts secret using the associated KMS CMK.
         # Depending on whether the secret is a string or binary, one of these fields will be populated.
-        if 'SecretString' in get_secret_value_response:
-            secret = get_secret_value_response['SecretString']
+        if "SecretString" in get_secret_value_response:
+            secret = get_secret_value_response["SecretString"]
             result = json.loads(secret)
         else:
-            decoded_binary_secret = base64.b64decode(get_secret_value_response['SecretBinary'])
+            decoded_binary_secret = base64.b64decode(
+                get_secret_value_response["SecretBinary"]
+            )
             result = decoded_binary_secret
 
     # Your code goes here.
@@ -60,8 +66,8 @@ def _get_secret() -> dict:
 
 
 def _ensure_content_view(engine=None):
-    v3 = '''
-        create or replace temp view content as 
+    v3 = """
+        create or replace temp view content as
             select depl.project as project
                     ,depl.id as deployment_id
                     ,depl.deploymentnumber::integer as deployment_num
@@ -118,9 +124,9 @@ def _ensure_content_view(engine=None):
 
 
             order by depl.project, depl.deploymentnumber, pl.position, msg.position;
-    '''
-    v3_new = '''
-        create or replace temp view content as 
+    """
+    v3_new = """
+        create or replace temp view content as
             select depl.project as project
                     ,depl.deploymentnumber::integer as deployment_num
                     ,depl.startdate as deployment_startdate
@@ -173,17 +179,17 @@ def _ensure_content_view(engine=None):
                     ,msg.languages
 
             order by depl.project, depl.deploymentnumber, pl.position, msg.position;
-    '''
-    q = '''select distinct project from content;'''
+    """
+    q = """select distinct project from content;"""
     global _engine
     if engine is None:
         engine = _engine
-    is_new = table_has_column('messages', 'audience', engine=engine)
+    is_new = table_has_column("messages", "audience", engine=engine)
     content_view = v3_new if is_new else v3
     try:
         with engine.connect() as conn:
             result = conn.execute(text(content_view))
-        print(f'(Re)established content view, is_new: {is_new}, {result}.')
+        print(f"(Re)established content view, is_new: {is_new}, {result}.")
     except Exception as ex:
         print(ex)
 
@@ -200,7 +206,7 @@ def get_db_connection(*, close_with_result=None, engine=None):
         engine = _engine
     kwargs = {}
     if close_with_result is not None:
-        kwargs['close_with_result'] = close_with_result
+        kwargs["close_with_result"] = close_with_result
     try:
         with engine.connect(**kwargs) as conn:
             yield conn

@@ -2,7 +2,6 @@ import uuid
 import uvicorn
 import sentry_sdk
 from sentry_sdk.integrations.aws_lambda import AwsLambdaIntegration
-import jwt
 from fastapi import Depends, FastAPI, HTTPException, Request
 from mangum import Mangum
 
