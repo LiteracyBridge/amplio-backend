@@ -40,7 +40,7 @@ if config.sentry_dsn is not None:
 app = FastAPI()
 
 origins = [
-    "http://localhost:5173",
+    "http://localhost:8080",
     "suite.amplio.org",
     "https://suite.amplio.org",
 ]

@@ -186,6 +186,7 @@ class _DbWriter:
         )
         duplicate_additions = []
         for sql_row in result:
+            sql_row = dict(sql_row._mapping)
             row_id = sql_row["recipientid"]
             # Only look at the db_rows for which we have csv rows. Ignore recipients no longer active in the program
             # spec. (They'e kept because statistics refer to them.)
@@ -274,7 +275,8 @@ class _DbWriter:
         values = {"program_id": self._program_spec.program_id}
         result = self._connection.execute(command, values)
         db_deployments: Dict[int, Dict[str, Any]] = {
-            int(r["deploymentnumber"]): r for r in [dict(row) for row in result]
+            int(r["deploymentnumber"]): r
+            for r in [dict(row._mapping) for row in result]
         }
 
         ps_deployments: Dict[int, Deployment] = {

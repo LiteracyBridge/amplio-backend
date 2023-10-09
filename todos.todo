@@ -3,7 +3,7 @@ Program Language Selection:
         ☐ IAM db access permision
         ☐ IAM secrets access permision
     Sheet upload:
-        ☐ diff and update program languages
+        ✔ diff and update program languages @done(23-10-09 07:12)
         ☐ diff and update supported languages
         ☐ add validation to ensure message languages are also in program languages
     Sheet Downlload:
@@ -14,3 +14,8 @@ Program Language Selection:
         ☐ add new docker deplyment url
         ☐ update ui to support adding new languages
             ☐ diff and update program languages on update
+
+Suite Frontend:
+    ☐ vue3 migration
+        ☐ setup tsc
+        ☐ setup vue3-compact
