@@ -9,9 +9,17 @@ from openpyxl.styles import Alignment, Font
 from openpyxl.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from routes.program_spec.spec import ProgramSpec, Deployment, Playlist, Message, Recipient, General
+from routes.program_spec.spec import (
+    Language,
+    ProgramSpec,
+    Deployment,
+    Playlist,
+    Message,
+    Recipient,
+    General,
+)
 
-ARTIFACTS = ['general', 'deployments', 'content', 'recipients']
+ARTIFACTS = ["general", "deployments", "content", "recipients"]
 
 
 class _XlsxExporter:
@@ -20,7 +28,9 @@ class _XlsxExporter:
         self.program_spec = program_spec
 
     @staticmethod
-    def pxl_columns_for(desired_columns: List[str], *, columns: Tuple[str]) -> List[int]:
+    def pxl_columns_for(
+        desired_columns: List[str], *, columns: Tuple[str]
+    ) -> List[int]:
         """
         Given some column names from a table, what will be the column numbers in a spreadsheet? 1-based.
         :param desired_columns: Columns for which the indices are desired.
@@ -34,7 +44,9 @@ class _XlsxExporter:
         return sorted(list(result))
 
     @staticmethod
-    def _auto_width(ws: Worksheet, *, formats: Dict[int, Dict[str, Any]] = None) -> None:
+    def _auto_width(
+        ws: Worksheet, *, formats: Dict[int, Dict[str, Any]] = None
+    ) -> None:
         """
         Sets formatting for the worksheet. In the most basic usage, sets the widths based on data.
         :param ws: The worksheet to be formatted.
@@ -52,26 +64,28 @@ class _XlsxExporter:
             """
             if formats and c.column in formats:
                 f = formats[c.column]
-                if f.get('no_width'):
+                if f.get("no_width"):
                     # don't say anything about the width
                     pass
-                elif f.get('width') is not None:
+                elif f.get("width") is not None:
                     # explicitly specified width
-                    dims[c.cell.column_letter] = f.get('width')
+                    dims[c.cell.column_letter] = f.get("width")
                 else:
                     # width based on content, with optional min and/or max width
                     dim = max((dims.get(c.column_letter, 0), len(str(c.value))))
-                    if f.get('max_width') is not None:
-                        dim = min(dim, f.get('max_width'))  # no more than this
-                    if f.get('min_width') is not None:
-                        dim = max(dim, f.get('min_width'))  # no less than this
+                    if f.get("max_width") is not None:
+                        dim = min(dim, f.get("max_width"))  # no more than this
+                    if f.get("min_width") is not None:
+                        dim = max(dim, f.get("min_width"))  # no less than this
                     dims[c.column_letter] = dim
-                if f.get('wrap'):
+                if f.get("wrap"):
                     c.alignment = Alignment(wrapText=True)
-                if f.get('date'):
-                    c.number_format = 'yyyy-mm-dd'
+                if f.get("date"):
+                    c.number_format = "yyyy-mm-dd"
             else:
-                dims[c.column_letter] = max((dims.get(c.column_letter, 0), len(str(c.value))))
+                dims[c.column_letter] = max(
+                    (dims.get(c.column_letter, 0), len(str(c.value)))
+                )
 
         dims = {}
         for row in ws.rows:
@@ -87,8 +101,9 @@ class _XlsxExporter:
             cell.font = bold
 
     @staticmethod
-    def _add_sheet(wb: Workbook, sheet_name: str, values: List[Tuple[str]],
-                   header: Tuple[str]) -> Worksheet:
+    def _add_sheet(
+        wb: Workbook, sheet_name: str, values: List[Tuple[str]], header: Tuple[str]
+    ) -> Worksheet:
         """
         Adds one sheet to the workbook, for 'content', 'recipients', etc.
         :param wb: The workbook into which to add the sheet.
@@ -108,8 +123,9 @@ class _XlsxExporter:
         if self.program_spec.general is not None:
             columns = General.csv_header
             values = [self.program_spec.general.csv_row]
-            ws = self._add_sheet(wb, sheet_name='General', values=values,
-                                 header=columns)
+            ws = self._add_sheet(
+                wb, sheet_name="General", values=values, header=columns
+            )
             self._auto_width(ws)
             return ws
 
@@ -121,8 +137,13 @@ class _XlsxExporter:
         """
         columns = Deployment.csv_header
         values = [d.csv_row for d in self.program_spec.deployments]
-        ws = self._add_sheet(wb, sheet_name='Deployments', values=values, header=columns)
-        formats = {c: {'date': True} for c in self.pxl_columns_for(['Start Date', 'End Date'], columns=columns)}
+        ws = self._add_sheet(
+            wb, sheet_name="Deployments", values=values, header=columns
+        )
+        formats = {
+            c: {"date": True}
+            for c in self.pxl_columns_for(["Start Date", "End Date"], columns=columns)
+        }
         self._auto_width(ws, formats=formats)
         return ws
 
@@ -133,11 +154,19 @@ class _XlsxExporter:
         :return: The new worksheet.
         """
         columns = Message.csv_header
-        values = [msg.csv_row for depl in self.program_spec.deployments for pl in depl.playlists for msg in
-                  pl.messages]
-        ws = self._add_sheet(wb, sheet_name='Content', values=values, header=columns)
-        formats = {c: {'max_width': 60, 'wrap': True} for c in
-                   self.pxl_columns_for(["Message Title", "Key Points"], columns=columns)}
+        values = [
+            msg.csv_row
+            for depl in self.program_spec.deployments
+            for pl in depl.playlists
+            for msg in pl.messages
+        ]
+        ws = self._add_sheet(wb, sheet_name="Content", values=values, header=columns)
+        formats = {
+            c: {"max_width": 60, "wrap": True}
+            for c in self.pxl_columns_for(
+                ["Message Title", "Key Points"], columns=columns
+            )
+        }
         self._auto_width(ws, formats=formats)
         return ws
 
@@ -149,7 +178,7 @@ class _XlsxExporter:
         """
         columns = Recipient.csv_header
         values = [r.csv_row for r in self.program_spec.recipients]
-        ws = self._add_sheet(wb, sheet_name='Recipients', values=values, header=columns)
+        ws = self._add_sheet(wb, sheet_name="Recipients", values=values, header=columns)
         self._auto_width(ws)
         return ws
 
@@ -187,14 +216,23 @@ class _XlsxExporter:
         :param artifact: The desired tab.
         :return: The tab, as a .csv, as a string.
         """
-        if artifact == 'general' and self.program_spec.general is not None:
-            return self._get_csv([self.program_spec.general.csv_row], General.csv_header)
-        elif artifact == 'deployments':
-            return self._get_csv((x.csv_row for x in self.program_spec.deployments), Deployment.csv_header)
-        elif artifact == 'content':
-            return self._get_csv((x.csv_row for x in self.program_spec.content), Message.csv_header)
-        elif artifact == 'recipients':
-            return self._get_csv((x.csv_row for x in self.program_spec.recipients), Recipient.csv_header)
+        if artifact == "general" and self.program_spec.general is not None:
+            return self._get_csv(
+                [self.program_spec.general.csv_row], General.csv_header
+            )
+        elif artifact == "deployments":
+            return self._get_csv(
+                (x.csv_row for x in self.program_spec.deployments),
+                Deployment.csv_header,
+            )
+        elif artifact == "content":
+            return self._get_csv(
+                (x.csv_row for x in self.program_spec.content), Message.csv_header
+            )
+        elif artifact == "recipients":
+            return self._get_csv(
+                (x.csv_row for x in self.program_spec.recipients), Recipient.csv_header
+            )
         else:
             return None
 
@@ -209,6 +247,7 @@ class _XlsxImporter:
         self._deployments: List[Dict] = []
         self._content: List[Dict] = []
         self._recipients: List[Dict] = []
+        self._languages: List[Dict] = []
         self._general: Dict = {}
 
     def _load_sheets(self, data: bytes) -> Tuple[bool, List[str]]:
@@ -218,12 +257,13 @@ class _XlsxImporter:
             self._sheets = openpyxl.load_workbook(_bytes)
             return True, []
         except Exception as ex:
-            result.append(f'Exception loading workbook: {ex}')
+            result.append(f"Exception loading workbook: {ex}")
         return False, result
 
     def _parse_sheets(self) -> Tuple[bool, List[str]]:
-        def parse_sheet(sheet: Worksheet, dc:dataclass, additional_map: Dict[str, str] = None) -> \
-                List[Dict[str, str]]:
+        def parse_sheet(
+            sheet: Worksheet, dc: dataclass, additional_map: Dict[str, str] = None
+        ) -> List[Dict[str, str]]:
             column_import_map = dc.csv_to_internal_map
             if additional_map is not None:
                 column_import_map.update(additional_map)
@@ -234,43 +274,78 @@ class _XlsxImporter:
             header = [r.value for r in rows[0]]
             rows = rows[1:]
             # what we'll call the values in the output dict. Unknown columns transfered as-is
-            column_names = [column_import_map[h] if h in column_import_map else h for h in header]
+            column_names = [
+                column_import_map[h] if h in column_import_map else h for h in header
+            ]
             result = []
             for row in rows:
                 # Excel will give us a row of empty values if we've looked at it hard. Skip rows with no data.
                 # We don't do anything with formulae, and customers like to put a sum of talking books so skip those
                 # as well.
-                if all([cell.data_type in 'nf' for cell in row]):
+                if all([cell.data_type in "nf" for cell in row]):
                     continue
 
                 # normalize
-                values = [x.value.strip() if isinstance(x.value, str) else x.value for x in row]
+                values = [
+                    x.value.strip() if isinstance(x.value, str) else x.value
+                    for x in row
+                ]
                 result.append(dict(zip(column_names, values)))
             return result
 
         try:
-            additional_message_mappings = {'Deployment #': 'deployment_num', 'Playlist Title': 'playlist_title'}
-            additional_recipient_mappings = {'Model': 'listening_model', 'Language': 'language'}
-            self._deployments = parse_sheet(self._sheets['Deployments'], Deployment)
-            self._content = parse_sheet(self._sheets['Content'], Message,
-                                        additional_map=additional_message_mappings)
-            if 'Recipients' in self._sheets:
-                self._recipients = parse_sheet(self._sheets['Recipients'], Recipient,
-                                               additional_map=additional_recipient_mappings)
-            elif 'Components' in self._sheets:
-                names_dict = parse_sheet(self._sheets['Components'], {'component': 'Component'})
-                names = [x['component'] for x in names_dict]
+            additional_message_mappings = {
+                "Deployment #": "deployment_num",
+                "Playlist Title": "playlist_title",
+            }
+            additional_recipient_mappings = {
+                "Model": "listening_model",
+                "Language": "language",
+            }
+            self._deployments = parse_sheet(self._sheets["Deployments"], Deployment)
+            self._content = parse_sheet(
+                self._sheets["Content"],
+                Message,
+                additional_map=additional_message_mappings,
+            )
+            if "Recipients" in self._sheets:
+                self._recipients = parse_sheet(
+                    self._sheets["Recipients"],
+                    Recipient,
+                    additional_map=additional_recipient_mappings,
+                )
+            elif "Components" in self._sheets:
+                names_dict = parse_sheet(
+                    self._sheets["Components"], {"component": "Component"}
+                )
+                names = [x["component"] for x in names_dict]
                 self._recipients = []
                 for name in names:
-                    self._recipients.extend(parse_sheet(self._sheets[name], Recipient,
-                                                        additional_map=additional_recipient_mappings))
+                    self._recipients.extend(
+                        parse_sheet(
+                            self._sheets[name],
+                            Recipient,
+                            additional_map=additional_recipient_mappings,
+                        )
+                    )
 
-            if 'General' in self._sheets:
-                self._general = parse_sheet(self._sheets['General'], General)[0]
+            if "General" in self._sheets:
+                self._general = parse_sheet(self._sheets["General"], General)[0]
 
+            if "Program Languages" in self.sheets:
+                self._languages = parse_sheet(
+                    self._sheets["Program Languages"],
+                    Language,
+                    additional_map={
+                        "Language Code": "languagecode",
+                        "Language Name": "languagename",
+                    },
+                )
+
+                print(self._languages)
             return True, []
         except Exception as ex:
-            return False, [f'Exception parsing workbook: {ex}']
+            return False, [f"Exception parsing workbook: {ex}"]
 
     def _add_sheets(self) -> Tuple[ProgramSpec, List[str]]:
         ok = True
@@ -286,36 +361,39 @@ class _XlsxImporter:
 
         message_export_map = Message.internal_to_csv_map
         for c in self._content:
-            msg_title = c['title']
-            depl_num = c['deployment_num']
-            pl_title = c['playlist_title']
+            msg_title = c["title"]
+            depl_num = c["deployment_num"]
+            pl_title = c["playlist_title"]
             if depl_num not in deployments:
                 ok = False
                 messages.append(
-                    f'    Message "{msg_title}" requires {message_export_map["deployment_num"]} {depl_num}' +
-                    f', which is not in the Deployments sheet.')
+                    f'    Message "{msg_title}" requires {message_export_map["deployment_num"]} {depl_num}'
+                    + f", which is not in the Deployments sheet."
+                )
             else:
                 depl = deployments[depl_num]
                 pl_in_depl = playlists[depl_num]
                 pl = pl_in_depl.get(pl_title)
                 if pl is None:
-                    pl = depl.add_playlist({'title': pl_title})
+                    pl = depl.add_playlist({"title": pl_title})
                     pl_in_depl[pl_title] = pl
                 pl.add_message(c)
 
         for r in self._recipients:
-            r['program_id'] = self._programid
+            r["program_id"] = self._programid
             prog_spec.add_recipient(r)
 
         # Older speradsheets had a different 'General' tab, with none of the current general info. Ignore those, if found.
-        if self._general and all([x in self._general for x in General.required_columns]):
+        if self._general and all(
+            [x in self._general for x in General.required_columns]
+        ):
             prog_spec.add_general(self._general)
 
         return prog_spec if ok else None, messages
 
     def do_import(self) -> Tuple[Union[bool, Optional[ProgramSpec]], List[str]]:
         if isinstance(self._data_or_path, Path):
-            with self._data_or_path.open('rb') as input_file:
+            with self._data_or_path.open("rb") as input_file:
                 data = input_file.read()
         else:
             data = self._data_or_path
@@ -343,20 +421,24 @@ def write_to_xlsx(program_spec: ProgramSpec, path: Optional[Path] = None) -> byt
     # Write to a file if desired
     if path is not None:
         if path.is_dir():
-            path = path_for_csv(path, 'progspec')
-        with path.open(mode='wb') as xls_file:
+            path = path_for_csv(path, "progspec")
+        with path.open(mode="wb") as xls_file:
             xls_file.write(data)
     return data
 
 
-def path_for_csv(out_dir: Path, artifact: str, prefix: str = '') -> Path:
-    if artifact == 'progspec':
-        return Path(out_dir, f'{prefix}{artifact}.xlsx')
-    return Path(out_dir, f'{prefix}{artifact}.csv')
+def path_for_csv(out_dir: Path, artifact: str, prefix: str = "") -> Path:
+    if artifact == "progspec":
+        return Path(out_dir, f"{prefix}{artifact}.xlsx")
+    return Path(out_dir, f"{prefix}{artifact}.csv")
 
 
-def write_to_csv(program_spec: ProgramSpec, artifact: str, path: Optional[Path] = None, prefix: str = '') -> Optional[
-    str]:
+def write_to_csv(
+    program_spec: ProgramSpec,
+    artifact: str,
+    path: Optional[Path] = None,
+    prefix: str = "",
+) -> Optional[str]:
     """
     Export an artifact from a Program Specification. The artifact is one of ['general', 'deployments', 'content', 'recipients'],
     the three sheets of the Program Specification spreadsheet, and the three csv files used by the ACM.
@@ -370,13 +452,14 @@ def write_to_csv(program_spec: ProgramSpec, artifact: str, path: Optional[Path] 
     if path is not None and data is not None:
         if path.is_dir():
             path = path_for_csv(path, artifact, prefix)
-        with path.open(mode='w') as csv_file:
+        with path.open(mode="w") as csv_file:
             csv_file.write(data)
     return data
 
 
-def read_from_xlsx(programid: str, data_or_path: Union[bytes, Path]) -> \
-        Tuple[Union[bool, Optional[ProgramSpec]], List[str]]:
+def read_from_xlsx(
+    programid: str, data_or_path: Union[bytes, Path]
+) -> Tuple[Union[bool, Optional[ProgramSpec]], List[str]]:
     """
     Imports a program specification from a spreadsheet.
 

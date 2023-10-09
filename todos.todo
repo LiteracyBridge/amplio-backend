@@ -1,0 +1,16 @@
+Program Language Selection:
+    Deployment:
+        ☐ IAM db access permision
+        ☐ IAM secrets access permision
+    Sheet upload:
+        ☐ diff and update program languages
+        ☐ diff and update supported languages
+        ☐ add validation to ensure message languages are also in program languages
+    Sheet Downlload:
+        ☐ add supported languages worksheet
+        ☐ update program languages worksheet with the project languages
+
+    Update via ui:
+        ☐ add new docker deplyment url
+        ☐ update ui to support adding new languages
+            ☐ diff and update program languages on update

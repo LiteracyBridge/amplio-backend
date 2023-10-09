@@ -12,7 +12,7 @@ from typing import Dict, List
 from jose import jwk, jwt
 from jose.utils import base64url_decode
 from pydantic import BaseModel
-from config import settings
+from config import config
 
 
 class JWK(BaseModel):
@@ -33,9 +33,9 @@ class JWK(BaseModel):
 class CognitoAuthenticator:
     def __init__(self) -> None:
         self.pool_region = "us-west-2"
-        self.pool_id = settings.user_pool_id
-        self.client_id = settings.user_pool_client_id
-        self.issuer = f"https://cognito-idp.{self.pool_region}.amazonaws.com/{settings.user_pool_id}/.well-known/jwks.json"
+        self.pool_id = config.user_pool_id
+        self.client_id = config.user_pool_client_id
+        self.issuer = f"https://cognito-idp.{self.pool_region}.amazonaws.com/{config.user_pool_id}/.well-known/jwks.json"
 
         self.jwks = self.__get_jwks()
 

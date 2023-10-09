@@ -13,14 +13,14 @@ from handlers.http_exception_handler import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
 from jwt_verifier import CognitoAuthenticator
 import models
-from config import settings
+from config import config
 
 from routes.program_spec import program_spec_route
 # from routes import survey_route, data_service_route, analysis_route, uf_messages_route
 
-if settings.sentry_dsn is not None:
+if config.sentry_dsn is not None:
     sentry_sdk.init(
-        dsn=settings.sentry_dsn,
+        dsn=config.sentry_dsn,
         integrations=[
             AwsLambdaIntegration(timeout_warning=True),
         ],
@@ -75,7 +75,7 @@ app.add_middleware(
 #     return response
 
 
-if not settings.is_local:
+if not config.is_local:
     ###############################################################################
     #   Logging configuration                                                     #
     ###############################################################################

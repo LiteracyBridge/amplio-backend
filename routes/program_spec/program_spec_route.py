@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 import binascii
 import datetime
@@ -224,8 +224,8 @@ def download(
 
 # @handler
 @router.post("/upload")
-def upload(
-    data: Annotated[bytes, File()],
+async def upload(
+    data: Annotated[UploadFile, File()],
     programid: str,
     email: str,
     return_diff: bool = False,
@@ -234,7 +234,9 @@ def upload(
     """
     Uploads the binary contents of a .xlsx file to the pending program spec, s3://amplio-progspecs/{programid}/pending.
     """
-    pending_spec, errors = read_from_xlsx(data)
+    pending_spec, errors = read_from_xlsx(
+        programid=programid, data_or_path=await data.read()
+    )
     if pending_spec:
         print(f"Loaded new pending spec for {programid} from data")
         # Looks good, save to S3.
@@ -249,6 +251,7 @@ def upload(
             Body=data, Bucket=PROGSPEC_BUCKET, Metadata=metadata, Key=key
         )
         _delete_versions(key, versions_to_keep=put_result.get("VersionId"))
+
         result = {"status": STATUS_OK, "versionid": put_result.get("VersionId")}
         if return_diff:
             print(f"Loaded published spec for {programid} to find diffs")

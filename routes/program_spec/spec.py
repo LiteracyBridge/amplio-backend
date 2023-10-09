@@ -966,7 +966,7 @@ class ProgramSpec:
         :param json_args: to be passed to the json converter, eg: json_args={'indent':2}
         :return: The program spec encoded as JSON.
         """
-        from ps import write_to_json
+        from routes.program_spec import write_to_json
 
         return write_to_json(self, json_args=json_args, to_string=to_string)
 
@@ -1049,3 +1049,10 @@ class ProgramSpec:
 
 
 # endregion
+
+
+@dataclass
+class Language(_SpecClass):
+    languagename: str = None
+    languagecode: str = None
+    comments: str = None
