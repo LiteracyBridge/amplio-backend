@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import time
-import urllib.request
 from typing import Dict, List
 
 from jose import jwk, jwt

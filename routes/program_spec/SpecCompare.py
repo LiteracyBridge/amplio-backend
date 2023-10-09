@@ -1,6 +1,7 @@
 from typing import List, Dict
 
 from routes.program_spec.spec import (
+    Language,
     ProgramSpec,
     Deployment,
     Playlist,
@@ -313,9 +314,20 @@ class SpecCompare:
         return results
 
     def diff_languages(self):
-        print(self.a)
-        print(self.b)
-        pass
+        def _lang_to_string(lang: Language):
+            return f"{lang.languagename} ({lang.languagecode})"
+
+        results = []
+        a_languages = [_lang_to_string(l) for l in self.a.program_languages]
+        b_languages = [_lang_to_string(l) for l in self.b.program_languages]
+
+        added: List[str] = [lang for lang in b_languages if lang not in a_languages]
+        removed: List[str] = [lang for lang in a_languages if lang not in b_languages]
+
+        results.append(f' Program Languages added: {", ".join(added)}')
+        results.append(f' Program Languages removed: {", ".join(removed)}')
+
+        return results
 
     def diff(self, content_only: bool = False) -> List[str]:
         result: List[str] = []
@@ -335,6 +347,10 @@ class SpecCompare:
                 result.extend(changes)
 
             #! TODO: Implement program language diff
+            changes = self.diff_languages()
+            if len(changes) > 0:
+                result.append("Program Languages")
+                result.extend(changes)
 
         return result
 

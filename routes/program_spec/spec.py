@@ -39,7 +39,7 @@ class _SpecClass:
     parser - A function to parse or normalize the field. Needs to know how to "do the right thing",
             and should be prepared to handle input from database, JSON, and XLSX (we currently don't
             import CSV).
-    formatter - A function to format the field for outout, or a dict of functions by data destination
+    formatter - A function to format the field for output, or a dict of functions by data destination
             ("sql", "csv", etc.). if "xlsx" is specified and "csv" is not, the xlsx formatter is
             also used for csv.
 
@@ -847,6 +847,12 @@ class General(_SpecClass):
 
 # endregion
 
+@dataclass
+class Language(_SpecClass):
+    languagename: Optional[str] = None
+    languagecode: Optional[str] = None
+    comments: Optional[str] = None
+
 
 # region ProgramSpec
 ####################################################################################################
@@ -856,6 +862,11 @@ class ProgramSpec:
         self._deployments: List[Deployment] = []
         self._recipients: List[Recipient] = []
         self._general: Optional[General] = None
+        self._program_languages: List[Language] = []
+
+    @property
+    def program_languages(self):
+        return self._program_languages
 
     @property
     def general(self):
@@ -877,6 +888,14 @@ class ProgramSpec:
     @property
     def recipients(self):
         return self._recipients
+
+    def add_language(self, language: Union[Dict, Language]) -> Language:
+        if isinstance(language, dict):
+            lang_dict = Language.parse(language)
+            language = Language(**lang_dict)
+
+        self._program_languages.append(language)
+        return language
 
     def add_general(self, general: Union[Dict, General]) -> General:
         if isinstance(general, dict):
@@ -1049,10 +1068,3 @@ class ProgramSpec:
 
 
 # endregion
-
-
-@dataclass
-class Language(_SpecClass):
-    languagename: str = None
-    languagecode: str = None
-    comments: str = None

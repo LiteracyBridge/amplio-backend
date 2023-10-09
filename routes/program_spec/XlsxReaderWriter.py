@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from io import BytesIO, StringIO
 from pathlib import Path
 from typing import Tuple, List, Optional, Dict, Union, Set, Any, Iterable
-
+from sentry_sdk import capture_exception
 import openpyxl
 from openpyxl.styles import Alignment, Font
 from openpyxl.workbook import Workbook
@@ -332,19 +332,21 @@ class _XlsxImporter:
             if "General" in self._sheets:
                 self._general = parse_sheet(self._sheets["General"], General)[0]
 
-            if "Program Languages" in self.sheets:
+            if "Program Languages" in self._sheets:
                 self._languages = parse_sheet(
                     self._sheets["Program Languages"],
                     Language,
                     additional_map={
                         "Language Code": "languagecode",
                         "Language Name": "languagename",
+                        "Comments": "comments",
                     },
                 )
 
                 print(self._languages)
             return True, []
         except Exception as ex:
+            capture_exception(ex)
             return False, [f"Exception parsing workbook: {ex}"]
 
     def _add_sheets(self) -> Tuple[ProgramSpec, List[str]]:
@@ -353,6 +355,9 @@ class _XlsxImporter:
         deployments: Dict[int, Deployment] = {}
         playlists: Dict[int, Dict[str, Playlist]] = {}
         prog_spec: ProgramSpec = ProgramSpec(self._programid)
+
+        for l in self._languages:
+            prog_spec.add_language(l)
 
         for d in self._deployments:
             depl = prog_spec.add_deployment(d)

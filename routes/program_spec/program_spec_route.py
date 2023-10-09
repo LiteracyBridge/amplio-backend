@@ -248,7 +248,7 @@ async def upload(
 
         key = _make_program_key(programid, PENDING_PROGSPEC_KEY)
         put_result = s3.put_object(
-            Body=data, Bucket=PROGSPEC_BUCKET, Metadata=metadata, Key=key
+            Body=await data.read(), Bucket=PROGSPEC_BUCKET, Metadata=metadata, Key=key
         )
         _delete_versions(key, versions_to_keep=put_result.get("VersionId"))
 
