@@ -1,4 +1,6 @@
 Program Language Selection:
+    ☐ database update on spec-put
+
     Deployment:
         ☐ IAM db access permision
         ☐ IAM secrets access permision

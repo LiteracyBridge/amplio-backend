@@ -1,8 +1,11 @@
+from copy import deepcopy
 import dataclasses
 from collections import namedtuple
 from typing import List, Optional, Dict, Any, Tuple
+from models import ProjectLanguage, SupportedLanguage, get_db
 
 import boto3
+from config import AWS_REGION
 import routes.program_spec.db as db
 from routes.program_spec import (
     ProgramSpec,
@@ -19,7 +22,7 @@ from sqlalchemy.engine import Engine, Connection
 # dyanmodb programs table keeps a cached copy of program name, so update it along with SQL name.
 dynamodb = None
 programs_table = None
-REGION_NAME = "us-west-2"
+# REGION_NAME = "us-west-2"
 PROGRAMS_TABLE_NAME = "programs"
 
 # Helpers for tracking differences between program spec and database.
@@ -110,7 +113,7 @@ class _DbWriter:
 
         global dynamodb, programs_table
         if dynamodb is None:
-            dynamodb = boto3.resource("dynamodb", region_name=REGION_NAME)
+            dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
             programs_table = dynamodb.Table(PROGRAMS_TABLE_NAME)
 
         dynamo_name = get_dynamo_name()
@@ -141,6 +144,96 @@ class _DbWriter:
         print(
             f"{result.rowcount} new programs record for {self._program_spec.program_id}."
         )
+
+    def _save_new_languages(self):
+        if self._program_spec.general is None:
+            return
+
+        languages: List[Dict[str, str]] = self._program_spec.general.new_languages
+        if len(languages) == 0:
+            return
+
+        # TODO: get new languages, compare against project languages, sync supported languages
+        db = next(get_db())
+
+        language_codes = [lang.get("code") for lang in languages]
+
+        # Sync new languages with supported languages
+        results = (
+            db.query(SupportedLanguage)
+            .filter(SupportedLanguage.code.in_(language_codes))
+            .all()
+        )
+        if len(results) > 0:
+            existing_language_codes = [lang.code for lang in results]
+            language_codes = [
+                code for code in language_codes if code not in existing_language_codes
+            ]
+
+        # Add new languages
+        new_languages = [
+            SupportedLanguage(
+                code=lang.get("code"),
+                name=lang.get("name"),
+                comments=lang.get("comments"),
+            )
+            for lang in languages
+            if lang.get("code") in language_codes
+        ]
+
+        db.add_all(new_languages)
+        db.commit()
+
+        # field_names = [x for x in General.sql_columns() if x != "name"]
+        # conflict_setters = ",".join(
+        #     [f"{x}=EXCLUDED.{x}" for x in field_names if x != "program_id"]
+        # )
+        # command = text(
+        #     f'INSERT INTO programs ({",".join(field_names)}) '
+        #     f'VALUES (:{",:".join(field_names)}) '
+        #     "ON CONFLICT ON CONSTRAINT programs_uniqueness_key DO UPDATE SET "
+        #     + conflict_setters
+        #     + ";"
+        # )
+        # values = self._program_spec.general.sql_row
+        # result = self._connection.execute(command, values)
+        # if values.get("name"):
+        #     self._save_name(values.get("program_id"), values.get("name"))
+        print(
+            f"{len(language_codes)} new languages synced with supported languages {self._program_spec.program_id}."
+        )
+
+        # TODO: update languagees with general.languages
+        # Update project languages
+        language_codes = deepcopy(self._program_spec.general.languages)
+        results = (
+            db.query(ProjectLanguage)
+            .filter(
+                ProjectLanguage.projectcode == self._program_spec.program_id,
+                ProjectLanguage.code.in_(language_codes),
+            )
+            .all()
+        )
+        if len(results) > 0:
+            existing_language_codes = [lang.code for lang in results]
+            language_codes = [
+                code for code in language_codes if code not in existing_language_codes
+            ]
+
+        # Add new languages
+        _languages: List[SupportedLanguage] = db.query(SupportedLanguage).all()
+        new_languages = [
+            ProjectLanguage(
+                code=lang.code,
+                name=lang.name,
+                projectcode=self._program_spec.program_id,
+            )
+            for lang in _languages
+            if lang.code in language_codes
+        ]
+
+        db.add_all(new_languages)
+        db.commit()
 
     def _merge_recipients(self):
         def differ(sql_row, ps_row: Recipient) -> bool:
@@ -260,6 +353,7 @@ class _DbWriter:
             """
             db_dict = Deployment.parse(sql_row)
             ps_dict = ps_row.todict
+
             return _rows_differ(
                 db_dict,
                 ps_dict,
@@ -328,6 +422,7 @@ class _DbWriter:
             print(
                 f"{result_a.rowcount} deployment records added for {self._program_spec.program_id}."
             )
+
             # Query the deployments after the insert, and get the ids of the newly added rows.
             result = self._connection.execute(command, values)
             for row in result:
@@ -524,6 +619,7 @@ class _DbWriter:
         values = {"program_id": self._program_spec.program_id}
         self._connection.execute(command, values)
 
+        self._save_new_languages()
         self._save_deployments_and_get_ids()
         self._save_content()
 

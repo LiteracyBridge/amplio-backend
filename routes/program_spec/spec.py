@@ -818,6 +818,10 @@ class General(_SpecClass):
         default_factory=list, metadata={"alias": ["region", "Regions"], "as_json": True}
     )
     languages: List[str] = field(default_factory=list, metadata={"as_json": True})
+    new_languages: List[Any] = field(
+        default_factory=list,
+        metadata={"as_json": True, "export": False, "import": True},
+    )
     deployments_count: int = 0
     deployments_length: str = "one-quarter"
     deployments_first: datetime.date = field(default=datetime.datetime.now().date())
@@ -846,6 +850,7 @@ class General(_SpecClass):
 
 
 # endregion
+
 
 @dataclass
 class Language(_SpecClass):
