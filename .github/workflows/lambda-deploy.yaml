@@ -4,7 +4,7 @@ on:
     branches:
       - dev
     # - main
-  pull_request:
+  # pull_request:
 
 jobs:
   BuildAndPushImageToECR:
@@ -28,7 +28,7 @@ jobs:
 
       - name: Generate requirement.text from Pipfile.lock
         run: jq -r '.default | to_entries[] | .key + .value.version' \
-            Pipfile.lock > requirements.txt
+            ./Pipfile.lock > requirements.txt
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
