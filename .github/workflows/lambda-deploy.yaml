@@ -15,6 +15,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
+      - name: Generate requirement.text from Pipfile.lock
+        working-directory: ./
+        run: jq -r '.default | to_entries[] | .key + .value.version' \
+            Pipfile.lock > requirements.txt
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -25,11 +30,6 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Generate requirement.text from Pipfile.lock
-        uses: actions/checkout@v2
-      - run: jq -r '.default | to_entries[] | .key + .value.version' \
-            Pipfile.lock > requirements.txt
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
