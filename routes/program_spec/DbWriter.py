@@ -156,7 +156,12 @@ class _DbWriter:
         # TODO: get new languages, compare against project languages, sync supported languages
         db = next(get_db())
 
-        language_codes = [lang.get("code") for lang in languages]
+        language_codes = [
+            lang.get("code")
+            for lang in languages
+            if lang.get("code")
+            in self._program_spec.general.languages  # skips new but deleted languages
+        ]
 
         # Sync new languages with supported languages
         results = (

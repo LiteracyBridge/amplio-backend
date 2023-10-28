@@ -19,5 +19,6 @@ Program Language Selection:
 
 Suite Frontend:
     ☐ vue3 migration
-        ☐ setup tsc
-        ☐ setup vue3-compact
+        ☐ program spec -> deployments & content -># draggable not updating deployments order
+        ✔ setup tsc @done(23-10-21 12:33)
+        ✔ setup vue3-compact @done(23-10-21 12:33)
