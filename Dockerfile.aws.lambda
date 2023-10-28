@@ -1,6 +1,6 @@
 FROM public.ecr.aws/lambda/python:3.10
 
-COPY ./backend ${LAMBDA_TASK_ROOT}
+COPY . ${LAMBDA_TASK_ROOT}
 
 # COPY .//requirements.txt ./requirements.txt
 
