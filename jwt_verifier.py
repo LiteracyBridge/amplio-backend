@@ -13,6 +13,8 @@ from jose.utils import base64url_decode
 from pydantic import BaseModel
 from config import config
 
+VERIFIED_JWT_CLAIMS_CACHE = {}
+
 
 class JWK(BaseModel):
     """A JSON Web Key (JWK) model that represents a cryptographic key.
@@ -37,7 +39,6 @@ class CognitoAuthenticator:
         self.issuer = f"https://cognito-idp.{self.pool_region}.amazonaws.com/{config.user_pool_id}/.well-known/jwks.json"
 
         self.jwks = self.__get_jwks()
-
 
     def __get_jwks(self) -> List[JWK]:
         """Returns a list of JSON Web Keys (JWKs) from the issuer. A JWK is a
@@ -78,6 +79,9 @@ class CognitoAuthenticator:
             True if valid, False otherwise
         """
 
+        if VERIFIED_JWT_CLAIMS_CACHE.get(token, None) is not None:
+            return True
+
         try:
             self._is_jwt(token)
             self._get_verified_header(token)
@@ -106,7 +110,7 @@ class CognitoAuthenticator:
             jwt.get_unverified_header(token)
             jwt.get_unverified_claims(token)
         except jwt.JWTError:
-            logging.info("Invalid JWT")
+            print("Invalid JWT")
             raise InvalidJWTError
         return True
 
@@ -134,7 +138,7 @@ class CognitoAuthenticator:
                 key = jwk.construct(k.dict())
                 break
         if not key:
-            logging.info(f"Unable to find a signing key that matches '{kid}'")
+            print(f"Unable to find a signing key that matches '{kid}'")
             raise InvalidKidError
 
         # get message and signature (base64 encoded)
@@ -142,7 +146,7 @@ class CognitoAuthenticator:
         signature = base64url_decode(encoded_signature.encode("utf-8"))
 
         if not key.verify(message.encode("utf8"), signature):
-            logging.info("Signature verification failed")
+            print("Signature verification failed")
             raise SignatureError
 
         # signature successfully verified
@@ -163,26 +167,27 @@ class CognitoAuthenticator:
 
         # verify expiration time
         if claims["exp"] < time.time():
-            logging.info("Expired token")
+            print("Expired token")
             raise TokenExpiredError
 
         # verify issuer
         if claims["iss"] != self.issuer.replace("/.well-known/jwks.json", ""):
-            logging.info("Invalid issuer claim")
+            print("Invalid issuer claim")
             raise InvalidIssuerError
 
         # verify audience
         # note: claims["client_id"] for access token, claims["aud"] otherwise
-        if claims["client_id"] != self.client_id:
-            logging.info("Invalid audience claim")
+        if claims.get("client_id", claims.get("aud")) != self.client_id:
+            print("Invalid audience claim")
             raise InvalidAudienceError
 
         # # verify token use
-        if claims["token_use"] != "access":
-            logging.info("Invalid token use claim")
+        if claims["token_use"] != "access" and claims["token_use"] != "id":
+            print("Invalid token use claim")
             raise InvalidTokenUseError
 
         # claims successfully verified
+        VERIFIED_JWT_CLAIMS_CACHE[token] = claims
         return claims
 
 

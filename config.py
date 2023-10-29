@@ -17,6 +17,8 @@ class Config:
     db_user: str
     db_port: Optional[str] = "5432"
 
+    dynamodb_url: Optional[str] = None
+
     user_pool_id: Optional[str] = None
     user_pool_client_id: Optional[str] = None
 
@@ -34,6 +36,7 @@ class Config:
             self.db_password = getenv("DB_PASSWORD", "")
             self.db_user = getenv("DB_USER", "postgres")
             self.db_port = getenv("DB_PORT", "5432")
+            self.dynamodb_url = getenv("DYNAMODB_URL", None)
             self.sentry_dsn = getenv("SENTRY_DSN", None)
 
             self.user_pool_id = getenv("AWS_USER_POOL_ID", None)
