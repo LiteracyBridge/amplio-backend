@@ -1,8 +1,6 @@
 import re
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from sqlalchemy.orm import Session
-import binascii
-import datetime
 from typing import Annotated, Any, Dict, Optional, Tuple, List, Union, Pattern
 from models import get_db
 import boto3 as boto3
@@ -182,8 +180,8 @@ def _add_deployment_revs(
                 program_info[program]["deployment_rev"] = rev
 
 
-@router.get("/")
-def do_get_programs(
+@router.get("")
+def get_programs(
     depls: bool = False,
     use_async: bool = False,
     email: str = Depends(current_user),
