@@ -26,7 +26,7 @@ from routes.program_spec import (
     compare_program_specs,
 )
 from routes.program_spec.db import _ensure_content_view
-
+from utilities.rolemanager.role_checker import current_user
 
 router = APIRouter()
 
@@ -330,10 +330,10 @@ def get_content(programid: str, db: Session = Depends(get_db)):
 # @handler(roles="AD,PM")
 # TODO: Implement roles
 @router.put("/content")
-def put_content(
+def update_content(
     programid: str,
     data: Dict[Any, Any],
-    email: Claim,
+    email=Depends(current_user),
     return_updated: bool = True,
     return_diff: bool = False,
 ):

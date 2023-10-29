@@ -163,31 +163,31 @@ class _DbWriter:
             in self._program_spec.general.languages  # skips new but deleted languages
         ]
 
-        # Sync new languages with supported languages
-        results = (
-            db.query(SupportedLanguage)
-            .filter(SupportedLanguage.code.in_(language_codes))
-            .all()
-        )
-        if len(results) > 0:
-            existing_language_codes = [lang.code for lang in results]
-            language_codes = [
-                code for code in language_codes if code not in existing_language_codes
-            ]
+        # # Sync new languages with supported languages
+        # results = (
+        #     db.query(SupportedLanguage)
+        #     .filter(SupportedLanguage.code.in_(language_codes))
+        #     .all()
+        # )
+        # if len(results) > 0:
+        #     existing_language_codes = [lang.code for lang in results]
+        #     language_codes = [
+        #         code for code in language_codes if code not in existing_language_codes
+        #     ]
 
-        # Add new languages
-        new_languages = [
-            SupportedLanguage(
-                code=lang.get("code"),
-                name=lang.get("name"),
-                comments=lang.get("comments"),
-            )
-            for lang in languages
-            if lang.get("code") in language_codes
-        ]
+        # # Add new languages
+        # new_languages = [
+        #     SupportedLanguage(
+        #         code=lang.get("code"),
+        #         name=lang.get("name"),
+        #         comments=lang.get("comments"),
+        #     )
+        #     for lang in languages
+        #     if lang.get("code") in language_codes
+        # ]
 
-        db.add_all(new_languages)
-        db.commit()
+        # db.add_all(new_languages)
+        # db.commit()
 
         # field_names = [x for x in General.sql_columns() if x != "name"]
         # conflict_setters = ",".join(
