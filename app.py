@@ -38,8 +38,10 @@ app = FastAPI()
 
 origins = [
     "http://localhost:8080",
+    "http://localhost:4173",
     "suite.amplio.org",
     "https://suite.amplio.org",
+    "https://suite-test.amplio.org",
 ]
 
 app.add_middleware(
