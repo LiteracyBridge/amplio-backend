@@ -53,7 +53,8 @@ class Config:
         )
         try:
             # Load postgres secrets
-            secret_string = client.get_secret_value(SecretId="lb_stats_test")[
+            # TODO: pass secrete name as env variable
+            secret_string = client.get_secret_value(SecretId=getenv("AWS_SECRET_ID"))[
                 "SecretString"
             ]
             secrets = json.loads(secret_string)
