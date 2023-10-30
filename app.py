@@ -23,6 +23,7 @@ from routes import program_route
 if config.sentry_dsn is not None:
     sentry_sdk.init(
         dsn=config.sentry_dsn,
+        environment=config.sentry_environment,
         integrations=[
             AwsLambdaIntegration(timeout_warning=True),
         ],
@@ -32,12 +33,6 @@ if config.sentry_dsn is not None:
         #     # traces_sample_rate=1.0,
     )
 
-
-# from database import SessionLocal, engine
-
-# models.Base.metadata.create_all(bind=engine)
-
-# FIXME: add congnito JWT verify middleware
 
 app = FastAPI()
 

@@ -23,6 +23,7 @@ class Config:
     user_pool_client_id: Optional[str] = None
 
     sentry_dsn: Optional[str] = None
+    sentry_environment: Optional[str] = None
 
     is_local: bool = False
 
@@ -37,7 +38,9 @@ class Config:
             self.db_user = getenv("DB_USER", "postgres")
             self.db_port = getenv("DB_PORT", "5432")
             self.dynamodb_url = getenv("DYNAMODB_URL", None)
+
             self.sentry_dsn = getenv("SENTRY_DSN", None)
+            self.sentry_environment = getenv("SENTRY_ENVIRONMENT", "local")
 
             self.user_pool_id = getenv("AWS_USER_POOL_ID", None)
             self.user_pool_client_id = getenv("AWS_USER_POOL_CLIENT_ID", None)
@@ -64,7 +67,9 @@ class Config:
             self.db_password = secrets["password"]
             self.db_host = secrets["host"]
             self.db_port = secrets["port"]
-            self.sentry_dsn = secrets["uf_sentry_dsn"]
+
+            self.sentry_dsn = secrets["suite_sentry_dsn"]
+            self.sentry_environment = secrets.get("sentry_environment", "prod")
 
             self.user_pool_id = secrets["aws_user_pool_id"]
             self.user_pool_client_id = secrets["aws_user_pool_client_id"]
