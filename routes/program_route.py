@@ -186,6 +186,8 @@ def get_programs(
     use_async: bool = False,
     email: str = Depends(current_user),
 ):
+    print("Executed")
+
     # add_deployments = _bool_arg(depls)
     # use_async = _bool_arg(use_async)
     program_info, implicit_repo = get_program_info_for_user(email)
