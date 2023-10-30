@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Depends
 from sqlalchemy.orm import Session
 import binascii
 import datetime
@@ -6,14 +6,14 @@ from typing import Annotated, Any, Dict, Optional
 from models import get_db
 import boto3 as boto3
 
-from amplio.utils import (
-    LambdaRouter,
-    handler,
-    QueryStringParam,
-    Claim,
-    BinBody,
-    JsonBody,
-)
+# from amplio.utils import (
+#     LambdaRouter,
+#     handler,
+#     QueryStringParam,
+#     Claim,
+#     BinBody,
+#     JsonBody,
+# )
 from routes.program_spec import (
     read_from_xlsx,
     read_from_s3,
@@ -171,7 +171,7 @@ def download(
     programid: str,
     artifact: str,
     aslink: bool,
-    email: Claim,
+    email: str = Depends(current_user),
     # email: str,
 ):
     """
@@ -282,7 +282,7 @@ async def upload(
 @router.post("/accept")
 def accept(
     programid: str,
-    email: Claim,
+    email: str = Depends(current_user),
     comment: str = "No comment provided",
     publish: bool = False,
 ):
