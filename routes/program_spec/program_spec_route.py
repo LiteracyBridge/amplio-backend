@@ -333,7 +333,7 @@ def get_content(programid: str, db: Session = Depends(get_db)):
 def update_content(
     programid: str,
     data: Dict[Any, Any],
-    email=Depends(current_user),
+    email: str = Depends(current_user),
     return_updated: bool = True,
     return_diff: bool = False,
 ):
@@ -361,6 +361,7 @@ def update_content(
         print(f"Errors in put_content for {programid}: {nl.join(errors)}")
         # return a 400 status code.
         result = ({"status": STATUS_FAILURE, "errors": errors}, FAILURE_RESPONSE_400)
+
     return result
 
 

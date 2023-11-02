@@ -156,8 +156,8 @@ class _DbWriter:
         # TODO: get new languages, compare against project languages, sync supported languages
         db = next(get_db())
 
-        language_codes = [
-            lang.get("code")
+        new_languages = [
+            lang
             for lang in languages
             if lang.get("code")
             in self._program_spec.general.languages  # skips new but deleted languages
@@ -205,39 +205,39 @@ class _DbWriter:
         # if values.get("name"):
         #     self._save_name(values.get("program_id"), values.get("name"))
         print(
-            f"{len(language_codes)} new languages synced with supported languages {self._program_spec.program_id}."
+            f"{len(new_languages)} new languages synced with supported languages {self._program_spec.program_id}."
         )
 
         # TODO: update languagees with general.languages
         # Update project languages
-        language_codes = deepcopy(self._program_spec.general.languages)
-        results = (
-            db.query(ProjectLanguage)
-            .filter(
-                ProjectLanguage.projectcode == self._program_spec.program_id,
-                ProjectLanguage.code.in_(language_codes),
-            )
-            .all()
-        )
-        if len(results) > 0:
-            existing_language_codes = [lang.code for lang in results]
-            language_codes = [
-                code for code in language_codes if code not in existing_language_codes
-            ]
+        # language_codes = deepcopy(self._program_spec.general.languages)
+        # results = (
+        #     db.query(ProjectLanguage)
+        #     .filter(
+        #         ProjectLanguage.projectcode == self._program_spec.program_id,
+        #         ProjectLanguage.code.in_(language_codes),
+        #     )
+        #     .all()
+        # )
+        # if len(results) > 0:
+        #     existing_language_codes = [lang.code for lang in results]
+        #     language_codes = [
+        #         code for code in language_codes if code not in existing_language_codes
+        #     ]
 
         # Add new languages
-        _languages: List[SupportedLanguage] = db.query(SupportedLanguage).all()
-        new_languages = [
+        # _languages: List[SupportedLanguage] = db.query(SupportedLanguage).all()
+        _new_languages = [
             ProjectLanguage(
-                code=lang.code,
-                name=lang.name,
+                code=lang.get("code"),
+                name=lang.get("name"),
                 projectcode=self._program_spec.program_id,
             )
-            for lang in _languages
-            if lang.code in language_codes
+            for lang in new_languages
+            # if lang.code in language_codes
         ]
 
-        db.add_all(new_languages)
+        db.add_all(_new_languages)
         db.commit()
 
     def _merge_recipients(self):

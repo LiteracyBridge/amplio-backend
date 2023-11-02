@@ -7,7 +7,7 @@ from utilities.rolemanager import manager
 ALLOWED_ROLES: str = "AD,PM,CO,FO"
 
 
-async def current_user(request: Request) -> Union[str, None]:
+async def current_user(request: Request) -> str:
     return VERIFIED_JWT_CLAIMS_CACHE[request.headers.get("Authorization")].get("email")
 
 
