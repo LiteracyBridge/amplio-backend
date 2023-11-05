@@ -1,9 +1,11 @@
 Program Language Selection:
     ☐ database update on spec-put
+    ☐ handle message_language code verification in app since constraint has been removed
 
-    Deployment:
-        ☐ IAM db access permision
-        ☐ IAM secrets access permision
+
+    ✔ Deployment: @done(23-11-02 17:12)
+        ✔ IAM db access permision @done(23-11-02 17:12)
+        ✔ IAM secrets access permision @done(23-11-02 17:12)
     Sheet upload:
         ✔ diff and update program languages @done(23-10-09 07:12)
         ☐ diff and update supported languages

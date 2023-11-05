@@ -16,7 +16,7 @@ import models
 from config import config
 
 from routes.program_spec import program_spec_route
-from routes import program_route
+from routes import categories_route, program_route
 
 # from routes import survey_route, data_service_route, analysis_route, uf_messages_route
 
@@ -111,6 +111,12 @@ app.include_router(
     program_route.router,
     prefix="/programs",
     tags=["programs"],
+    dependencies=[Depends(models.get_db)],
+)
+app.include_router(
+    categories_route.router,
+    prefix="/categories",
+    tags=["categories"],
     dependencies=[Depends(models.get_db)],
 )
 # app.include_router(
