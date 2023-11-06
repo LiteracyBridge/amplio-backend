@@ -1001,7 +1001,7 @@ class ProgramSpec:
         :param path: An optional Path to which the spreadsheet file will be written.
         :return: The bytes of the spreadsheet.
         """
-        from ps import write_to_xlsx
+        from routes.program_spec import write_to_xlsx
 
         return write_to_xlsx(self, path)
 

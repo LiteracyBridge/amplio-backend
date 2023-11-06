@@ -24,8 +24,14 @@ ARTIFACTS = ["general", "deployments", "content", "recipients"]
 
 class _XlsxExporter:
     def __init__(self, program_spec: ProgramSpec):
-        self.program_id = program_spec.program_id
-        self.program_spec = program_spec
+
+        # If program_spec is tuple, select the first one.
+        if isinstance(program_spec, tuple):
+            self.program_spec = program_spec[0]
+        else:
+           self.program_spec = program_spec
+
+        self.program_id = self.program_spec.program_id
 
     @staticmethod
     def pxl_columns_for(
@@ -422,7 +428,7 @@ def write_to_xlsx(program_spec: ProgramSpec, path: Optional[Path] = None) -> byt
     :param path: An optional Path to which the spreadsheet file will be written.
     :return: The bytes of the spreadsheet.
     """
-    data: bytes = _XlsxExporter(program_spec).get_spreadsheet()
+    data: bytes = _XlsxExporter(program_spec[0]).get_spreadsheet()
     # Write to a file if desired
     if path is not None:
         if path.is_dir():
