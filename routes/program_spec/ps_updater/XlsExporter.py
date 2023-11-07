@@ -6,6 +6,7 @@ from typing import List, Dict, Tuple, Optional
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
+from models import ProjectLanguage
 
 import routes.program_spec.ps_updater.spec as Spec
 import routes.program_spec.ps_updater.ExportProcessor as ExportProcessor
@@ -13,7 +14,7 @@ import routes.program_spec.ps_updater.ExportProcessor as ExportProcessor
 PUBLISHED_PREFIX: str = "pub_"
 UNPUBLISHED_PREFIX: str = "unpub_"
 
-CSV_ARTIFACTS = ["general", "deployments", "content", "recipients"]
+CSV_ARTIFACTS = ["general", "deployments", "content", "recipients",  "languages"]
 
 
 class Exporter:
@@ -81,6 +82,15 @@ class Exporter:
         if len(program_rows) == 1:
             self.program_spec.add_general(program_rows[0])
         self._opened = True
+
+        # Add program languages to the program spec
+        languages = (
+            self.engine.query(ProjectLanguage)
+            .filter(ProjectLanguage.projectcode == self.program_id)
+            .all()
+        )
+        self.program_spec.add_languages(languages)
+
         return self.program_spec
 
     def do_save(
@@ -165,7 +175,7 @@ class Exporter:
             metadata = {"submission-date": datetime.now().isoformat()}
 
         if artifacts is None:
-            artifacts = ["published", "general", "deployments", "content", "recipients"]
+            artifacts = ["published", "general", "deployments", "content", "recipients", "languages"]
         if names is None:
             names = {
                 "published": f"{PUBLISHED_PREFIX}progspec.xlsx",
@@ -173,6 +183,7 @@ class Exporter:
                 "deployments": f"{PUBLISHED_PREFIX}deployments.csv",
                 "content": f"{PUBLISHED_PREFIX}content.csv",
                 "recipients": f"{PUBLISHED_PREFIX}recipients.csv",
+                "languages": f"{PUBLISHED_PREFIX}languages.csv",
             }
         errors: List[str] = []
 

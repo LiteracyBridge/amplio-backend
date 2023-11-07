@@ -4,6 +4,8 @@ import re
 from dataclasses import dataclass, field, fields
 from datetime import datetime, date
 from typing import List, Dict, Any, Optional, Union
+from models import ProjectLanguage
+from routes.program_spec.spec import Language
 
 """
 Yet another ProgramSpec definition. Contains only what is needed for the spreadsheet importer/exporter.
@@ -353,6 +355,7 @@ class Program:
         self._recipients: List[Recipient] = []
         self._content: List[Content] = []
         self._program: Optional[General] = None
+        self._languages: List[Dict] = []  # [{'code': 'en', 'name': 'English'}]
 
     @property
     def program(self):
@@ -369,6 +372,10 @@ class Program:
     @property
     def content(self):
         return self._content
+
+    @property
+    def languages(self):
+        return self._languages
 
     def compute_recipientid(self, recip: Recipient) -> str:
         # all the parts that must be different between recipients
@@ -460,6 +467,10 @@ class Program:
 
     def add_deployment(self, deployment: Dict):
         self._deployments.append(self.make_deployment(deployment))
+
+    def add_languages(self, languages: List[ProjectLanguage]):
+        for language in languages:
+            self._languages.append({"code": language.code, "name": language.name})
 
 
 @dataclass

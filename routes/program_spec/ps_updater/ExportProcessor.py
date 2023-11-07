@@ -196,6 +196,19 @@ class ExportProcessor:
         self._auto_width(ws)
         return ws
 
+    def _save_languages(self, wb: Workbook) -> Worksheet:
+        """
+        Saves the Languages sheet.
+        :param wb: The workbook to receive the sheet.
+        :return: The new worksheet.
+        """
+        columns = ["code", "name"]
+        ws = self._add_sheet(
+            wb, sheet_name="Languages", values=self.program_spec.languages, header=columns
+        )
+        self._auto_width(ws)
+        return ws
+
     def _get_csv(
         self,
         rows: List[Union[dict, dataclasses.dataclass]],
@@ -223,10 +236,13 @@ class ExportProcessor:
         wb: Workbook = Workbook()
         for s in wb.get_sheet_names():
             del wb[s]
+
         self._save_general(wb)
         self._save_deployments(wb)
         self._save_content(wb)
         self._save_recipients(wb)
+        self._save_languages(wb)
+
         xls_data = BytesIO()
         wb.save(xls_data)
         data = xls_data.getvalue()
@@ -254,6 +270,12 @@ class ExportProcessor:
                 self.program_spec.recipients,
                 "recipients",
                 Spec.recipient_sql_2_csv.keys(),
+            )
+        elif artifact == "languages":
+            return self._get_csv(
+                self.program_spec.languages,
+                "languages",
+                ["code", "name"],
             )
         else:
             return None
