@@ -6,6 +6,7 @@ frontend/tsconfig.tsbuildinfo
 venv
 **/__pycache__/**
 *dump.sql
+__pycache__
 
 # local env files
 .env

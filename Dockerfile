@@ -1,6 +1,6 @@
 FROM python:3.8
 
-ADD ./backend ./app
+ADD ./src ./app
 
 # COPY .//requirements.txt ./requirements.txt
 WORKDIR /app
