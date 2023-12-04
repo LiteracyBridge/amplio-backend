@@ -1,6 +1,6 @@
 {
     "include": [
-      "src"
+      "."
     ],
 
     "exclude": [
@@ -11,9 +11,9 @@
     ],
 
     "ignore": [
-      "src/alembic",
-      "src/routes/program_spec",
-      "src/utilities/rolemanager"
+      "./alembic",
+      "routes/program_spec",
+      "utilities/rolemanager"
     ],
 
     "defineConstant": {

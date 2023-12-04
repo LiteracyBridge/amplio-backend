@@ -8,17 +8,6 @@ on:
   # pull_request:
 
 jobs:
-  TypeCheck:
-    name: "Run static analysis tools on the project"
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-
-      - name: Pyright Static Analysis
-        uses: jakebailey/pyright-action@v1
-
   BuildAndPushImageToECR:
     name: "Build and Push to ECR"
     runs-on: ubuntu-latest
