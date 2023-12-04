@@ -1,7 +1,7 @@
 import re
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from sqlalchemy.orm import Session
-from typing import Annotated, Any, Dict, Optional, Tuple, List, Union, Pattern
+from typing import Any, Dict, Optional, Tuple, List, Union, Pattern
 from models import get_db
 import boto3 as boto3
 import asyncio
@@ -45,11 +45,11 @@ def get_program_info_for_user(email: str) -> Tuple[Dict[str, Dict[str, str]], st
     )  # programs_table.scan()['Items']
     for programid in programids:
         item = programs_table_items.get(programid)
-        program_repository = item.get("repository", DEFAULT_REPOSITORY).lower()
+        program_repository = item.get("repository", DEFAULT_REPOSITORY).lower()  # type: ignore
         list = repository_programs.setdefault(program_repository, [])
         list.append(programid)
         # add {'name': program_name} as {program: {'roles':roles, 'name':program_name}}
-        result[programid]["name"] = item.get("program_name") or programid
+        result[programid]["name"] = item.get("program_name") or programid  # type: ignore
 
     # Find the repository with the most programs, and make that the implicit repository.
     implicit_repo: Union[str, None] = None
@@ -65,7 +65,7 @@ def get_program_info_for_user(email: str) -> Tuple[Dict[str, Dict[str, str]], st
         for programid in program_list:
             # add {'repository':repository} to {program: {'roles':roles, ...}}
             result[programid]["repository"] = repo
-    return (result, implicit_repo)
+    return (result, implicit_repo) # type: ignore
 
 
 def _add_deployment_revs(
@@ -111,7 +111,7 @@ def _add_deployment_revs(
     global s3
     import boto3
 
-    if s3 is None:
+    if s3 is None: # type: ignore
         s3 = boto3.client("s3")
 
     dbx_rev_pattern = re.compile(

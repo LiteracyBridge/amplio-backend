@@ -9,6 +9,7 @@ import time
 from typing import Dict, List
 
 from jose import jwk, jwt
+from jose.exceptions import JWTError
 from jose.utils import base64url_decode
 from pydantic import BaseModel
 from config import config
@@ -109,7 +110,7 @@ class CognitoAuthenticator:
         try:
             jwt.get_unverified_header(token)
             jwt.get_unverified_claims(token)
-        except jwt.JWTError:
+        except JWTError:
             print("Invalid JWT")
             raise InvalidJWTError
         return True

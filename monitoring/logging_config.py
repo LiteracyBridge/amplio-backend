@@ -1,5 +1,4 @@
-import os
-import uuid
+from uuid import UUID
 import logging
 import json
 
