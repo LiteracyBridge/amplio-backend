@@ -31,7 +31,7 @@ Returns the list of the organisation's roles.
 
 > `POST /api/roles`
 
-Creates a new role for the organi   sation.
+Creates a new role for the organisation.
 
 > `DELETE /api/roles/:id`
 
@@ -39,4 +39,10 @@ Deletes the role with the given id.
 
 > `POST /api/roles/assign`
 
-Assigns a role(s) to a user.
+Assigns a role(s) to a user. Request format:
+```json
+{
+    "user_id": 1,
+    "role_ids": [1, 2]
+}
+```
