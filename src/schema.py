@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from typing import Any, Generic, List, TypeVar
+from typing import Any, List, TypeVar
 from pydantic import BaseModel
 
 

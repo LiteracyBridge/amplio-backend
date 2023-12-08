@@ -23,6 +23,8 @@ alembic = "*"
 
 [dev-packages]
 black = "*"
+httpx = "*"
+pytest = "*"
 
 [requires]
 python_version = "^3.9"
