@@ -20,6 +20,7 @@ python-multipart = "*"
 pg8000 = "*"
 requests = "*"
 alembic = "*"
+sqlalchemy-easy-softdelete = "*"
 
 [dev-packages]
 black = "*"

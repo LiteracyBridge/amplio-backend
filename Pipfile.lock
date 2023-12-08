@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "7d291e9d7b41fe08741eb7f33e35e8fb472f7da614be7f10dbe19d80a8dcc9fb"
+            "sha256": "7a23c0a118396e3858a2cd3d9b568e218395e382f697e942c5901bee61f77705"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -616,6 +616,15 @@
             "index": "pypi",
             "markers": "python_version >= '3.7'",
             "version": "==2.0.23"
+        },
+        "sqlalchemy-easy-softdelete": {
+            "hashes": [
+                "sha256:6d0ae4a6bdffc082ad11618c27086a07eaa2ff9c86a5ee8899f47f8d2daa4efe",
+                "sha256:827c7fcb3949eb1cb1f9addf2f40a7cfc45571815dde4f8855061df09305b7d2"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.9' and python_version < '4.0'",
+            "version": "==0.8.3"
         },
         "starlette": {
             "hashes": [

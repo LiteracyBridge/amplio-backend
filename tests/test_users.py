@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from src import app
+from src import app  # type: ignore
 from . import cognito_login
 
 client = TestClient(app.app)
