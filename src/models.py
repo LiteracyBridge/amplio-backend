@@ -25,31 +25,31 @@ from database import BaseModel, SessionLocal
 #     deleted_at: datetime
 
 
-class Project(BaseModel):
-    __tablename__ = "projects"
+# class Project(BaseModel):
+#     __tablename__ = "projects"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    projectcode = mapped_column(String, nullable=False, unique=True)
-
-
-class SupportedLanguage(BaseModel):
-    __tablename__ = "supportedlanguages"
-
-    code: Mapped[str] = mapped_column("languagecode", String, primary_key=True)
-    name: Mapped[str] = mapped_column("languagename", String, nullable=False)
-    comments: Mapped[Optional[str]] = mapped_column(String)
+#     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+#     projectcode = mapped_column(String, nullable=False, unique=True)
 
 
-class ProjectLanguage(BaseModel):
-    __tablename__ = "languages"
+# class SupportedLanguage(BaseModel):
+#     __tablename__ = "supportedlanguages"
 
-    code: Mapped[str] = mapped_column("languagecode", String, primary_key=True)
-    name: Mapped[str] = mapped_column("language", String, nullable=False)
-    projectcode: Mapped[Optional[str]] = mapped_column(
-        String, ForeignKey("projects.projectcode"), nullable=False, primary_key=True
-    )
+#     code: Mapped[str] = mapped_column("languagecode", String, primary_key=True)
+#     name: Mapped[str] = mapped_column("languagename", String, nullable=False)
+#     comments: Mapped[Optional[str]] = mapped_column(String)
 
-    project: Mapped[Project] = relationship("Project")
+
+# class ProjectLanguage(BaseModel):
+#     __tablename__ = "languages"
+
+#     code: Mapped[str] = mapped_column("languagecode", String, primary_key=True)
+#     name: Mapped[str] = mapped_column("language", String, nullable=False)
+#     projectcode: Mapped[Optional[str]] = mapped_column(
+#         String, ForeignKey("projects.projectcode"), nullable=False, primary_key=True
+#     )
+
+#     project: Mapped[Project] = relationship("Project")
 
 
 class SupportedCategory(BaseModel):
