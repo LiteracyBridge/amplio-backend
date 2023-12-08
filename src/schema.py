@@ -7,6 +7,8 @@ T = TypeVar("T")
 
 class ApiResponse(BaseModel):
     data: List[Any]
+    status_code: int = 200
+    status: str = "OK"
 
     class Config:
         orm_mode = True
