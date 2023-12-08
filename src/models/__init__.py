@@ -5,7 +5,7 @@ from sqlalchemy import Column, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column
 from typing import Optional
 
-from database import SessionLocal
+from database import SessionLocal, BaseModel
 
 # Model imports
 from models.project_model import Project
