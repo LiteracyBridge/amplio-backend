@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from config import AWS_REGION, config
 from models import get_db
 import boto3
+from models import Invitation
 from schema import ApiResponse
 from routes.users import roles_route
 
@@ -52,7 +53,7 @@ def get_users(db: Session = Depends(get_db)):
     )
 
 
-@router.post("/invite")
+@router.post("/invitations")
 def invite_user(dto: InvitationDto, db: Session = Depends(get_db)):
     client = boto3.client(
         "cognito-idp", region_name=AWS_REGION, endpoint_url=config.user_pool_endpoint
@@ -62,12 +63,19 @@ def invite_user(dto: InvitationDto, db: Session = Depends(get_db)):
     if dto.other_names is not None:
         last_name += " " + dto.other_names
 
-    # full_name += " " + dto.last_name
+    invitation: Invitation = Invitation()
+    invitation.first_name = dto.first_name
+    invitation.last_name = dto.last_name
+    invitation.email = dto.email
+    invitation.status = "PENDING"
+    invitation.organisation_id = 1 # TODO: retrieve organisation id from the request headers/logged in user
+    db.add(invitation)
+    db.commit()
 
     response = client.admin_create_user(
         UserPoolId=config.user_pool_client_id,
         Username=dto.email,
-        # Password=dto.password,
+        # TemporaryPassword=dto.password,
         DesiredDeliveryMediums=["EMAIL"],
         UserAttributes=[
             {"Name": "email", "Value": dto.email},

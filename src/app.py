@@ -12,7 +12,7 @@ from handlers.exception_handler import exception_handler
 from handlers.http_exception_handler import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
 from jwt_verifier import CognitoAuthenticator
-import models
+from models import get_db
 from config import config
 
 from routes.program_spec import program_spec_route
@@ -106,25 +106,25 @@ app.include_router(
     program_spec_route.router,
     prefix="/program-spec",
     tags=["program-spec"],
-    dependencies=[Depends(models.get_db)],
+    dependencies=[Depends(get_db)],
 )
 app.include_router(
     program_route.router,
     prefix="/programs",
     tags=["programs"],
-    dependencies=[Depends(models.get_db)],
+    dependencies=[Depends(get_db)],
 )
 app.include_router(
     categories_route.router,
     prefix="/categories",
     tags=["categories"],
-    dependencies=[Depends(models.get_db)],
+    dependencies=[Depends(get_db)],
 )
 app.include_router(
     users_route.router,
     prefix="/users",
     tags=["user"],
-    dependencies=[Depends(models.get_db)],
+    dependencies=[Depends(get_db)],
 )
 # app.include_router(
 #     analysis_route.router,
