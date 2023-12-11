@@ -1,0 +1,13 @@
+### invite user
+POST {{apiUrl}}/users/invite
+Accept: application/json  {{host}}
+Content-Type: application/json
+sessionToken: {{ clientSessionToken }}
+Authorization: Bearer {{ accessToken }}
+domain: {{ domain }}
+
+{
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "email": "janedoe1@mailinator.com"
+}

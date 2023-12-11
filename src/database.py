@@ -37,9 +37,9 @@ class BaseSchema(PydanticBaseModel):
     "BaseSchema with map from camelCase to snake_case"
 
     class Config:
-        orm_mode = True
+        from_attributes = True
         alias_generator = snake_to_camel
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 
 ModelType = TypeVar("ModelType", bound=BaseModel)

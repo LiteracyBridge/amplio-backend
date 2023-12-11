@@ -3,8 +3,6 @@ from typing import Any, Optional
 
 from boto3 import Session
 from dotenv import load_dotenv
-from pydantic import BaseSettings, BaseModel
-from pydantic.env_settings import SettingsSourceCallable
 from os import getenv
 
 AWS_REGION = "us-west-2"
@@ -21,6 +19,7 @@ class Config:
 
     user_pool_id: Optional[str] = None
     user_pool_client_id: Optional[str] = None
+    user_pool_endpoint: Optional[str] = None
 
     sentry_dsn: Optional[str] = None
     sentry_environment: Optional[str] = None
@@ -44,6 +43,7 @@ class Config:
 
             self.user_pool_id = getenv("AWS_USER_POOL_ID", None)
             self.user_pool_client_id = getenv("AWS_USER_POOL_CLIENT_ID", None)
+            self.user_pool_endpoint = getenv("AWS_USER_POOL_ENDPOINT", None)
         else:
             self.load_aws_secrets()
 
