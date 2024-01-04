@@ -3,8 +3,6 @@ from typing import Any, Optional
 
 from boto3 import Session
 from dotenv import load_dotenv
-from pydantic import BaseSettings, BaseModel
-from pydantic.env_settings import SettingsSourceCallable
 from os import getenv
 
 AWS_REGION = "us-west-2"
