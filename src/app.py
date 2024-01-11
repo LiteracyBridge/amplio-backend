@@ -19,7 +19,6 @@ from routes.program_spec import program_spec_route
 from routes import categories_route, program_route
 from routes.users import users_route
 
-# from routes import survey_route, data_service_route, analysis_route, uf_messages_route
 
 if config.sentry_dsn is not None:
     sentry_sdk.init(
@@ -58,9 +57,21 @@ cognito_auth = CognitoAuthenticator()
 
 @app.middleware("http")
 async def verify_jwt(request: Request, call_next):
-    # return await call_next(request)
+    """
+    Middleware function to verify the JWT access token in the request headers.
 
-    # Get the access token from the request headers
+    Args:
+        request (Request): The incoming request object.
+        call_next (Callable): The next middleware or route handler.
+
+    Raises:
+        401 HTTPException: If no access token is provided in the request headers or
+            if the access token is invalid.
+
+    Returns:
+        Response: The response object.
+    """
+
     if request.method == "OPTIONS":
         return await call_next(request)
 
