@@ -1,0 +1,30 @@
+ROLES_TEMPLATE = {
+    "acm/tb_loader": [
+        "manage-deployment",
+        "manage-playlist",
+        "manage-prompt",
+        "deploy-content",
+        "manage-content",
+        "manage-acm-checkouts",
+        "view-tb-analytics",
+        "view-usage-queries",
+        "view-collection-stats",
+        "view-deployment-status",
+    ],
+    "suite": [
+        "create-program",
+        "update-program",
+        "delete-program",
+        "update-spec",
+        "publish-spec",
+    ],
+    "roles": [
+        "create-staff",
+        "update-staff",
+        "delete-staff",
+        "assign-role",
+        "create-role",
+        "delete-role",
+        "update-role",
+    ],
+}

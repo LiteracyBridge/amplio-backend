@@ -8,12 +8,12 @@ Roles are defined at the organisation level. An organisation can have has its ow
 
 ![Roles database structure](assets/images/user-roles-db-structure.png)
 
-
 ## Endpoints
 
 > `GET /api/roles`
 
 Returns the list of the organisation's roles.
+
 ```json
 {
     "data": [
@@ -40,6 +40,7 @@ Deletes the role with the given id.
 > `POST /api/roles/assign`
 
 Assigns a role(s) to a user. Request format:
+
 ```json
 {
     "user_id": 1,

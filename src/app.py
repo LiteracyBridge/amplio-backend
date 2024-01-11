@@ -18,6 +18,7 @@ from config import config
 from routes.program_spec import program_spec_route
 from routes import categories_route, program_route
 from routes.users import users_route
+from routes.users import roles_route
 
 
 if config.sentry_dsn is not None:
@@ -137,6 +138,13 @@ app.include_router(
     tags=["user"],
     dependencies=[Depends(get_db)],
 )
+app.include_router(
+    roles_route.router,
+    prefix="/users/roles",
+    tags=["user-roles"],
+    dependencies=[Depends(get_db)],
+)
+
 # app.include_router(
 #     analysis_route.router,
 #     prefix="/analysis",

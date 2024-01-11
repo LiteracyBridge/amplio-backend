@@ -8,16 +8,8 @@ from models import get_db
 import boto3
 from models import Invitation
 from schema import ApiResponse
-from routes.users import roles_route
 
 router = APIRouter()
-
-router.include_router(
-    roles_route.router,
-    prefix="/roles",
-    tags=["user"],
-    dependencies=[Depends(get_db)],
-)
 
 
 class InvitationDto(BaseModel):

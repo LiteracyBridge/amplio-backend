@@ -1,7 +1,10 @@
 from functools import wraps
 from typing import Union
-from fastapi import Request, HTTPException
+from fastapi import Depends, Request, HTTPException
+from sqlalchemy.orm import Session
 from jwt_verifier import VERIFIED_JWT_CLAIMS_CACHE
+from models import get_db
+from models.user_model import User
 from utilities.rolemanager import manager
 
 ALLOWED_ROLES: str = "AD,PM,CO,FO"
@@ -9,6 +12,22 @@ ALLOWED_ROLES: str = "AD,PM,CO,FO"
 
 async def current_user(request: Request) -> str:
     return VERIFIED_JWT_CLAIMS_CACHE[request.headers.get("Authorization")].get("email")
+
+
+# TODO: rename to current user
+def current_user2(request: Request, db: Session = Depends(get_db)) -> User:
+    token: str = str(request.headers.get("Authorization").replace("Bearer ", ""))
+    email = VERIFIED_JWT_CLAIMS_CACHE[token].get("email")
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if user is None:
+        raise HTTPException(
+            status_code=403,
+            detail="Unauthorized",
+        )
+
+    return user
 
 
 def user_has_allowed_role(func):

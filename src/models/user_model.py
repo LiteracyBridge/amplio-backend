@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import String, ForeignKey, Boolean
+from sqlalchemy import String, ForeignKey
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from models.timestamps_model import SoftDeleteMixin, TimestampMixin
@@ -23,6 +23,15 @@ class Invitation(TimestampMixin, SoftDeleteMixin, BaseModel):
     organisation: Mapped[Organisation] = relationship("Organisation")
 
 
-# TODO: define user model
+class User(TimestampMixin, SoftDeleteMixin, BaseModel):
+    __tablename__ = "users"
 
-# TODO: use alembic to create migration for user model -- see https://alembic.sqlalchemy.org/en/latest/tutorial.html
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    first_name: Mapped[str] = mapped_column(String, nullable=True)
+    last_name: Mapped[str] = mapped_column(String, nullable=True)
+    other_names: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    email: Mapped[str] = mapped_column(String, nullable=False)
+    phone_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    organisation_id: Mapped[int] = mapped_column(ForeignKey("organisations.id"))
+
+    organisation: Mapped[Organisation] = relationship("Organisation")

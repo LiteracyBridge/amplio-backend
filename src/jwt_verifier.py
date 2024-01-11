@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from config import config
 
 VERIFIED_JWT_CLAIMS_CACHE = {}
+CACHED_USERS = {}
 
 
 class JWK(BaseModel):
