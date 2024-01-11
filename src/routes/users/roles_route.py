@@ -1,5 +1,13 @@
 import re
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Request,
+    UploadFile,
+)
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Annotated, Any, Dict, Optional, Tuple, List, Union, Pattern
@@ -26,7 +34,7 @@ class NewRoleDto(BaseModel):
 
 
 # Create a new role
-@router.post("")
+@router.post("", response_model=ApiResponse)
 def crate_roles(
     body: NewRoleDto, db: Session = Depends(get_db), user: User = Depends(current_user2)
 ):
@@ -39,7 +47,11 @@ def crate_roles(
     db.add(role)
     db.commit()
 
-    return ApiResponse(data=[role])
+    return ApiResponse(
+        data=jsonable_encoder(
+            db.query(Role).filter(Role.organisation_id == role.organisation_id).all()
+        )
+    )
 
 
 @router.get("/template")
