@@ -110,10 +110,32 @@ def revoke_role(
     if existing_role is None:
         raise HTTPException(status_code=404, detail="Role not found")
 
-    db.delete(existing_role)
+    existing_role.delete()
     db.commit()
 
     return get_users(user=user, db=db)
+
+
+@router.delete("/{role_id}")
+def delete_role(
+    role_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    """Permanently deletes a role from the database"""
+
+    role = (
+        db.query(Role)
+        .filter(Role.id == role_id and Role.organisation_id == user.organisation_id)
+        .first()
+    )
+    if role is None:
+        raise HTTPException(status_code=404, detail="Role not found")
+
+    db.delete(role)
+    db.commit()
+
+    return get_roles(user=user, db=db)
 
 
 @router.get("/template")
