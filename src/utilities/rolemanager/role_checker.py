@@ -14,22 +14,6 @@ async def current_user(request: Request) -> str:
     return VERIFIED_JWT_CLAIMS_CACHE[request.headers.get("Authorization")].get("email")
 
 
-# TODO: rename to current user
-def current_user2(request: Request, db: Session = Depends(get_db)) -> User:
-    token: str = str(request.headers.get("Authorization").replace("Bearer ", ""))
-    email = VERIFIED_JWT_CLAIMS_CACHE[token].get("email")
-
-    user = db.query(User).filter(User.email == email).first()
-
-    if user is None:
-        raise HTTPException(
-            status_code=403,
-            detail="Unauthorized",
-        )
-
-    return user
-
-
 def user_has_allowed_role(func):
     def _determine_program_id(path_params, query_params) -> Union[str, None]:
         for x in [

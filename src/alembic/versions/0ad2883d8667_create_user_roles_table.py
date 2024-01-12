@@ -22,9 +22,19 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("role_id", sa.Integer(), nullable=False),
-        sa.Column("created_at", sa.DateTime(), nullable=True, default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(), nullable=True, default=sa.func.now()),
-        sa.Column("deleted_at", sa.DateTime(), nullable=True),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=True,
+            default=sa.func.now(),
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=True,
+            default=sa.func.now(),
+        ),
+        sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
         sa.ForeignKeyConstraint(
             ["role_id"],
             ["roles.id"],

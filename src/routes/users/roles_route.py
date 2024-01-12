@@ -93,6 +93,29 @@ def assign_role(
     return get_users(user=user, db=db)
 
 
+@router.post("/revoke")
+def revoke_role(
+    user_id: Annotated[int, Body()],
+    role_id: Annotated[int, Body()],
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    """Revoke role from a user"""
+
+    existing_role = (
+        db.query(UserRole)
+        .filter(UserRole.user_id == user_id and UserRole.role_id == role_id)
+        .first()
+    )
+    if existing_role is None:
+        raise HTTPException(status_code=404, detail="Role not found")
+
+    db.delete(existing_role)
+    db.commit()
+
+    return get_users(user=user, db=db)
+
+
 @router.get("/template")
 def get_template(db: Session = Depends(get_db)):
     return ApiResponse(data=[ROLES_TEMPLATE])

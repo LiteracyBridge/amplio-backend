@@ -7,9 +7,8 @@ from config import AWS_REGION, config
 from models import get_db
 import boto3
 from models import Invitation
-from models.user_model import User, UserRole
+from models.user_model import User, UserRole, current_user
 from schema import ApiResponse
-from utilities.rolemanager.role_checker import current_user2
 
 router = APIRouter()
 
@@ -23,12 +22,12 @@ class InvitationDto(BaseModel):
 
 
 @router.get("")
-def get_users(user: User = Depends(current_user2), db: Session = Depends(get_db)):
+def get_users(user: User = Depends(current_user), db: Session = Depends(get_db)):
     # TODO: Write a db query to fetch all users of the organization
 
     # TODO: Replace return statement with the db query
     return ApiResponse(
-        data= db.query(User)
+        data=db.query(User)
         .filter(User.organisation_id == user.organisation_id)
         .options(
             subqueryload(User.roles).options(subqueryload(UserRole.role)),
@@ -41,7 +40,7 @@ def get_users(user: User = Depends(current_user2), db: Session = Depends(get_db)
 def invite_user(
     dto: InvitationDto,
     db: Session = Depends(get_db),
-    user: User = Depends(current_user2),
+    user: User = Depends(current_user),
 ):
     client = boto3.client(
         "cognito-idp", region_name=AWS_REGION, endpoint_url=config.user_pool_endpoint
