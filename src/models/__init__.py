@@ -4,7 +4,7 @@ from database import SessionLocal, BaseModel
 from models.project_model import Project
 from models.language_model import SupportedLanguage, ProjectLanguage
 from models.category_model import SupportedCategory
-from models.user_model import Invitation, User
+from models.user_model import Invitation, User, UserRole
 from models.organisation_model import Organisation
 from models.timestamps_model import TimestampMixin, SoftDeleteMixin
 from models.role_model import Role

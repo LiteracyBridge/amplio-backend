@@ -1,8 +1,9 @@
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from models.role_model import Role
 from models.timestamps_model import SoftDeleteMixin, TimestampMixin
 from database import BaseModel
 from models.organisation_model import Organisation
@@ -23,6 +24,17 @@ class Invitation(TimestampMixin, SoftDeleteMixin, BaseModel):
     organisation: Mapped[Organisation] = relationship("Organisation")
 
 
+class UserRole(TimestampMixin, SoftDeleteMixin, BaseModel):
+    __tablename__ = "user_roles"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"))
+
+    user: Mapped["User"] = relationship("User", back_populates="roles")
+    role: Mapped[Role] = relationship("Role")
+
+
 class User(TimestampMixin, SoftDeleteMixin, BaseModel):
     __tablename__ = "users"
 
@@ -35,3 +47,4 @@ class User(TimestampMixin, SoftDeleteMixin, BaseModel):
     organisation_id: Mapped[int] = mapped_column(ForeignKey("organisations.id"))
 
     organisation: Mapped[Organisation] = relationship("Organisation")
+    roles: Mapped[List[UserRole]] = relationship("UserRole", back_populates="user")

@@ -27,7 +27,7 @@ class NewRoleDto(BaseModel):
     description: Optional[str]
 
 
-@router.get("", response_model=ApiResponse)
+@router.get("")
 def get_roles(user: User = Depends(current_user2), db: Session = Depends(get_db)):
     """Returns list of roles for the current user's organisation"""
 
@@ -38,7 +38,7 @@ def get_roles(user: User = Depends(current_user2), db: Session = Depends(get_db)
     )
 
 
-@router.post("", response_model=ApiResponse)
+@router.post("")
 def crate_roles(
     body: NewRoleDto, db: Session = Depends(get_db), user: User = Depends(current_user2)
 ):

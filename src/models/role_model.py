@@ -13,7 +13,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from database import BaseModel, SessionLocal
-from models import SoftDeleteMixin, TimestampMixin
+from models.timestamps_model import SoftDeleteMixin, TimestampMixin
 from models.organisation_model import Organisation
 
 
