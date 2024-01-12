@@ -33,6 +33,14 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 BaseModel = declarative_base()
 
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 class BaseSchema(PydanticBaseModel):
     "BaseSchema with map from camelCase to snake_case"
 

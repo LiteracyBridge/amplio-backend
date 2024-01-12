@@ -1,12 +1,15 @@
 from typing import List, Optional
+from fastapi import Depends, HTTPException, Request
 
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
+from database import get_db
 from models.role_model import Role
 from models.timestamps_model import SoftDeleteMixin, TimestampMixin
 from database import BaseModel
 from models.organisation_model import Organisation
+from jwt_verifier import VERIFIED_JWT_CLAIMS_CACHE
 
 
 class Invitation(TimestampMixin, SoftDeleteMixin, BaseModel):
@@ -48,3 +51,20 @@ class User(TimestampMixin, SoftDeleteMixin, BaseModel):
 
     organisation: Mapped[Organisation] = relationship("Organisation")
     roles: Mapped[List[UserRole]] = relationship("UserRole", back_populates="user")
+
+
+def current_user(request: Request, db: Session = Depends(get_db)) -> User:
+    """Returns the current user object from the request object"""
+
+    token: str = str(request.headers.get("Authorization").replace("Bearer ", ""))
+    email = VERIFIED_JWT_CLAIMS_CACHE[token].get("email")
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if user is None:
+        raise HTTPException(
+            status_code=403,
+            detail="Unauthorized",
+        )
+
+    return user
