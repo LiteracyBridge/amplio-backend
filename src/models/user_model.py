@@ -43,7 +43,6 @@ class User(TimestampMixin, SoftDeleteMixin, BaseModel):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     first_name: Mapped[str] = mapped_column(String, nullable=True)
     last_name: Mapped[str] = mapped_column(String, nullable=True)
-    other_names: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     email: Mapped[str] = mapped_column(String, nullable=False)
     phone_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     organisation_id: Mapped[int] = mapped_column(ForeignKey("organisations.id"))

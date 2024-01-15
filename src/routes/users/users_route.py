@@ -96,7 +96,7 @@ def invite_user(
     print(response)
     # TODO: Write a db query to save the user to the database
 
-    return ApiResponse(data=[response.get("User")])
+    return get_invitations(user=user, db=db)
 
 
 @router.delete("/invitations/{email}")
