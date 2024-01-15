@@ -3,27 +3,13 @@ from fastapi import Depends, HTTPException, Request
 
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
-from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
+from sqlalchemy.orm import Mapped, Session, mapped_column, relationship, subqueryload
 from database import get_db
 from models.role_model import Role
 from models.timestamps_model import SoftDeleteMixin, TimestampMixin
 from database import BaseModel
 from models.organisation_model import Organisation
 from jwt_verifier import VERIFIED_JWT_CLAIMS_CACHE
-
-
-class Invitation(TimestampMixin, SoftDeleteMixin, BaseModel):
-    __tablename__ = "invitations"
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    first_name: Mapped[str] = mapped_column(String, nullable=True)
-    last_name: Mapped[str] = mapped_column(String, nullable=True)
-    email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
-    phone_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    status: Mapped[str] = mapped_column(String, nullable=False)
-    organisation_id: Mapped[int] = mapped_column(ForeignKey("organisations.id"))
-
-    organisation: Mapped[Organisation] = relationship("Organisation")
 
 
 class UserRole(TimestampMixin, SoftDeleteMixin, BaseModel):
@@ -59,6 +45,8 @@ def current_user(request: Request, db: Session = Depends(get_db)) -> User:
 
     user = db.query(User).filter(User.email == email).first()
 
+    return user
+
     if user is None:
         raise HTTPException(
             status_code=403,
@@ -66,3 +54,51 @@ def current_user(request: Request, db: Session = Depends(get_db)) -> User:
         )
 
     return user
+
+
+class Invitation(TimestampMixin, SoftDeleteMixin, BaseModel):
+    __tablename__ = "invitations"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    first_name: Mapped[str] = mapped_column(String, nullable=True)
+    last_name: Mapped[str] = mapped_column(String, nullable=True)
+    email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    phone_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    organisation_id: Mapped[int] = mapped_column(ForeignKey("organisations.id"))
+
+    organisation: Mapped[Organisation] = relationship("Organisation")
+
+    @staticmethod
+    def create_user(
+        email: str,
+        db: Session,
+    ) -> User | None:
+        """
+        Create a new user from an invitation.
+
+        The invitation is deleted after the user is created successfully.
+        """
+
+        invitation = db.query(Invitation).filter(Invitation.email == email).first()
+        if invitation is None:
+            return None
+
+        user = User()
+        user.first_name = invitation.first_name
+        user.last_name = invitation.last_name
+        user.email = invitation.email
+        user.organisation_id = invitation.organisation_id
+
+        db.add(user)
+        db.delete(invitation)
+        db.commit()
+
+        return (
+            db.query(User)
+            .filter(User.email == user.email)
+            .options(
+                subqueryload(User.roles).options(subqueryload(UserRole.role)),
+            )
+            .first()
+        )

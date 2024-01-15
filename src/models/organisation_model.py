@@ -11,7 +11,7 @@ class Organisation(BaseModel, SoftDeleteMixin, TimestampMixin):
     __tablename__ = "organisations"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String, nullable=True)
+    name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
 
 
 # TODO: define user model

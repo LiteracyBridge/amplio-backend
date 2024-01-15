@@ -17,7 +17,7 @@ from models.user_model import UserRole
 from routes.program_spec.db import _ensure_content_view
 from routes.users.roles_template import ROLES_TEMPLATE
 from schema import ApiResponse
-from routes.users.users_route import get_users
+from routes.users.users_route import get_all_users
 
 router = APIRouter()
 
@@ -90,7 +90,7 @@ def assign_role(
         db.add(user_role)
         db.commit()
 
-    return get_users(user=user, db=db)
+    return get_all_users(user=user, db=db)
 
 
 @router.post("/revoke")
@@ -113,7 +113,7 @@ def revoke_role(
     existing_role.delete()
     db.commit()
 
-    return get_users(user=user, db=db)
+    return get_all_users(user=user, db=db)
 
 
 @router.delete("/{role_id}")
