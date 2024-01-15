@@ -11,7 +11,7 @@ ROLES_TEMPLATE = {
         "view-collection-stats",
         "view-deployment-status",
     ],
-    "suite": [
+    "programs": [
         "create-program",
         "update-program",
         "delete-program",

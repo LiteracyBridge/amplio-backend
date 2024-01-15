@@ -68,7 +68,7 @@ def assign_role(
 
     role = (
         db.query(Role)
-        .filter(Role.id == role_id and Role.organisation_id == user.organisation_id)
+        .filter(Role.id == role_id, Role.organisation_id == user.organisation_id)
         .first()
     )
     if role is None:
@@ -77,7 +77,7 @@ def assign_role(
     for user_id in users:
         existing_role = (
             db.query(UserRole)
-            .filter(UserRole.user_id == user_id and UserRole.role_id == role_id)
+            .filter(UserRole.user_id == user_id, UserRole.role_id == role_id)
             .first()
         )
         if existing_role is not None:
@@ -104,7 +104,7 @@ def revoke_role(
 
     existing_role = (
         db.query(UserRole)
-        .filter(UserRole.user_id == user_id and UserRole.role_id == role_id)
+        .filter(UserRole.user_id == user_id, UserRole.role_id == role_id)
         .first()
     )
     if existing_role is None:
@@ -126,7 +126,7 @@ def delete_role(
 
     role = (
         db.query(Role)
-        .filter(Role.id == role_id and Role.organisation_id == user.organisation_id)
+        .filter(Role.id == role_id , Role.organisation_id == user.organisation_id)
         .first()
     )
     if role is None:
