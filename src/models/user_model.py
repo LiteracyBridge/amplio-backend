@@ -5,11 +5,23 @@ from sqlalchemy import String, ForeignKey
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship, subqueryload
 from database import get_db
+from models.program_model import Program
 from models.role_model import Role
 from models.timestamps_model import SoftDeleteMixin, TimestampMixin
 from database import BaseModel
 from models.organisation_model import Organisation
 from jwt_verifier import VERIFIED_JWT_CLAIMS_CACHE
+
+
+class ProgramUser(TimestampMixin, SoftDeleteMixin, BaseModel):
+    __tablename__ = "program_users"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    program_id: Mapped[int] = mapped_column(ForeignKey("programs.id"))
+
+    user: Mapped["User"] = relationship("User", back_populates="programs")
+    program: Mapped[Program] = relationship("Program")
 
 
 class UserRole(TimestampMixin, SoftDeleteMixin, BaseModel):
@@ -18,9 +30,13 @@ class UserRole(TimestampMixin, SoftDeleteMixin, BaseModel):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"))
+    program_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("programs.id"), nullable=True
+    )
 
     user: Mapped["User"] = relationship("User", back_populates="roles")
     role: Mapped[Role] = relationship("Role")
+    program: Mapped[Program] = relationship("Program")
 
 
 class User(TimestampMixin, SoftDeleteMixin, BaseModel):
@@ -36,24 +52,7 @@ class User(TimestampMixin, SoftDeleteMixin, BaseModel):
     organisation: Mapped[Organisation] = relationship("Organisation")
     roles: Mapped[List[UserRole]] = relationship("UserRole", back_populates="user")
 
-
-def current_user(request: Request, db: Session = Depends(get_db)) -> User:
-    """Returns the current user object from the request object"""
-
-    token: str = str(request.headers.get("Authorization").replace("Bearer ", ""))
-    email = VERIFIED_JWT_CLAIMS_CACHE[token].get("email")
-
-    user = db.query(User).filter(User.email == email).first()
-
-    return user
-
-    if user is None:
-        raise HTTPException(
-            status_code=403,
-            detail="Unauthorized",
-        )
-
-    return user
+    # TODO: a permissions field, similar to ts
 
 
 class Invitation(TimestampMixin, SoftDeleteMixin, BaseModel):
@@ -100,5 +99,22 @@ class Invitation(TimestampMixin, SoftDeleteMixin, BaseModel):
             .options(
                 subqueryload(User.roles).options(subqueryload(UserRole.role)),
             )
-            .first()
+            .first(),
         )
+
+
+def current_user(request: Request, db: Session = Depends(get_db)) -> User:
+    """Returns the current user object from the request object"""
+
+    token: str = str(request.headers.get("Authorization").replace("Bearer ", ""))
+    email = VERIFIED_JWT_CLAIMS_CACHE[token].get("email")
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if user is None:
+        raise HTTPException(
+            status_code=403,
+            detail="Unauthorized",
+        )
+
+    return user

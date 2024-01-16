@@ -8,7 +8,7 @@ from models.user_model import Invitation, User, UserRole, current_user
 from models.organisation_model import Organisation
 from models.timestamps_model import TimestampMixin, SoftDeleteMixin
 from models.role_model import Role
-
+from models.program_model import Program, DeploymentInterval
 
 # # Dependency
 # def get_db():

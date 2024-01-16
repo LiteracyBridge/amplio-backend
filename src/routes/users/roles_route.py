@@ -61,6 +61,7 @@ def crate_roles(
 def assign_role(
     users: Annotated[List[int], Body()],
     role_id: Annotated[int, Body()],
+    program_id: Annotated[Optional[int], Body()],
     db: Session = Depends(get_db),
     user: User = Depends(current_user),
 ):
@@ -86,6 +87,7 @@ def assign_role(
         user_role = UserRole()
         user_role.user_id = user_id
         user_role.role_id = role_id
+        user_role.program_id = program_id
 
         db.add(user_role)
         db.commit()

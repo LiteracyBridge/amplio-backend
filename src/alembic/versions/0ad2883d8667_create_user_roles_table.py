@@ -22,6 +22,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("role_id", sa.Integer(), nullable=False),
+        sa.Column("program_id", sa.Integer(), nullable=True),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -43,6 +44,11 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["user_id"],
             ["users.id"],
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["program_id"],
+            ["programs.id"],
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("id"),
