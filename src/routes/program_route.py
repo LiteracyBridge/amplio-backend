@@ -6,10 +6,13 @@ from models import get_db
 import boto3 as boto3
 import asyncio
 from concurrent import futures
+from models.user_model import User, current_user
+from models.program_model import Program
 from routes.program_spec.db import _ensure_content_view
-from utilities.rolemanager.role_checker import current_user
+from utilities.rolemanager.role_checker import current_user as curr_user
 from utilities.rolemanager import manager
 from utilities.rolemanager.rolesdb import RolesDb
+from schema import ApiResponse
 
 
 router = APIRouter()
@@ -184,7 +187,7 @@ def _add_deployment_revs(
 def get_programs(
     depls: bool = False,
     use_async: bool = False,
-    email: str = Depends(current_user),
+    email: str = Depends(curr_user),
 ):
     # TODO:return data: {program-data}
     print("Executed")
@@ -202,3 +205,14 @@ def get_programs(
             "implicit_repository": implicit_repo,
         }
     }
+
+
+@router.get("/all")
+def get_all_programs(
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    # TODO: If user has permission to view all programs & is amplio staff, return all system programs
+    results = db.query(Program).all()
+
+    return ApiResponse(data=results)
