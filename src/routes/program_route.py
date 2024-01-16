@@ -183,12 +183,15 @@ def _add_deployment_revs(
                 program_info[program]["deployment_rev"] = rev
 
 
+# TODO: make this get_program_details {program_id}
 @router.get("")
 def get_programs(
     depls: bool = False,
     use_async: bool = False,
     email: str = Depends(curr_user),
 ):
+    # TODO: rewrite to use programs of the current user
+
     # TODO:return data: {program-data}
     print("Executed")
 

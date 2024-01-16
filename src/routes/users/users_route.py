@@ -9,7 +9,7 @@ from config import AWS_REGION, config
 from models import get_db
 import boto3
 from models import Invitation
-from models.user_model import User, UserRole, current_user
+from models.user_model import ProgramUser, User, UserRole, current_user
 from schema import ApiResponse
 from sentry_sdk import capture_exception
 
@@ -39,6 +39,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
         .filter(User.email == email)
         .options(
             subqueryload(User.roles).options(subqueryload(UserRole.role)),
+            subqueryload(User.programs).options(subqueryload(ProgramUser.program)),
         )
         .first()
     )
@@ -51,6 +52,17 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
                 status_code=403,
                 detail="Unauthorized",
             )
+
+        user = (
+            db.query(User)
+            .filter(User.email == email)
+            .options(
+                subqueryload(User.roles).options(subqueryload(UserRole.role)),
+                subqueryload(User.programs).options(subqueryload(ProgramUser.program)),
+            )
+            .first()
+    )
+
 
     return ApiResponse(data=[user])
 

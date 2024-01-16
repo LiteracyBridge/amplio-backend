@@ -1,27 +1,17 @@
 from typing import List, Optional
-from fastapi import Depends, HTTPException, Request
 
-from sqlalchemy import String, ForeignKey
+from fastapi import Depends, HTTPException, Request
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship, subqueryload
+
 from database import get_db
+from database import BaseModel
+from jwt_verifier import VERIFIED_JWT_CLAIMS_CACHE
+from models.organisation_model import Organisation
 from models.program_model import Program
 from models.role_model import Role
 from models.timestamps_model import SoftDeleteMixin, TimestampMixin
-from database import BaseModel
-from models.organisation_model import Organisation
-from jwt_verifier import VERIFIED_JWT_CLAIMS_CACHE
-
-
-class ProgramUser(TimestampMixin, SoftDeleteMixin, BaseModel):
-    __tablename__ = "program_users"
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    program_id: Mapped[int] = mapped_column(ForeignKey("programs.id"))
-
-    user: Mapped["User"] = relationship("User", back_populates="programs")
-    program: Mapped[Program] = relationship("Program")
 
 
 class UserRole(TimestampMixin, SoftDeleteMixin, BaseModel):
@@ -51,8 +41,30 @@ class User(TimestampMixin, SoftDeleteMixin, BaseModel):
 
     organisation: Mapped[Organisation] = relationship("Organisation")
     roles: Mapped[List[UserRole]] = relationship("UserRole", back_populates="user")
+    programs: Mapped[List["ProgramUser"]] = relationship("ProgramUser", back_populates="user")
 
     # TODO: a permissions field, similar to ts
+
+class ProgramUser(TimestampMixin, BaseModel):
+    __tablename__ = "program_users"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    program_id: Mapped[int] = mapped_column(ForeignKey("programs.id"), primary_key=True)
+
+    user: Mapped[User] = relationship("User", back_populates="programs")
+    program: Mapped[Program] = relationship("Program")
+
+    @staticmethod
+    def add_user(user_id: int, program_id: int, db: Session):
+        program_user = ProgramUser()
+        program_user.user_id = user_id
+        program_user.program_id = program_id
+
+        db.merge(program_user)
+        db.commit()
+
+        return program_user
+
 
 
 class Invitation(TimestampMixin, SoftDeleteMixin, BaseModel):
@@ -93,27 +105,25 @@ class Invitation(TimestampMixin, SoftDeleteMixin, BaseModel):
         db.delete(invitation)
         db.commit()
 
-        return (
-            db.query(User)
-            .filter(User.email == user.email)
-            .options(
-                subqueryload(User.roles).options(subqueryload(UserRole.role)),
-            )
-            .first(),
-        )
+        return user
 
 
 def current_user(request: Request, db: Session = Depends(get_db)) -> User:
     """Returns the current user object from the request object"""
 
     token: str = str(request.headers.get("Authorization").replace("Bearer ", ""))
-    email = VERIFIED_JWT_CLAIMS_CACHE[token].get("email")
+    email = VERIFIED_JWT_CLAIMS_CACHE.get(token, {}).get("email")
+    if email is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized",
+        )
 
     user = db.query(User).filter(User.email == email).first()
 
     if user is None:
         raise HTTPException(
-            status_code=403,
+            status_code=401,
             detail="Unauthorized",
         )
 

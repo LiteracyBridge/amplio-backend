@@ -12,9 +12,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Annotated, Dict, Optional, List
 from models import get_db
-from models import User, Role, current_user
-from models.user_model import UserRole
-from routes.program_spec.db import _ensure_content_view
+from models import User, Role, current_user, Program
+from models.user_model import ProgramUser, UserRole
 from routes.users.roles_template import ROLES_TEMPLATE
 from schema import ApiResponse
 from routes.users.users_route import get_all_users
@@ -75,22 +74,21 @@ def assign_role(
     if role is None:
         raise HTTPException(status_code=404, detail="Role not found")
 
-    for user_id in users:
-        existing_role = (
-            db.query(UserRole)
-            .filter(UserRole.user_id == user_id, UserRole.role_id == role_id)
-            .first()
-        )
-        if existing_role is not None:
-            continue
-
+    existing_users = (
+        db.query(User).filter(User.id.in_(users)).all()
+    )
+    for user in existing_users:
         user_role = UserRole()
-        user_role.user_id = user_id
-        user_role.role_id = role_id
+        user_role.user_id = user.id
+        user_role.role_id = role.id
         user_role.program_id = program_id
 
         db.add(user_role)
         db.commit()
+
+        # Update the user's programs
+        if program_id is not None:
+            ProgramUser.add_user(user_id=user.id, program_id=program_id, db=db)
 
     return get_all_users(user=user, db=db)
 
