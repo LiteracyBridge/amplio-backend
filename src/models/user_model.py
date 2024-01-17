@@ -53,6 +53,7 @@ class ProgramUser(TimestampMixin, BaseModel):
 
     user: Mapped[User] = relationship("User", back_populates="programs")
     program: Mapped[Program] = relationship("Program")
+    user_roles: Mapped[List[UserRole]] = relationship("UserRole", foreign_keys=[UserRole.user_id], back_populates="program_user")
 
     @staticmethod
     def add_user(user_id: int, program_id: int, db: Session):

@@ -6,7 +6,7 @@ from models import get_db
 import boto3 as boto3
 import asyncio
 from concurrent import futures
-from models.user_model import User, current_user
+from models.user_model import ProgramUser, User, current_user
 from models.program_model import Program
 from routes.program_spec.db import _ensure_content_view
 from utilities.rolemanager.role_checker import current_user as curr_user
@@ -219,3 +219,29 @@ def get_all_programs(
     results = db.query(Program).options(subqueryload(Program.project)).all()
 
     return ApiResponse(data=results)
+
+# TODO: Add permission check
+@router.get("/{program_id}/users")
+def get_program_users(
+    program_id: int,
+    db: Session = Depends(get_db),
+):
+    users = db.query(ProgramUser).filter(ProgramUser.program_id == program_id) .options(subqueryload(ProgramUser.user), subqueryload(ProgramUser.user_roles)).all()
+
+    return ApiResponse(data=users)
+
+@router.delete("/{program_id}/users")
+def remove_user(
+    id: int,
+    user_id: int,
+    db: Session = Depends(get_db),
+):
+    program_user = db.query(ProgramUser).filter(ProgramUser.id == id, ProgramUser.user_id == user_id).first()
+
+    if program_user is None:
+        raise HTTPException(status_code=404, detail="Program User not found")
+
+    db.delete(program_user)
+    db.commit()
+
+    return get_program_users(program_id=program_user.program_id, db=db)

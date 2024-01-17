@@ -1,9 +1,20 @@
-User roles:
-    ☐ programs queries restriction
-    ☐ roles assignment
-        ☐ move it to users table
-        ☐ show program names
-    ☐ add user profile page
+Code Red:
+    ☐ add current user to request object (after jwt verification) => request.state = current_user
+    ☐
+
+Settings:
+    User roles:
+        ☐ programs queries restriction
+        ☐ roles assignment
+            ☐ move it to users table
+            ☐ show program names
+        ☐ add user profile page
+    Programs:
+        ☐ permissions check
+        ☐ add users drawer
+            ☐ remove user from program
+            ☐ add user to program
+        ☐ archive program
 
 Program Language Selection:
     ☐ database update on spec-put
