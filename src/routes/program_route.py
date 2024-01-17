@@ -1,6 +1,6 @@
 import re
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, subqueryload
 from typing import Any, Dict, Optional, Tuple, List, Union, Pattern
 from models import get_db
 import boto3 as boto3
@@ -216,6 +216,6 @@ def get_all_programs(
     db: Session = Depends(get_db),
 ):
     # TODO: If user has permission to view all programs & is amplio staff, return all system programs
-    results = db.query(Program).all()
+    results = db.query(Program).options(subqueryload(Program.project)).all()
 
     return ApiResponse(data=results)

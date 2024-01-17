@@ -2,8 +2,8 @@ from enum import Enum
 from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
 
-from sqlalchemy import Column, Integer, String, Date, JSON, UniqueConstraint, ForeignKey
-from sqlalchemy.orm import validates
+from sqlalchemy import Boolean, Column, Integer, String, Date, JSON, UniqueConstraint, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from database import BaseModel
 
 
@@ -24,6 +24,14 @@ class DeploymentInterval(Enum):
     six_months = 6
     one_year = 12
 
+class Project(BaseModel):
+    __tablename__ = "projects"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name = mapped_column("project", String, nullable=False)
+    active = mapped_column(Boolean, nullable=False, default=True)
+    code = mapped_column(String,name= "projectcode", nullable=False)
+
 
 class Program(BaseModel):
     __tablename__ = "programs"
@@ -34,6 +42,8 @@ class Program(BaseModel):
     program_id = Column('program_id', ForeignKey('projects.projectcode'), index=True, nullable=False)
     country = Column(String(50), nullable=False)
     region = Column(JSON, nullable=False)
+    partner: Mapped[str] = mapped_column(String, nullable=True)
+
     sustainable_development_goals = Column(JSON, nullable=False)
     listening_models = Column(JSON, nullable=False)
     deployments_count = Column(Integer, nullable=False)
@@ -45,6 +55,8 @@ class Program(BaseModel):
     direct_beneficiaries_additional_map = Column(JSON, default={})
     # partner = Column(String, nullable=False)
     # affiliate = Column(String, nullable=False)
+
+    project: Mapped[Project] = relationship("Project")
 
     @validates('deployments_length')
     def validate_deployments_length(self, key, deployments_length):

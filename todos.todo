@@ -1,3 +1,10 @@
+User roles:
+    ☐ programs queries restriction
+    ☐ roles assignment
+        ☐ move it to users table
+        ☐ show program names
+    ☐ add user profile page
+
 Program Language Selection:
     ☐ database update on spec-put
     ☐ handle message_language code verification in app since constraint has been removed

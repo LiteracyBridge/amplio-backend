@@ -3,7 +3,6 @@ from typing import Optional
 from sqlalchemy import String, ForeignKey, Boolean
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from models import Project
 from database import BaseModel
 
 
