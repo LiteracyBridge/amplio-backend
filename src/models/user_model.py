@@ -53,7 +53,7 @@ class ProgramUser(TimestampMixin, BaseModel):
 
     user: Mapped[User] = relationship("User", back_populates="programs")
     program: Mapped[Program] = relationship("Program")
-    user_roles: Mapped[List[UserRole]] = relationship("UserRole", primaryjoin="and_(ProgramUser.program_id == foreign(UserRole.program_id), ProgramUser.user_id == foreign(UserRole.user_id))", overlaps="program", viewonly=True)
+    roles: Mapped[List[UserRole]] = relationship("UserRole", primaryjoin="and_(ProgramUser.program_id == foreign(UserRole.program_id), ProgramUser.user_id == foreign(UserRole.user_id))", overlaps="program", viewonly=True)
 
     @staticmethod
     def add_user(user_id: int, program_id: int, db: Session):

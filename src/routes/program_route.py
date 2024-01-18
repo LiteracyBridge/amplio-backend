@@ -6,9 +6,10 @@ from models import get_db
 import boto3 as boto3
 import asyncio
 from concurrent import futures
-from models.user_model import ProgramUser, User, current_user
+from models.user_model import ProgramUser, User, UserRole, current_user
 from models.program_model import Program
 from routes.program_spec.db import _ensure_content_view
+from routes.users.users_route import get_all_users
 from utilities.rolemanager.role_checker import current_user as curr_user
 from utilities.rolemanager import manager
 from utilities.rolemanager.rolesdb import RolesDb
@@ -220,28 +221,33 @@ def get_all_programs(
 
     return ApiResponse(data=results)
 
-# TODO: Add permission check
-@router.get("/{program_id}/users")
-def get_program_users(
-    program_id: int,
-    db: Session = Depends(get_db),
-):
-    users = db.query(ProgramUser).filter(ProgramUser.program_id == program_id) .options(subqueryload(ProgramUser.user), subqueryload(ProgramUser.user_roles)).all()
+# # TODO: Add permission check
+# @router.get("/{program_id}/users")
+# def get_program_users(
+#     program_id: int,
+#     db: Session = Depends(get_db),
+# ):
+#     users = db.query(ProgramUser).filter(ProgramUser.program_id == program_id) .options(subqueryload(ProgramUser.user), subqueryload(ProgramUser.roles).options(subqueryload(UserRole.role))).all()
 
-    return ApiResponse(data=users)
+#     return ApiResponse(data=users)
+
 
 @router.delete("/{program_id}/users")
 def remove_user(
-    id: int,
+    program_id: int,
     user_id: int,
     db: Session = Depends(get_db),
+    user: User = Depends(current_user),
 ):
-    program_user = db.query(ProgramUser).filter(ProgramUser.id == id, ProgramUser.user_id == user_id).first()
+    program_user = db.query(ProgramUser).filter(ProgramUser.program_id == program_id, ProgramUser.user_id == user_id).first()
 
     if program_user is None:
         raise HTTPException(status_code=404, detail="Program User not found")
 
+    # Delete all roles for the user in the program
+    db.query(UserRole).filter(UserRole.program_id == program_id, UserRole.user_id == user_id).delete()
+
     db.delete(program_user)
     db.commit()
 
-    return get_program_users(program_id=program_user.program_id, db=db)
+    return get_all_users(user=user, db=db)
