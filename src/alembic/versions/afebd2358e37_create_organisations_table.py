@@ -5,9 +5,9 @@ Revises:
 Create Date: 2023-12-11 09:20:16.687517
 
 """
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "afebd2358e37"
@@ -21,6 +21,7 @@ def upgrade() -> None:
         "organisations",
         sa.Column("id", sa.Integer(), primary_key=True, nullable=False),
         sa.Column("name", sa.String(), nullable=False, unique=True),
+        sa.Column("parent_id", sa.Integer(), nullable == True),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -28,12 +29,17 @@ def upgrade() -> None:
             default=sa.func.now(),
         ),
         sa.Column(
-            "update_at",
+            "updated_at",
             sa.DateTime(timezone=True),
             nullable=True,
             default=sa.func.now(),
         ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
+        sa.ForeignKeyConstraint(
+            ["parent_id"],
+            ["organisations.id"],
+            ondelete="CASCADE",
+        ),
     )
 
 

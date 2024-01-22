@@ -1,17 +1,19 @@
 from typing import Annotated, Optional
-from botocore.utils import email
-from fastapi import APIRouter, Body, Depends, Request, HTTPException
-from jwt_verifier import VERIFIED_JWT_CLAIMS_CACHE
-from pydantic import BaseModel
-from sqlalchemy import delete
-from sqlalchemy.orm import Session, subqueryload
-from config import AWS_REGION, config
-from models import get_db
+
 import boto3
-from models import Invitation
+from botocore.utils import email
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
+from pydantic import BaseModel
+from sentry_sdk import capture_exception
+from sqlalchemy import delete, or_
+from sqlalchemy.orm import Session, subqueryload
+
+from config import AWS_REGION, config
+from jwt_verifier import VERIFIED_JWT_CLAIMS_CACHE
+from models import Invitation, get_db
+from models.organisation_model import Organisation
 from models.user_model import ProgramUser, User, UserRole, current_user
 from schema import ApiResponse
-from sentry_sdk import capture_exception
 
 router = APIRouter()
 
@@ -61,22 +63,31 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
                 subqueryload(User.programs).options(subqueryload(ProgramUser.program)),
             )
             .first()
-    )
-
+        )
 
     return ApiResponse(data=[user])
 
 
 @router.get("")
 def get_all_users(user: User = Depends(current_user), db: Session = Depends(get_db)):
-    return ApiResponse(
-        data=db.query(User)
-        .filter(User.organisation_id == user.organisation_id)
+    # TODO: return users based on the organisation id or parent organisation id
+    query = (
+        db.query(User)
+        .join(
+            Organisation,
+            or_(
+                User.organisation_id == Organisation.id,
+                User.organisation_id == Organisation.parent_id,
+            ),
+        )
         .options(
             subqueryload(User.roles).options(subqueryload(UserRole.role)),
+            subqueryload(User.organisation)
         )
         .all()
     )
+
+    return ApiResponse(data=query)
 
 
 @router.get("/invitations")
