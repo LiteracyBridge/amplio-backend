@@ -8,7 +8,7 @@ from database import BaseModel
 from models.timestamps_model import SoftDeleteMixin, TimestampMixin
 
 
-class Organisation(BaseModel, SoftDeleteMixin, TimestampMixin):
+class Organisation(BaseModel):
     __tablename__ = "organisations"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)

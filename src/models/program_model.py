@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from enum import Enum
+from typing import List
 
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import (
@@ -15,7 +16,9 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, foreign, mapped_column, relationship, validates
 
 from database import BaseModel
+from models.deployment_model import Deployment
 from models.organisation_model import Organisation
+from models.recipient_model import Recipient
 from models.timestamps_model import SoftDeleteMixin, TimestampMixin
 
 time_length = ["one_month", "one_quarter", "six_months", "one_year"]
@@ -51,12 +54,18 @@ class Project(BaseModel):
     active = mapped_column(Boolean, nullable=False, default=True)
     code = mapped_column(String, name="projectcode", nullable=False)
 
+    deployments: Mapped[List[Deployment]] = relationship("Deployment")
+    recipients: Mapped[List[Recipient]] = relationship("Recipient")
+    program: Mapped["Program"] = relationship("Program")
+    general: Mapped["Program"] = relationship("Program")  # This is for spec frontend
+
 
 class Program(BaseModel):
     __tablename__ = "programs"
     __table_args__ = (UniqueConstraint("program_id", name="programs_uniqueness_key"),)
+
     id = Column(Integer, primary_key=True, index=True)
-    program_id = Column(
+    program_id = mapped_column(
         "program_id", ForeignKey("projects.projectcode"), index=True, nullable=False
     )
     country = Column(String(50), nullable=False)

@@ -1,9 +1,9 @@
-from typing import Union, Tuple, Optional, List
+from typing import List, Optional, Tuple, Union
 
 from sqlalchemy import text
-from sqlalchemy.engine import Engine, Connection
+from sqlalchemy.engine import Connection, Engine
 
-from routes.program_spec.db import get_db_engine, get_db_connection
+from routes.program_spec.db import get_db_connection, get_db_engine
 from routes.program_spec.spec import ProgramSpec
 
 
