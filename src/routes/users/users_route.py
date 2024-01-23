@@ -22,6 +22,25 @@ class InvitationDto(BaseModel):
     first_name: str
     last_name: str
     email: str
+    organisation_id: Optional[int] = None
+
+
+@router.get("/organisations")
+def get_organisations(
+    user: User = Depends(current_user), db: Session = Depends(get_db)
+):
+    """Get all organisations for the user"""
+
+    return ApiResponse(
+        data=db.query(Organisation)
+        .filter(
+            or_(
+                Organisation.id == user.organisation_id,
+                Organisation.parent_id == user.organisation_id,
+            )
+        )
+        .all()
+    )
 
 
 @router.get("/me")
@@ -70,8 +89,6 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
 
 @router.get("")
 def get_all_users(user: User = Depends(current_user), db: Session = Depends(get_db)):
-    # TODO: return users based on the organisation id or parent organisation id
-
     subquery = select(Organisation.id).filter(
         or_(
             Organisation.id == user.organisation_id,
@@ -96,11 +113,23 @@ def get_all_users(user: User = Depends(current_user), db: Session = Depends(get_
 def get_invitations(user: User = Depends(current_user), db: Session = Depends(get_db)):
     """Get all user invitations for the organisation"""
 
-    return ApiResponse(
-        data=db.query(Invitation)
-        .filter(Invitation.organisation_id == user.organisation_id)
+    subquery = select(Organisation.id).filter(
+        or_(
+            Organisation.id == user.organisation_id,
+            Organisation.parent_id == user.organisation_id,
+        )
+    )
+
+    query = (
+        db.query(Invitation)
+        .filter(Invitation.organisation_id.in_(subquery))
+        .options(
+            subqueryload(Invitation.organisation),
+        )
         .all()
     )
+
+    return ApiResponse(data=query)
 
 
 @router.post("/invitations")
@@ -133,7 +162,9 @@ def invite_user(
     invitation.last_name = dto.last_name
     invitation.email = dto.email
     invitation.status = "PENDING"
-    invitation.organisation_id = user.organisation_id
+    invitation.organisation_id = (
+        user.organisation_id if dto.organisation_id is None else dto.organisation_id
+    )
     # TODO: Add phone number
 
     db.add(invitation)

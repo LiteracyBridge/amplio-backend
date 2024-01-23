@@ -220,42 +220,18 @@ def get_all_programs(
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ):
-    # TODO: If user has permission to view all programs & is amplio staff, return all system programs
-    # results = db.query(OrganisationProgram)
-    # .join(Organisation, or_(Organisation.id == user.organisation_id, OrganisationProgram.organisation_id == None))
-    # .filter(OrganisationProgram.organisation_id == user.organisation_id)
-    # .options(subqueryload(Program.project)).all()
-
-    # subquery = select(Organisation.id).filter(
-    #     or_(
-    #         Organisation.id == user.organisation_id,
-    #         Organisation.parent_id == user.organisation_id,
-    #     )
-    # )
-
-    # query = (
-    #     db.query(OrganisationProgram).filter(
-    #         OrganisationProgram.organisation_id.in_(subquery)
-    #     )
-    #     # .options(subqueryload(Program.project))
-    #     .all()
-    # )
-
-    where_exists = (
-        # select(OrganisationProgram)
-        exists(OrganisationProgram).where(
-            OrganisationProgram.program_id == Program.id,
-            exists(Organisation).where(
-                or_(
-                    Organisation.id.in_(
-                        [OrganisationProgram.organisation_id, user.organisation_id]
-                    ),
-                    Organisation.parent_id.in_(
-                        [OrganisationProgram.organisation_id, user.organisation_id]
-                    ),
-                )
-            ),
-        )
+    where_exists = exists(OrganisationProgram).where(
+        OrganisationProgram.program_id == Program.id,
+        exists(Organisation).where(
+            or_(
+                Organisation.id.in_(
+                    [OrganisationProgram.organisation_id, user.organisation_id]
+                ),
+                Organisation.parent_id.in_(
+                    [OrganisationProgram.organisation_id, user.organisation_id]
+                ),
+            )
+        ),
     )
     results = (
         db.query(Program)
