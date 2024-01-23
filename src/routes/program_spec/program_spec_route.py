@@ -1,10 +1,17 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Depends
-from sqlalchemy.orm import Session
 import binascii
 import datetime
 from typing import Annotated, Any, Dict, Optional
-from models import get_db
+
 import boto3 as boto3
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from sqlalchemy.orm import Session, subqueryload
+
+# from routes.program_spec.ps_updater.XlsExporter import Exporter
+import routes.program_spec.ps_updater.XlsExporter as XlsExporter
+from models import get_db
+from models.deployment_model import Deployment
+from models.playlist_model import Playlist
+from models.program_model import Project
 
 # from amplio.utils import (
 #     LambdaRouter,
@@ -15,20 +22,18 @@ import boto3 as boto3
 #     JsonBody,
 # )
 from routes.program_spec import (
-    read_from_xlsx,
-    read_from_s3,
+    compare_program_specs,
+    export_to_db,
+    publish_to_s3,
     read_from_db,
     read_from_json,
-    write_to_s3,
-    publish_to_s3,
-    export_to_db,
+    read_from_s3,
+    read_from_xlsx,
     write_to_json,
-    compare_program_specs,
+    write_to_s3,
 )
 from routes.program_spec.db import _ensure_content_view
-
-# from routes.program_spec.ps_updater.XlsExporter import Exporter
-import routes.program_spec.ps_updater.XlsExporter as XlsExporter
+from schema import ApiResponse
 from utilities.rolemanager.role_checker import current_user
 
 router = APIRouter()
@@ -325,10 +330,26 @@ def get_content(programid: str, db: Session = Depends(get_db)):
     :param email: The user requesting the data.
     :return: a JSON string with the current program spec.
     """
-    _ensure_content_view(engine=None, connection=db.connection())
-    db_spec, errors = read_from_db(programid, engine=None, connection=db.connection())
-    json_spec = write_to_json(db_spec, to_string=False)
-    return json_spec
+
+    results = (
+        db.query(Project)
+        .filter(Project.code == programid)
+        .options(
+            subqueryload(Project.general),
+            subqueryload(Project.recipients),
+            subqueryload(Project.deployments).options(
+                subqueryload(Deployment.playlists).subqueryload(Playlist.messages)
+            ),
+        )
+        .all()
+    )
+
+    return ApiResponse(data=results)
+
+    # _ensure_content_view(engine=None, connection=db.connection())
+    # db_spec, errors = read_from_db(programid, engine=None, connection=db.connection())
+    # json_spec = write_to_json(db_spec, to_string=False)
+    # return json_spec
 
 
 # @handler(roles="AD,PM")

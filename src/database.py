@@ -1,26 +1,14 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from config import config
-
 import json
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel as PydanticBaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from utils import snake_to_camel
+from sqlalchemy.orm import Session, sessionmaker
 
+from config import config
+from utils import snake_to_camel
 
 engine = create_engine(config.db_url())
 
