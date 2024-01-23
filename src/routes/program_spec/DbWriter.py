@@ -1,23 +1,24 @@
-from copy import deepcopy
 import dataclasses
 from collections import namedtuple
-from typing import List, Optional, Dict, Any, Tuple
-from models import ProjectLanguage, SupportedLanguage, get_db
+from copy import deepcopy
+from typing import Any, Dict, List, Optional, Tuple
 
 import boto3
-from config import AWS_REGION
-import routes.program_spec.db as db
-from routes.program_spec import (
-    ProgramSpec,
-    Deployment,
-    get_db_engine,
-    Playlist,
-    Message,
-    Recipient,
-    General,
-)
 from sqlalchemy import text
-from sqlalchemy.engine import Engine, Connection
+from sqlalchemy.engine import Connection, Engine
+
+import routes.program_spec.db as db
+from config import AWS_REGION
+from models import ProjectLanguage, SupportedLanguage, get_db
+from routes.program_spec import (
+    Deployment,
+    General,
+    Message,
+    Playlist,
+    ProgramSpec,
+    Recipient,
+    get_db_engine,
+)
 
 # dyanmodb programs table keeps a cached copy of program name, so update it along with SQL name.
 dynamodb = None
@@ -573,6 +574,9 @@ class _DbWriter:
 
             language_list = [x.strip() for x in message.languages.split(",")]
             for language in language_list:
+                if language is None or language.strip() == "":
+                    continue
+
                 command = text(
                     "INSERT INTO message_languages(message_id, language_code) VALUES(:message_id, :language_code);"
                 )
