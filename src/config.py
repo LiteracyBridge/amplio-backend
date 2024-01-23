@@ -60,7 +60,7 @@ class Config:
             ]
             secrets = json.loads(secret_string)
 
-            self.db_name = secrets["dbname"]
+            self.db_name = secrets["suite_dbname"]
             self.db_user = secrets["username"]
             self.db_password = secrets["password"]
             self.db_host = secrets["host"]
