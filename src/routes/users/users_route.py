@@ -5,7 +5,7 @@ from botocore.utils import email
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sentry_sdk import capture_exception
-from sqlalchemy import delete, or_
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session, subqueryload
 
 from config import AWS_REGION, config
@@ -71,18 +71,20 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
 @router.get("")
 def get_all_users(user: User = Depends(current_user), db: Session = Depends(get_db)):
     # TODO: return users based on the organisation id or parent organisation id
+
+    subquery = select(Organisation.id).filter(
+        or_(
+            Organisation.id == user.organisation_id,
+            Organisation.parent_id == user.organisation_id,
+        )
+    )
+
     query = (
         db.query(User)
-        .join(
-            Organisation,
-            or_(
-                User.organisation_id == Organisation.id,
-                User.organisation_id == Organisation.parent_id,
-            ),
-        )
+        .filter(User.organisation_id.in_(subquery))
         .options(
             subqueryload(User.roles).options(subqueryload(UserRole.role)),
-            subqueryload(User.organisation)
+            subqueryload(User.organisation),
         )
         .all()
     )

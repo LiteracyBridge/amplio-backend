@@ -1,20 +1,24 @@
-import re
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
-from sqlalchemy.orm import Session, subqueryload
-from typing import Any, Dict, Optional, Tuple, List, Union, Pattern
-from models import get_db
-import boto3 as boto3
 import asyncio
+import re
 from concurrent import futures
+from os.path import join
+from typing import Any, Dict, List, Optional, Pattern, Tuple, Union
+
+import boto3 as boto3
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from sqlalchemy import exists, or_, select
+from sqlalchemy.orm import Session, subqueryload
+
+from models import get_db
+from models.organisation_model import Organisation
+from models.program_model import OrganisationProgram, Program
 from models.user_model import ProgramUser, User, UserRole, current_user
-from models.program_model import Program
 from routes.program_spec.db import _ensure_content_view
 from routes.users.users_route import get_all_users
-from utilities.rolemanager.role_checker import current_user as curr_user
-from utilities.rolemanager import manager
-from utilities.rolemanager.rolesdb import RolesDb
 from schema import ApiResponse
-
+from utilities.rolemanager import manager
+from utilities.rolemanager.role_checker import current_user as curr_user
+from utilities.rolemanager.rolesdb import RolesDb
 
 router = APIRouter()
 
@@ -69,7 +73,7 @@ def get_program_info_for_user(email: str) -> Tuple[Dict[str, Dict[str, str]], st
         for programid in program_list:
             # add {'repository':repository} to {program: {'roles':roles, ...}}
             result[programid]["repository"] = repo
-    return (result, implicit_repo) # type: ignore
+    return (result, implicit_repo)  # type: ignore
 
 
 def _add_deployment_revs(
@@ -115,7 +119,7 @@ def _add_deployment_revs(
     global s3
     import boto3
 
-    if s3 is None: # type: ignore
+    if s3 is None:  # type: ignore
         s3 = boto3.client("s3")
 
     dbx_rev_pattern = re.compile(
@@ -217,9 +221,51 @@ def get_all_programs(
     db: Session = Depends(get_db),
 ):
     # TODO: If user has permission to view all programs & is amplio staff, return all system programs
-    results = db.query(Program).options(subqueryload(Program.project)).all()
+    # results = db.query(OrganisationProgram)
+    # .join(Organisation, or_(Organisation.id == user.organisation_id, OrganisationProgram.organisation_id == None))
+    # .filter(OrganisationProgram.organisation_id == user.organisation_id)
+    # .options(subqueryload(Program.project)).all()
+
+    # subquery = select(Organisation.id).filter(
+    #     or_(
+    #         Organisation.id == user.organisation_id,
+    #         Organisation.parent_id == user.organisation_id,
+    #     )
+    # )
+
+    # query = (
+    #     db.query(OrganisationProgram).filter(
+    #         OrganisationProgram.organisation_id.in_(subquery)
+    #     )
+    #     # .options(subqueryload(Program.project))
+    #     .all()
+    # )
+
+    where_exists = (
+        # select(OrganisationProgram)
+        exists(OrganisationProgram).where(
+            OrganisationProgram.program_id == Program.id,
+            exists(Organisation).where(
+                or_(
+                    Organisation.id.in_(
+                        [OrganisationProgram.organisation_id, user.organisation_id]
+                    ),
+                    Organisation.parent_id.in_(
+                        [OrganisationProgram.organisation_id, user.organisation_id]
+                    ),
+                )
+            ),
+        )
+    )
+    results = (
+        db.query(Program)
+        .filter(where_exists)
+        .options(subqueryload(Program.project))
+        .all()
+    )
 
     return ApiResponse(data=results)
+
 
 # # TODO: Add permission check
 # @router.get("/{program_id}/users")
@@ -239,13 +285,19 @@ def remove_user(
     db: Session = Depends(get_db),
     user: User = Depends(current_user),
 ):
-    program_user = db.query(ProgramUser).filter(ProgramUser.program_id == program_id, ProgramUser.user_id == user_id).first()
+    program_user = (
+        db.query(ProgramUser)
+        .filter(ProgramUser.program_id == program_id, ProgramUser.user_id == user_id)
+        .first()
+    )
 
     if program_user is None:
         raise HTTPException(status_code=404, detail="Program User not found")
 
     # Delete all roles for the user in the program
-    db.query(UserRole).filter(UserRole.program_id == program_id, UserRole.user_id == user_id).delete()
+    db.query(UserRole).filter(
+        UserRole.program_id == program_id, UserRole.user_id == user_id
+    ).delete()
 
     db.delete(program_user)
     db.commit()

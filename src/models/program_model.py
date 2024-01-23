@@ -2,9 +2,17 @@ from datetime import date, datetime
 from enum import Enum
 
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import (JSON, Boolean, Column, Date, ForeignKey, Integer,
-                        String, UniqueConstraint)
-from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    Date,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import Mapped, foreign, mapped_column, relationship, validates
 
 from database import BaseModel
 from models.organisation_model import Organisation
@@ -130,14 +138,18 @@ class Program(BaseModel):
             "component": "",
         }
 
+
 class OrganisationProgram(BaseModel, SoftDeleteMixin, TimestampMixin):
     __tablename__ = "organisation_programs"
 
-    program_id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    organisation_id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    program_id: Mapped[int] = mapped_column(ForeignKey("programs.id"), primary_key=True)
+    organisation_id: Mapped[int] = mapped_column(
+        ForeignKey("organisations.id"),
+        primary_key=True,
+    )
 
-    organisation: Mapped[Organisation] = relationship("Organisation", back_populates="programs")
-    program: Mapped[Program] = relationship("Program", back_populates="organisations")
+    organisation: Mapped[Organisation] = relationship("Organisation")
+    program: Mapped[Program] = relationship("Program")
 
 
 # should validate_list_input belong to a utils package of some sort?
