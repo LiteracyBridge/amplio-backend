@@ -21,7 +21,7 @@ def upgrade() -> None:
         "organisations",
         sa.Column("id", sa.Integer(), primary_key=True, nullable=False),
         sa.Column("name", sa.String(), nullable=False, unique=True),
-        sa.Column("parent_id", sa.Integer(), nullable == True),
+        sa.Column("parent_id", sa.Integer(), nullable=True),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),

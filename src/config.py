@@ -1,9 +1,9 @@
 import json
+from os import getenv
 from typing import Any, Optional
 
 from boto3 import Session
 from dotenv import load_dotenv
-from os import getenv
 
 AWS_REGION = "us-west-2"
 
