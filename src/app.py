@@ -1,25 +1,26 @@
+import re
 import uuid
-import uvicorn
-import sentry_sdk
-from sentry_sdk.integrations.aws_lambda import AwsLambdaIntegration
-from fastapi import Depends, FastAPI, HTTPException, Request
-from mangum import Mangum
+from functools import wraps
 
-from monitoring import logging_config
-from middlewares.correlation_id_middleware import CorrelationIdMiddleware
-from middlewares.logging_middleware import LoggingMiddleware
+import sentry_sdk
+import uvicorn
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from mangum import Mangum
+from sentry_sdk.integrations.aws_lambda import AwsLambdaIntegration
+
+from config import config
 from handlers.exception_handler import exception_handler
 from handlers.http_exception_handler import http_exception_handler
-from fastapi.middleware.cors import CORSMiddleware
-from jwt_verifier import CognitoAuthenticator
+from jwt_verifier import CognitoAuthenticator, auth_check
+from middlewares.correlation_id_middleware import CorrelationIdMiddleware
+from middlewares.logging_middleware import LoggingMiddleware
 from models import get_db
-from config import config
-
+from models.user_model import current_user
+from monitoring import logging_config
+from routes import categories_route, language_route, program_route
 from routes.program_spec import program_spec_route
-from routes import categories_route, program_route
-from routes.users import users_route
-from routes.users import roles_route
-
+from routes.users import roles_route, users_route
 
 if config.sentry_dsn is not None:
     sentry_sdk.init(
@@ -82,6 +83,7 @@ async def verify_jwt(request: Request, call_next):
 
     cognito_auth.verify_token(token.replace("Bearer ", ""))
 
+    request.state.current_user = current_user(request=request, db=next(get_db()))
     response = await call_next(request)
 
     return response
@@ -113,6 +115,11 @@ if not config.is_local:
 ###############################################################################
 #   Routers configuration                                                     #
 ###############################################################################
+@app.get("/me")
+@auth_check(roles=["admin"])
+def test(request: Request):
+    return {"message": "Hello World"}
+
 
 app.include_router(
     program_spec_route.router,
@@ -142,6 +149,12 @@ app.include_router(
     roles_route.router,
     prefix="/users/roles",
     tags=["user-roles"],
+    dependencies=[Depends(get_db)],
+)
+app.include_router(
+    language_route.router,
+    prefix="/languages",
+    tags=["languages"],
     dependencies=[Depends(get_db)],
 )
 

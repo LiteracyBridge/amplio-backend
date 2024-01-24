@@ -1,8 +1,9 @@
 from typing import Optional
 
-from sqlalchemy import String, ForeignKey, Boolean
+from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from database import BaseModel
 
 
