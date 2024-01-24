@@ -13,9 +13,25 @@ from jose.exceptions import JWTError
 from jose.utils import base64url_decode
 from pydantic import BaseModel
 from config import config
+from functools import wraps
 
 VERIFIED_JWT_CLAIMS_CACHE = {}
 CACHED_USERS = {}
+
+
+
+def auth_check(roles):
+    def decorator_auth(func):
+
+        @wraps(func)
+        def wrapper_auth(*args, **kwargs):
+            print(args)
+            print(kwargs)
+            print(kwargs['request'].state.current_user)
+            return func(*args, **kwargs)
+
+        return wrapper_auth
+    return decorator_auth
 
 
 class JWK(BaseModel):
