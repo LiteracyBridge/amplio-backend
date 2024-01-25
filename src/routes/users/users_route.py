@@ -105,6 +105,7 @@ def get_all_users(user: User = Depends(current_user), db: Session = Depends(get_
         .options(
             subqueryload(User.roles).options(subqueryload(UserRole.role)),
             subqueryload(User.organisation),
+            subqueryload(User.programs),
         )
         .all()
     )

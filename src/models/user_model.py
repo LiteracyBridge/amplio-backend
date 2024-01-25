@@ -5,8 +5,7 @@ from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship, subqueryload
 
-from database import get_db
-from database import BaseModel
+from database import BaseModel, get_db
 from jwt_verifier import VERIFIED_JWT_CLAIMS_CACHE
 from models.organisation_model import Organisation
 from models.program_model import Program
@@ -20,13 +19,9 @@ class UserRole(TimestampMixin, SoftDeleteMixin, BaseModel):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"))
-    program_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("programs.id"), nullable=True
-    )
 
     user: Mapped["User"] = relationship("User", back_populates="roles")
     role: Mapped[Role] = relationship("Role")
-    program: Mapped[Program] = relationship("Program")
 
 
 class User(TimestampMixin, SoftDeleteMixin, BaseModel):
@@ -41,9 +36,12 @@ class User(TimestampMixin, SoftDeleteMixin, BaseModel):
 
     organisation: Mapped[Organisation] = relationship("Organisation")
     roles: Mapped[List[UserRole]] = relationship("UserRole", back_populates="user")
-    programs: Mapped[List["ProgramUser"]] = relationship("ProgramUser", back_populates="user")
+    programs: Mapped[List["ProgramUser"]] = relationship(
+        "ProgramUser", back_populates="user"
+    )
 
     # TODO: a permissions field, similar to ts
+
 
 class ProgramUser(TimestampMixin, BaseModel):
     __tablename__ = "program_users"
@@ -53,19 +51,23 @@ class ProgramUser(TimestampMixin, BaseModel):
 
     user: Mapped[User] = relationship("User", back_populates="programs")
     program: Mapped[Program] = relationship("Program")
-    roles: Mapped[List[UserRole]] = relationship("UserRole", primaryjoin="and_(ProgramUser.program_id == foreign(UserRole.program_id), ProgramUser.user_id == foreign(UserRole.user_id))", overlaps="program", viewonly=True)
+    # roles: Mapped[List[UserRole]] = relationship(
+    #     "UserRole",
+    #     primaryjoin="and_(ProgramUser.program_id == foreign(UserRole.program_id), ProgramUser.user_id == foreign(UserRole.user_id))",
+    #     overlaps="program",
+    #     viewonly=True,
+    # )
 
-    @staticmethod
-    def add_user(user_id: int, program_id: int, db: Session):
-        program_user = ProgramUser()
-        program_user.user_id = user_id
-        program_user.program_id = program_id
+    # @staticmethod
+    # def add_user(user_id: int, program_id: int, db: Session):
+    #     program_user = ProgramUser()
+    #     program_user.user_id = user_id
+    #     program_user.program_id = program_id
 
-        db.merge(program_user)
-        db.commit()
+    #     db.add(program_user)
+    #     db.commit()
 
-        return program_user
-
+    #     return program_user
 
 
 class Invitation(TimestampMixin, SoftDeleteMixin, BaseModel):

@@ -4,11 +4,13 @@ Code Red:
 
 Settings:
     User roles:
-        ☐ programs queries restriction
-        ☐ roles assignment
-            ☐ move it to users table
-            ☐ show program names
+        ☐ remove `program_id` from user_roles table
+        ✔ programs queries restriction @done(24-01-24 21:35)
+        ✔ roles assignment @done(24-01-24 21:35)
+            ✔ move it to users table @done(24-01-24 21:35)
+            ✔ show program names @done(24-01-24 21:35)
         ☐ add user profile page
+
     Programs:
         ☐ permissions check
         ☐ add users drawer

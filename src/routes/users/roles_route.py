@@ -1,22 +1,15 @@
-from fastapi import (
-    APIRouter,
-    Body,
-    Depends,
-    File,
-    HTTPException,
-    Request,
-    UploadFile,
-)
+from typing import Annotated, Dict, List, Optional
+
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Request, UploadFile
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, subqueryload
-from typing import Annotated, Dict, Optional, List
-from models import get_db
-from models import User, Role, current_user, Program
+
+from models import Program, Role, User, current_user, get_db
 from models.user_model import ProgramUser, UserRole
 from routes.users.roles_template import ROLES_TEMPLATE
-from schema import ApiResponse
 from routes.users.users_route import get_all_users
+from schema import ApiResponse
 
 router = APIRouter()
 
@@ -60,22 +53,23 @@ def crate_roles(
 def assign_or_update_roles(
     user_id: Annotated[int, Body()],
     roles: Annotated[List[int], Body()],
-    program_id: Annotated[Optional[int], Body()] = None,
     db: Session = Depends(get_db),
     user: User = Depends(current_user),
 ):
     """Assign or update user roles"""
 
     existing_user = (
-        db.query(User).filter(User.id == user_id)
-        .options( subqueryload(User.roles))
+        db.query(User)
+        .filter(User.id == user_id)
+        .options(subqueryload(User.roles))
         .first()
     )
     if existing_user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-
-    existing_roles: List[int] = list(map(lambda role: role.role_id, existing_user.roles))
+    existing_roles: List[int] = list(
+        map(lambda role: role.role_id, existing_user.roles)
+    )
 
     # Create a new roles for the user
     for role_id in roles:
@@ -83,18 +77,15 @@ def assign_or_update_roles(
             user_role = UserRole()
             user_role.user_id = user_id
             user_role.role_id = role_id
-            user_role.program_id = program_id
 
             db.add(user_role)
-
-            # Update the user's programs
-            if program_id is not None:
-                ProgramUser.add_user(user_id=user_id, program_id=program_id, db=db)
 
     # Remove roles that are not in the new list
     deleted_roles = list(filter(lambda role_id: role_id not in roles, existing_roles))
 
-    db.query(UserRole).filter(UserRole.role_id.in_(deleted_roles), UserRole.user_id == user_id).delete()
+    db.query(UserRole).filter(
+        UserRole.role_id.in_(deleted_roles), UserRole.user_id == user_id
+    ).delete()
     db.commit()
 
     return get_all_users(user=user, db=db)
@@ -133,7 +124,7 @@ def delete_role(
 
     role = (
         db.query(Role)
-        .filter(Role.id == role_id , Role.organisation_id == user.organisation_id)
+        .filter(Role.id == role_id, Role.organisation_id == user.organisation_id)
         .first()
     )
     if role is None:

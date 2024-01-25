@@ -2,11 +2,12 @@ import asyncio
 import re
 from concurrent import futures
 from os.path import join
-from typing import Any, Dict, List, Optional, Pattern, Tuple, Union
+from typing import Annotated, Any, Dict, List, Optional, Pattern, Tuple, Union
 
 import boto3 as boto3
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Request, UploadFile
 from sqlalchemy import exists, or_, select
+from sqlalchemy.exc import MultipleResultsFound
 from sqlalchemy.orm import Session, subqueryload
 
 from models import get_db
@@ -252,6 +253,26 @@ def get_all_programs(
 #     users = db.query(ProgramUser).filter(ProgramUser.program_id == program_id) .options(subqueryload(ProgramUser.user), subqueryload(ProgramUser.roles).options(subqueryload(UserRole.role))).all()
 
 #     return ApiResponse(data=users)
+
+
+@router.post("/users")
+def add_user_to_program(
+    user_id: Annotated[int, Body()],
+    program_id: Annotated[int, Body()],
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    try:
+        program_user = ProgramUser()
+        program_user.program_id = program_id
+        program_user.user_id = user_id
+
+        db.merge(program_user)
+        db.commit()
+    except MultipleResultsFound as e:
+        raise HTTPException(status_code=400, detail="User already added to program")
+
+    return get_all_users(user=user, db=db)
 
 
 @router.delete("/{program_id}/users")
