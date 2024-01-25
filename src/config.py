@@ -16,6 +16,7 @@ class Config:
     db_password: str
     db_user: str
     db_port: Optional[str] = "5432"
+    db_echo: Optional[bool] = False
 
     dynamodb_url: Optional[str] = None
 
@@ -39,6 +40,7 @@ class Config:
             self.db_password = getenv("DB_PASSWORD", "")
             self.db_user = getenv("DB_USER", "postgres")
             self.db_port = getenv("DB_PORT", "5432")
+            self.db_echo = bool(getenv("DB_ECHO", False))
             self.dynamodb_url = getenv("DYNAMODB_URL", None)
 
             self.sentry_dsn = getenv("SENTRY_DSN", None)

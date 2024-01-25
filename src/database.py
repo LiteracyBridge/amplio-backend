@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from config import config
 from utils import snake_to_camel
 
-engine = create_engine(config.db_url(), echo=getenv("DB_ECHO", False))
+engine = create_engine(config.db_url(), echo=config.db_echo)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
