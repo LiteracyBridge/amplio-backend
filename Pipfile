@@ -28,6 +28,7 @@ black = "*"
 httpx = "*"
 pytest = "*"
 moto = {extras = ["all"], version = "*"}
+types-python-jose = "*"
 
 [requires]
 python_version = "^3.11"

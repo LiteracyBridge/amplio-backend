@@ -18,7 +18,7 @@ from middlewares.logging_middleware import LoggingMiddleware
 from models import get_db
 from models.user_model import current_user
 from monitoring import logging_config
-from routes import categories_route, language_route, program_route
+from routes import categories_route, language_route, program_route, tableau_route
 from routes.program_spec import program_spec_route
 from routes.users import roles_route, users_route
 
@@ -157,6 +157,13 @@ app.include_router(
     tags=["languages"],
     dependencies=[Depends(get_db)],
 )
+app.include_router(
+    tableau_route.router,
+    prefix="/tableau",
+    tags=["tableau"],
+    dependencies=[Depends(get_db)],
+)
+
 
 # app.include_router(
 #     analysis_route.router,

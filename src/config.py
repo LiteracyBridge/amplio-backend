@@ -9,6 +9,8 @@ AWS_REGION = "us-west-2"
 
 
 class Config:
+    is_local: bool = False
+
     db_name: str
     db_host: str
     db_password: str
@@ -23,7 +25,9 @@ class Config:
     sentry_dsn: Optional[str] = None
     sentry_environment: Optional[str] = None
 
-    is_local: bool = False
+    tableau_client_id: Optional[str] = None
+    tableau_secret_id: Optional[str] = None
+    tableau_secret_value: Optional[str] = None
 
     def __init__(self) -> None:
         if getenv("APP_ENV", "production") == "local":
@@ -42,6 +46,10 @@ class Config:
 
             self.user_pool_id = getenv("AWS_USER_POOL_ID", None)
             self.user_pool_client_id = getenv("AWS_USER_POOL_CLIENT_ID", None)
+
+            self.tableau_client_id = getenv("TABLEAU_CLIENT_ID", None)
+            self.tableau_secret_id = getenv("TABLEAU_SECRET_ID", None)
+            self.tableau_secret_value = getenv("TABLEAU_SECRET_VALUE", None)
         else:
             self.load_aws_secrets()
 
@@ -54,7 +62,6 @@ class Config:
         )
         try:
             # Load postgres secrets
-            # TODO: pass secrete name as env variable
             secret_string = client.get_secret_value(SecretId=getenv("AWS_SECRET_ID"))[
                 "SecretString"
             ]
@@ -71,6 +78,16 @@ class Config:
 
             self.user_pool_id = secrets["aws_user_pool_id"]
             self.user_pool_client_id = secrets["aws_user_pool_client_id"]
+
+            # Load tableau secrets
+            secret_string = client.get_secret_value(
+                SecretId=getenv("TABLEAU_SECRET_ID", "tableau_embedding")
+            )["SecretString"]
+            secrets = json.loads(secret_string)
+
+            self.tableau_client_id = secrets["client"]
+            self.tableau_secret_id = secrets["secret_id"]
+            self.tableau_secret_value = secrets["secret_value"]
 
         except Exception as err:
             raise err
