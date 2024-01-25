@@ -29,6 +29,7 @@ httpx = "*"
 pytest = "*"
 moto = {extras = ["all"], version = "*"}
 types-python-jose = "*"
+types-psycopg2 = "*"
 
 [requires]
 python_version = "^3.11"

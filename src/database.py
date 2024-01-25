@@ -1,11 +1,11 @@
 import json
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Generic, List, Optional, Tuple, Type, TypeVar, Union
 
 import sqlalchemy.types as types
 from fastapi.encoders import jsonable_encoder
 from psycopg2.extensions import AsIs
 from pydantic import BaseModel as PydanticBaseModel
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -71,6 +71,21 @@ class PGPoint(types.UserDefinedType):
                 return None
 
         return process
+
+
+def query_to_json(
+    query: str, name_map=None, params: Optional[Dict] = None
+) -> Tuple[List[Any], int]:
+    db = next(get_db())
+    with db.connection() as conn:
+        db_result = conn.execute(text(query), params)
+        columns = list(db_result.keys())
+        if name_map:
+            columns = [name_map.get(column, column) for column in columns]
+        result = []
+        for record in db_result:
+            result.append(dict(zip(columns, record)))
+    return result, len(result)
 
 
 # ModelType = TypeVar("ModelType", bound=BaseModel)
