@@ -1,4 +1,5 @@
 import json
+from os import getenv
 from typing import Any, Dict, Generic, List, Optional, Tuple, Type, TypeVar, Union
 
 import sqlalchemy.types as types
@@ -12,7 +13,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from config import config
 from utils import snake_to_camel
 
-engine = create_engine(config.db_url(), echo=True)
+engine = create_engine(config.db_url(), echo=getenv("DB_ECHO", False))
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
