@@ -18,7 +18,13 @@ from middlewares.logging_middleware import LoggingMiddleware
 from models import get_db
 from models.user_model import current_user
 from monitoring import logging_config
-from routes import categories_route, language_route, program_route, tableau_route
+from routes import (
+    categories_route,
+    language_route,
+    program_route,
+    tableau_route,
+    user_feedback,
+)
 from routes.dashboard_queries import dashboard_queries_route
 from routes.program_spec import program_spec_route
 from routes.users import roles_route, users_route
@@ -168,6 +174,12 @@ app.include_router(
     dashboard_queries_route.router,
     prefix="/dashboard-queries",
     tags=["dashboard-queries"],
+    dependencies=[Depends(get_db)],
+)
+app.include_router(
+    user_feedback.uf_routes,
+    prefix="/user-feedback",
+    tags=["user-feedback"],
     dependencies=[Depends(get_db)],
 )
 
