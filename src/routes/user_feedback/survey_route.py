@@ -14,8 +14,8 @@ class SurveyDto(BaseModel):
     id: Optional[int] = None
     name: str
     description: Optional[str] = None
-    language: str = "en"
-    deployment_id: int
+    # language: str = "en"
+    # deployment_id: int
     project_code: str
     status: str = "draft"
 
@@ -85,8 +85,8 @@ def create_or_update(dto: SurveyDto, db: Session = Depends(get_db)):
 
     new_survey.name = dto.name
     new_survey.description = dto.description
-    new_survey.language = dto.language
-    new_survey.deployment_id = dto.deployment_id
+    # new_survey.language = dto.language
+    # new_survey.deployment_id = dto.deployment_id
     new_survey.project_code = dto.project_code
     new_survey.status = dto.status
 

@@ -38,10 +38,12 @@ class Survey(BaseModel, SoftDeleteMixin):
     name: Mapped[str]
     description: Mapped[Optional[str]]
     project_code: Mapped[str] = mapped_column()
-    deployment_id: Mapped[int] = mapped_column(
-        ForeignKey("deployments.id", ondelete="CASCADE")
+
+    # TODO: Remove deployment_id and language cols
+    deployment_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("deployments.id", ondelete="CASCADE"), nullable=True
     )
-    language: Mapped[str] = mapped_column(String, default="en")
+    language: Mapped[Optional[str]] = mapped_column(String, default="en", nullable=True)
 
     deployment: Mapped[Deployment] = relationship("Deployment")
     questions: Mapped[List[Question]] = relationship("Question")
