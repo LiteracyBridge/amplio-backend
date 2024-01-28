@@ -12,7 +12,7 @@ from config import AWS_REGION, config
 from jwt_verifier import VERIFIED_JWT_CLAIMS_CACHE
 from models import Invitation, get_db
 from models.organisation_model import Organisation
-from models.program_model import Program
+from models.program_model import Program, Project
 from models.user_model import ProgramUser, User, UserRole, current_user
 from schema import ApiResponse
 
@@ -62,7 +62,11 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
         .options(
             subqueryload(User.roles).options(subqueryload(UserRole.role)),
             subqueryload(User.programs).options(
-                subqueryload(ProgramUser.program).options(subqueryload(Program.project))
+                subqueryload(ProgramUser.program).options(
+                    subqueryload(Program.project).options(
+                        subqueryload(Project.deployments)
+                    )
+                )
             ),
         )
         .first()
