@@ -1,4 +1,3 @@
-import enum
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -9,15 +8,7 @@ from sentry_sdk import capture_exception
 from sqlalchemy.orm import Session, joinedload, subqueryload
 from sqlalchemy.sql import select
 
-from models import (
-    Analysis,
-    AnalysisChoice,
-    Choice,
-    Project,
-    Question,
-    Survey,
-    SurveySection,
-)
+from models import Analysis, AnalysisChoice, Question, Survey
 from models import UserFeedbackMessage as Message
 from models import get_db
 from schema import ApiResponse
