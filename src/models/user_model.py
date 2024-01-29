@@ -114,7 +114,7 @@ class Invitation(TimestampMixin, SoftDeleteMixin, BaseModel):
 def current_user(request: Request, db: Session = Depends(get_db)) -> User:
     """Returns the current user object from the request object"""
 
-    token: str = str(request.headers.get("Authorization").replace("Bearer ", ""))
+    token: str = str(request.headers.get("Authorization").replace("Bearer ", ""))  # type: ignore
     email = VERIFIED_JWT_CLAIMS_CACHE.get(token, {}).get("email")
     if email is None:
         raise HTTPException(

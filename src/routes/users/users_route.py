@@ -1,7 +1,6 @@
 from typing import Annotated, Optional
 
 import boto3
-from botocore.utils import email
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sentry_sdk import capture_exception
@@ -53,7 +52,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     from the invitations table (if exists)
     """
 
-    token: str = str(request.headers.get("Authorization").replace("Bearer ", ""))
+    token: str = str(request.headers.get("Authorization").replace("Bearer ", ""))  # type: ignore
     email = VERIFIED_JWT_CLAIMS_CACHE[token].get("email")
 
     user = (
@@ -203,6 +202,7 @@ def delete_invitation(
     user: User = Depends(current_user),
 ):
     invitation = db.query(Invitation).filter(Invitation.email == email).first()
+    client = boto3.client("cognito-idp", region_name=AWS_REGION)
 
     if invitation is not None:
         try:
