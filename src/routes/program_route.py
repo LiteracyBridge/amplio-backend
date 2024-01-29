@@ -7,7 +7,7 @@ from typing import Annotated, Any, Dict, List, Optional, Pattern, Tuple, Union
 import boto3 as boto3
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Request, UploadFile
 from pydantic import BaseModel
-from sqlalchemy import exists, or_, select
+from sqlalchemy import and_, exists, or_, select
 from sqlalchemy.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.orm import Session, subqueryload
 
@@ -253,14 +253,25 @@ def get_all_programs(
 
 
 # # TODO: Add permission check
-# @router.get("/{program_id}/users")
-# def get_program_users(
-#     program_id: int,
-#     db: Session = Depends(get_db),
-# ):
-#     users = db.query(ProgramUser).filter(ProgramUser.program_id == program_id) .options(subqueryload(ProgramUser.user), subqueryload(ProgramUser.roles).options(subqueryload(UserRole.role))).all()
+@router.get("/{program_id}/organisation-users")
+def get_program_users(
+    program_id: int,
+    db: Session = Depends(get_db),
+):
+    users = (
+        db.query(User)
+        .filter(
+            exists(OrganisationProgram).where(
+                and_(
+                    OrganisationProgram.organisation_id == User.organisation_id,
+                    OrganisationProgram.program_id == program_id,
+                )
+            )
+        )
+        .all()
+    )
 
-#     return ApiResponse(data=users)
+    return ApiResponse(data=users)
 
 
 class ManageOrgDto(BaseModel):
