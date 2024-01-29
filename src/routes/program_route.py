@@ -6,8 +6,9 @@ from typing import Annotated, Any, Dict, List, Optional, Pattern, Tuple, Union
 
 import boto3 as boto3
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Request, UploadFile
+from pydantic import BaseModel
 from sqlalchemy import exists, or_, select
-from sqlalchemy.exc import MultipleResultsFound
+from sqlalchemy.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.orm import Session, subqueryload
 
 from models import get_db
@@ -234,10 +235,17 @@ def get_all_programs(
             )
         ),
     )
+
     results = (
         db.query(Program)
         .filter(where_exists)
-        .options(subqueryload(Program.project))
+        .options(
+            subqueryload(Program.project),
+            subqueryload(Program.organisations).options(
+                subqueryload(OrganisationProgram.organisation)
+            ),
+            subqueryload(Program.users).options(subqueryload(ProgramUser.user)),
+        )
         .all()
     )
 
@@ -255,6 +263,67 @@ def get_all_programs(
 #     return ApiResponse(data=users)
 
 
+class ManageOrgDto(BaseModel):
+    organisation_id: int
+    program_id: int
+
+
+@router.post("/organisations")
+def add_organisation_to_program(
+    dto: ManageOrgDto,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Add an organisation to a program"""
+
+    try:
+        organisation_program = OrganisationProgram()
+        organisation_program.program_id = dto.program_id
+        organisation_program.organisation_id = dto.organisation_id
+
+        db.merge(organisation_program)
+        db.commit()
+    except MultipleResultsFound as e:
+        raise HTTPException(
+            status_code=400, detail="Organisation already added to program"
+        )
+
+    return get_all_programs(db=db, user=request.state.current_user)
+
+
+@router.delete("/{program_id}/organisations/{organisation_id}")
+def remove_organisation_from_program(
+    program_id: int,
+    organisation_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Remove an organisation from a program"""
+
+    try:
+        organisation_program = (
+            db.query(OrganisationProgram)
+            .filter_by(program_id=program_id, organisation_id=organisation_id)
+            .one()
+        )
+
+        db.delete(organisation_program)
+
+        # Remove all organisation users from the program
+        db.query(ProgramUser).filter(
+            ProgramUser.program_id == program_id,
+            ProgramUser.user_id.in_(
+                select(User.id).where(User.organisation_id == organisation_id)
+            ),
+        ).delete(synchronize_session=False)
+
+        db.commit()
+    except NoResultFound as e:
+        pass
+
+    return get_all_programs(db=db, user=request.state.current_user)
+
+
 @router.post("/users")
 def add_user_to_program(
     user_id: Annotated[int, Body()],
@@ -262,6 +331,8 @@ def add_user_to_program(
     db: Session = Depends(get_db),
     user: User = Depends(current_user),
 ):
+    """Add a user to a program"""
+
     try:
         program_user = ProgramUser()
         program_user.program_id = program_id
@@ -272,7 +343,7 @@ def add_user_to_program(
     except MultipleResultsFound as e:
         raise HTTPException(status_code=400, detail="User already added to program")
 
-    return get_all_users(user=user, db=db)
+    return get_all_programs(db=db, user=user)
 
 
 @router.delete("/{program_id}/users")
@@ -282,6 +353,8 @@ def remove_user(
     db: Session = Depends(get_db),
     user: User = Depends(current_user),
 ):
+    """Remove a user from a program"""
+
     program_user = (
         db.query(ProgramUser)
         .filter(ProgramUser.program_id == program_id, ProgramUser.user_id == user_id)
@@ -299,4 +372,4 @@ def remove_user(
     db.delete(program_user)
     db.commit()
 
-    return get_all_users(user=user, db=db)
+    return get_all_programs(db=db, user=user)
