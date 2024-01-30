@@ -1,3 +1,5 @@
+from typing import List
+
 from sqlalchemy import (
     JSON,
     CheckConstraint,
@@ -9,8 +11,10 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
+from sqlalchemy.orm import Mapped, relationship
 
 from database import BaseModel, PGPoint
+from models.tb_deployed_model import TalkingBookDeployed
 
 
 class Recipient(BaseModel):
@@ -70,3 +74,9 @@ class Recipient(BaseModel):
     direct_beneficiaries = Column(Integer)
     direct_beneficiaries_additional = Column(JSON)
     indirect_beneficiaries = Column(Integer)
+
+    talkingbooks_deployed: Mapped[List[TalkingBookDeployed]] = relationship(
+        "TalkingBookDeployed",
+        primaryjoin="and_(foreign(TalkingBookDeployed.recipient_id) == Recipient.id)",
+        viewonly=True,
+    )

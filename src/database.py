@@ -76,8 +76,9 @@ class PGPoint(types.UserDefinedType):
 
 def query_to_json(
     query: str, name_map=None, params: Optional[Dict] = None
-) -> Tuple[List[Any], int]:
+) -> List[Any]:
     db = next(get_db())
+
     with db.connection() as conn:
         db_result = conn.execute(text(query), params)
         columns = list(db_result.keys())
@@ -86,7 +87,7 @@ def query_to_json(
         result = []
         for record in db_result:
             result.append(dict(zip(columns, record)))
-    return result, len(result)
+    return result
 
 
 # ModelType = TypeVar("ModelType", bound=BaseModel)
