@@ -287,41 +287,6 @@ def publish(
 #         return {"status": STATUS_FAILURE, "errors": errors}, FAILURE_RESPONSE_400
 
 
-# @handler
-# @router.post("/accept")
-# def accept(
-#     programid: str,
-#     email: str = Depends(current_user),
-#     comment: str = "No comment provided",
-#     publish: bool = False,
-# ):
-#     result = {"status": STATUS_OK}
-#     errors = None
-#     print(
-#         f"Accept pending program spec for program {programid} by {email}. "
-#         + f"Publish ?: {publish}."
-#     )
-#     pending_spec, errors = read_from_s3(programid, PENDING_PROGSPEC_KEY)
-#     if pending_spec:
-#         ok, errors = export_to_db(pending_spec)
-#         if ok:
-#             if publish:
-#                 metadata = {
-#                     "submitter-email": email,
-#                     "submitter-comment": comment,
-#                     "submission-date": datetime.datetime.now().isoformat(),
-#                 }
-#                 ok, errors = publish_to_s3(pending_spec, metadata=metadata)
-#                 if ok:
-#                     pending_key = _make_program_key(programid, PENDING_PROGSPEC_KEY)
-#                     _delete_versions(pending_key)
-#     if errors:
-#         print(f"Errors in accept for {programid}: {nl.join(errors)}")
-#         # return a 400 status code.
-#         result = ({"status": STATUS_FAILURE, "errors": errors}, FAILURE_RESPONSE_400)
-#     return result
-
-
 @router.get("/content")
 def get_content(programid: str, db: Session = Depends(get_db)):
     """
@@ -369,6 +334,8 @@ def update_content(
     :param return_diff: If true, return a diff of the program spec.
     :return: the update status, and the diff if requested.
     """
+
+    # TODO: rewrite program spec update to use the alchemy models
     result = {"status": STATUS_OK}
     errors = None
     print(f"put content for {programid} by {email}, data: {data}")
@@ -388,23 +355,3 @@ def update_content(
         result = ({"status": STATUS_FAILURE, "errors": errors}, FAILURE_RESPONSE_400)
 
     return result
-
-
-# def lambda_router(event, context):
-#     print(f"Event: {event}")
-#     the_router: LambdaRouter = LambdaRouter(event, context)
-#     action = the_router.path_param(0)
-#     print(
-#         f'Request {action} by user {the_router.claim("email") or "-unknown-"} for program {the_router.queryStringParam("programid") or "None"}'
-#     )
-#     return the_router.dispatch(action)
-
-
-# if __name__ == "__main__":
-#     event = {
-#         "requestContext": {"authorizer": {"claims": {"email": "bill@amplio.org"}}},
-#         "pathParameters": {"proxy": "put_content"},
-#         "queryStringParameters": {"programid": "TEST", "return_diff": "yes"},
-#         "body": '{"Nothing": [1,2,3]}',
-#     }
-#     lambda_router(event, {})

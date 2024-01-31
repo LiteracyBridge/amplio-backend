@@ -3,40 +3,6 @@ from typing import Dict, List
 
 from database import query_to_json
 
-DEPLOYMENT_BY_COMMUNITY = """
-SELECT DISTINCT
-        td.project,
-        td.deployment,
-        d.deploymentnumber,
-        td.contentpackage as package,
-        td.recipientid,
-        r.communityname,
-        r.groupname,
-        r.agent,
-        r.language as languagecode,
-        d.startdate,
-        d.enddate,
-       COUNT(DISTINCT td.talkingbookid) AS deployed_tbs
-    FROM tbsdeployed td
-    JOIN recipients r
-      ON td.recipientid = r.recipientid
-    LEFT OUTER JOIN deployments d
-      ON d.project=td.project AND d.deployment ilike td.deployment
-    WHERE td.project = :programid
-    GROUP BY td.project,
-        td.deployment,
-        package,
-        d.deploymentnumber,
-        td.recipientid,
-        r.communityname,
-        r.groupname,
-        r.agent,
-        r.language,
-        d.startdate,
-        d.enddate
-"""
-
-
 STATUS_BY_DEPLOYMENT = """
 WITH status_by_deployment AS (
     SELECT tbd.project AS programid, d.deploymentnumber, tbd.deployment, MIN(tbd.deployedtimestamp::date) AS earliest,
