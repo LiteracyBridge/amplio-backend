@@ -323,9 +323,10 @@ def get_content(programid: str, db: Session = Depends(get_db)):
 def update_content(
     programid: str,
     data: Dict[Any, Any],
-    email: str = Depends(current_user),
+    # email: str = Depends(current_user),
     return_updated: bool = True,
     return_diff: bool = False,
+    db: Session = Depends(get_db),
 ):
     """
     Update one or more sections of the program spec.
@@ -338,7 +339,7 @@ def update_content(
     # TODO: rewrite program spec update to use the alchemy models
     result = {"status": STATUS_OK}
     errors = None
-    print(f"put content for {programid} by {email}, data: {data}")
+    # print(f"put content for {programid} by {email}, data: {data}")
     json_spec, errors = read_from_json(programid, data)
     if json_spec:
         if return_diff:
@@ -354,4 +355,4 @@ def update_content(
         # return a 400 status code.
         result = ({"status": STATUS_FAILURE, "errors": errors}, FAILURE_RESPONSE_400)
 
-    return result
+    return get_content(programid=programid, db=db)
