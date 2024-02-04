@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy import exists
 from sqlalchemy.orm import Session, subqueryload
 
 from database import query_to_json
@@ -21,12 +22,17 @@ def status(program_id: str, selector: str, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/{program_id}/recipients")
-def recipients(program_id: str, db: Session = Depends(get_db)):
-    # TODO: populate tbdeployed
+@router.get("/{program_id}/recipients/{deployment}")
+def recipients(program_id: str, deployment: str, db: Session = Depends(get_db)):
     return ApiResponse(
         data=db.query(Recipient)
-        .filter(Recipient.program_id == program_id)
+        .filter(
+            Recipient.program_id == program_id,
+            exists(TalkingBookDeployed).where(
+                TalkingBookDeployed.recipient_id == Recipient.id,
+                TalkingBookDeployed.deployment_name == deployment,
+            ),
+        )
         .options(
             subqueryload(Recipient.talkingbooks_deployed).options(
                 subqueryload(TalkingBookDeployed.deployment),
