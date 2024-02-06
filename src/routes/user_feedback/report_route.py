@@ -1,23 +1,13 @@
-import enum
 import itertools
-import os
-import tempfile
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import FileResponse, StreamingResponse
-from openpyxl import Workbook
-from pg8000 import IntegrityError
-from pydantic import BaseModel
-from sentry_sdk import capture_exception
-from sqlalchemy import and_, exists, text
+from sqlalchemy import and_
 from sqlalchemy.orm import Session, joinedload, subqueryload
-from sqlalchemy.sql import select
 
 from models import Analysis, AnalysisChoice, Question
 from models import UserFeedbackMessage as Message
 from models import get_db
 from models.uf_message_model import UserFeedbackMessage
-from routes.user_feedback.uf_messages_route import get_uuid_metadata
 from schema import ApiResponse
 
 router = APIRouter()
@@ -26,7 +16,6 @@ router = APIRouter()
 @router.get("/{survey_id}")
 def get_report(
     survey_id: int,
-    request: Request,
     deployment: str,
     language: str,
     db: Session = Depends(get_db),
@@ -56,28 +45,6 @@ def get_report(
         .all()
     )
 
-    # To execute the query and get all results:
-    # results = query.all()
-    # analysis = (
-    #     db.query(Analysis)
-    #     .filter(
-    #         Analysis.question_id.in_(
-    #             # select(
-    #             db.query(Question.id)
-    #             .filter(Question.survey_id == survey_id)
-    #             .subquery()
-    #             # )
-    #         ),
-    #         messages_query,
-    #     )
-    #     .options(
-    #         subqueryload(Analysis.message),
-    #         subqueryload(Analysis.choices).options(subqueryload(AnalysisChoice.choice)),
-    #         subqueryload(Analysis.question),
-    #     )
-    # )
-    # print(analysis.statement)
-
     questions = db.query(Question).filter(Question.survey_id == survey_id).all()
 
     # Map the questions into the form {question_id: index}
@@ -94,12 +61,10 @@ def get_report(
     }
 
     # Group analysis by message_uuid
-    # analysis = sorted(analysis, key=lambda a: a.message_uuid)
     grouped_analysis = [
         list(g) for _, g in itertools.groupby(analysis, key=lambda a: a.message_uuid)
     ]
 
-    # return analysis
     # Create a row for each message, corresponding to the questions index
     questions_count = len(questions) + questions_cols_start_index
 
@@ -127,26 +92,3 @@ def get_report(
         rows.append(row)
 
     return ApiResponse(data=rows)
-
-    wb = Workbook()
-    responses_sheet = wb.active
-    responses_sheet.title = "Responses"
-
-    for row in rows:
-        responses_sheet.append(row)
-
-    fp = os.path.join(tempfile.gettempdir(), "Analysis Report.xlsx")
-    wb.save(fp)
-
-    def iterfile():
-        with open(fp, mode="rb") as f:
-            yield from f
-
-    # Return file as response
-    # return FileResponse(fp, media_type=, filename='Analysis Report.xlsx')
-    return StreamingResponse(
-        iterfile(),
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        # filename="Analysis Report.xlsx",
-        # content_disposition_type='attachment; filename="Analysis Report.xlsx"'
-    )
