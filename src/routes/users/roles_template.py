@@ -1,30 +1,19 @@
 ROLES_TEMPLATE = {
-    "acm/tb_loader": [
+    "acm": [
         "manage-deployment",
         "manage-playlist",
         "manage-prompt",
-        "deploy-content",
         "manage-content",
-        "manage-acm-checkouts",
-        "view-tb-analytics",
-        "view-usage-queries",
-        "view-collection-stats",
-        "view-deployment-status",
+        "manage-checkout",
     ],
-    "programs": [
-        "create-program",
-        "update-program",
-        "delete-program",
-        "update-spec",
-        "publish-spec",
+    "talking_book_loader": [
+        "deploy-content",
     ],
-    "roles": [
-        "create-staff",
-        "update-staff",
-        "delete-staff",
-        "assign-role",
-        "create-role",
-        "delete-role",
-        "update-role",
+    "user_feedback": ["manage-survey", "analyse-survey", "review-analysis"],
+    "staff": ["manage-staff", "manage-role"],
+    "program": [
+        "manage-users",
+        "manage-specification",
+        "manage-program",
     ],
 }
