@@ -16,6 +16,7 @@ from sqlalchemy.sql import select
 from models import Analysis, AnalysisChoice, Question
 from models import UserFeedbackMessage as Message
 from models import get_db
+from models.uf_message_model import UserFeedbackMessage
 from routes.user_feedback.uf_messages_route import get_uuid_metadata
 from schema import ApiResponse
 
@@ -30,9 +31,6 @@ def get_report(
     language: str,
     db: Session = Depends(get_db),
 ):
-    # req_query = request.query_params
-    # messages_query = ((Message.message_uuid == Analysis.message_uuid),)
-
     analysis = (
         db.query(Analysis)
         .join(
@@ -48,7 +46,10 @@ def get_report(
             and_(Question.id == Analysis.question_id, Question.survey_id == survey_id),
         )
         .options(
-            subqueryload(Analysis.message),
+            subqueryload(Analysis.message).options(
+                subqueryload(UserFeedbackMessage.recipient),
+                subqueryload(UserFeedbackMessage.content_metadata),
+            ),
             subqueryload(Analysis.choices).options(subqueryload(AnalysisChoice.choice)),
             subqueryload(Analysis.question),
         )
@@ -83,7 +84,7 @@ def get_report(
     rows = []
     questions_cols_start_index = 5  # Index of the first question column
     rows.append(
-        ["Message ID", "Transcription", "District", "Community", "Group"]
+        ["Message", "Transcription", "District", "Community", "Group"]
         + [q.question_label for q in questions]
     )
 
@@ -112,17 +113,20 @@ def get_report(
             if len(a.choices) > 0:
                 value = ", ".join([c.choice.value for c in a.choices])
 
-            row[0] = a.message_uuid
             row[1] = a.message.transcription
             row[mapped[str(a.question_id)]] = value
 
-            # FIXME: This is really inefficient. All message metadata should be loaded in one query
-            metadata = get_uuid_metadata(uuid=a.message_uuid, db=db)
-            row[2] = metadata["district"]
-            row[3] = metadata["community"]
-            row[4] = metadata["group"]
+            if a.message.content_metadata is not None:
+                row[0] = a.message.content_metadata.title
+
+            if a.message.recipient is not None:
+                row[2] = a.message.recipient.district
+                row[3] = a.message.recipient.community_name
+                row[4] = a.message.recipient.group_name
 
         rows.append(row)
+
+    return ApiResponse(data=rows)
 
     wb = Workbook()
     responses_sheet = wb.active
