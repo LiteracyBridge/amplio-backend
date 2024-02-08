@@ -5,12 +5,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from pg8000 import IntegrityError
 from pydantic import BaseModel
 from sentry_sdk import capture_exception
+from sqlalchemy import exists
 from sqlalchemy.orm import Session, joinedload, subqueryload
 from sqlalchemy.sql import select
 
 from models import Analysis, AnalysisChoice, Question, Survey
 from models import UserFeedbackMessage as Message
 from models import get_db
+from models.uf_message_model import UserFeedbackMessage
 from schema import ApiResponse
 
 router = APIRouter()
@@ -50,9 +52,9 @@ def get_statistics(
     messages = (
         db.query(Message)
         .filter(
-            Message.programid == survey.project_code,
+            Message.program_id == survey.project_code,
             Message.language == language,
-            Message.deploymentnumber == deployment,
+            Message.deployment_number == deployment,
         )
         .all()
     )
@@ -65,6 +67,34 @@ def get_statistics(
         "total_messages": len(messages),
     }
     return ApiResponse(data=[data])
+
+
+@router.get("/{survey_id}/submissions")
+def get_analysed_messages(
+    survey_id: int, deployment: str, language: str, db: Session = Depends(get_db)
+):
+    survey = db.query(Survey).filter(Survey.id == survey_id).first()
+    if survey is None:
+        raise HTTPException(status_code=404, detail="Survey not found")
+
+    query = (
+        db.query(UserFeedbackMessage)
+        .filter(
+            UserFeedbackMessage.program_id == survey.project_code,
+            UserFeedbackMessage.language == language,
+            UserFeedbackMessage.deployment_number == deployment,
+            exists(Analysis).where(
+                Analysis.message_uuid == UserFeedbackMessage.message_uuid
+            ),
+        )
+        .options(
+            subqueryload(UserFeedbackMessage.recipient),
+            subqueryload(UserFeedbackMessage.content_metadata),
+        )
+        .all()
+    )
+
+    return ApiResponse(data=query)
 
 
 class AnalysisDto(BaseModel):
@@ -157,7 +187,9 @@ def save_or_create_analysis(
             analysis.is_useless = False
             analysis.analyst_email = dto.analyst_email
             analysis.start_time = dto.start_time
-            analysis.submit_time = dto.submit_time
+            analysis.submit_time = (
+                dto.submit_time if dto.submit_time else datetime.now()
+            )
             analysis.response = item.get("response", None)
 
             if is_new:

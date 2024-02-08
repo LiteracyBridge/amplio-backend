@@ -15,8 +15,8 @@ class UserFeedbackMessage(BaseModel):
     __tablename__ = "uf_messages"
 
     message_uuid = mapped_column(String, primary_key=True, index=True)
-    programid: Mapped[str] = mapped_column(String)
-    deploymentnumber: Mapped[str] = mapped_column(String)
+    program_id: Mapped[str] = mapped_column("programid", String)
+    deployment_number: Mapped[str] = mapped_column("deploymentnumber", String)
     language: Mapped[str] = mapped_column(String, default="en")
     length_seconds: Mapped[int] = mapped_column(Integer, nullable=True)
     length_bytes: Mapped[int] = mapped_column(Integer, nullable=True)

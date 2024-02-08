@@ -43,8 +43,8 @@ def get_next_uuid(
     query = (
         db.query(Message)
         .where(
-            Message.programid == program,
-            Message.deploymentnumber == deployment_number,
+            Message.program_id == program,
+            Message.deployment_number == deployment_number,
             Message.language == language,
             Message.length_seconds >= MINIMUM_SECONDS_FILTER,
             Message.message_uuid.notin_(skipped_messages),

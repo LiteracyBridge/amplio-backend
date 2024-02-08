@@ -26,7 +26,7 @@ def get_report(
             Message,
             and_(
                 Message.message_uuid == Analysis.message_uuid,
-                Message.deploymentnumber == deployment,
+                Message.deployment_number == deployment,
                 Message.language == language,
             ),
         )
