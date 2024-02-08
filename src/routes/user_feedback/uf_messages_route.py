@@ -4,11 +4,12 @@ from typing import Annotated, Any, Dict, Optional
 import boto3 as boto3
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import exists, not_, select, text
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, subqueryload
 
 from models import Analysis
 from models import UserFeedbackMessage as Message
 from models import get_db
+from models.uf_message_model import UserFeedbackMessage
 from schema import ApiResponse
 
 MINIMUM_SECONDS_FILTER = 0  # filters out any UF messages of less than this # of seconds
@@ -246,17 +247,78 @@ def get_uf_data(
     return all_data
 
 
-@router.get("")
+@router.get("/{program_id}")
 def lambda_handler(
-    request: Request,
-    skipped_messages: Annotated[
-        list[str] | None, Query(alias="skipped_messages[]")
-    ] = [],
+    program_id: str,
+    deployment: str,
+    language: str,
+    message_id: Optional[str] = None,
+    skipped_messages: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
-    params = request.query_params
+    # params = request.query_params
 
-    print(params)
+    print(skipped_messages)
+
+    if deployment is None and language is None:
+        HTTPException(status_code=400, detail="Missing required parameters")
+
+    if skipped_messages is None or skipped_messages == "null" or skipped_messages == "":
+        skipped_messages = []
+    else:
+        skipped_messages = skipped_messages.split(",")
+
+    # If message id is provided, only query for that message and return it
+    if message_id is not None and message_id != "null":
+        result = (
+            db.query(UserFeedbackMessage)
+            .where(
+                UserFeedbackMessage.message_uuid == message_id,
+                UserFeedbackMessage.language == language,
+                UserFeedbackMessage.program_id == program_id,
+            )
+            .options(
+                subqueryload(UserFeedbackMessage.recipient),
+                subqueryload(UserFeedbackMessage.content_metadata),
+            )
+            .first()
+        )
+        if result is None:
+            raise HTTPException(status_code=404, detail="Message not found")
+
+        return ApiResponse(data=[result])
+
+    # messages_to_skip = []
+
+    # if skip and uuid is not None:
+    #     messages_to_skip.append(uuid)
+
+    subquery = select(Analysis.message_uuid).where(
+        Analysis.message_uuid == Message.message_uuid
+    )
+
+    result = (
+        db.query(Message)
+        .where(
+            Message.program_id == program_id,
+            Message.deployment_number == deployment,
+            Message.language == language,
+            Message.length_seconds >= MINIMUM_SECONDS_FILTER,
+            Message.message_uuid.notin_(skipped_messages),
+            Message.message_uuid.not_in(subquery),
+            Message.is_useless == None,
+        )
+        .options(
+            subqueryload(UserFeedbackMessage.recipient),
+            subqueryload(UserFeedbackMessage.content_metadata),
+        )
+        .order_by(Message.message_uuid)
+        .first()
+    )
+
+    data = [result] if result is not None else []
+    return ApiResponse(data=data)
+
     # start = time.time_ns()
     # uuid = None
     # deployment = None
@@ -264,19 +326,16 @@ def lambda_handler(
     # skip = False
 
     # Parse out query string params
-    email = params.get("email", "").lower()
-    program = str(params.get("program"))
-    deployment = str(params["deployment"])
-    language = str(params["language"])
+    # email = params.get("email", "").lower()
+    # program_id = str(params.get("program"))
+    # deployment = str(params["deployment"])
+    # language = str(params["language"])
     # skipped_messages = params.get("skipped_messages[]", [])
 
     # print(skipped_messages)
     # if skipped message is not list, covert to list
     # if not isinstance(skipped_messages, list):
     #     skipped_messages = [skipped_messages]
-
-    if program is None and deployment is None and language is None:
-        HTTPException(status_code=400, detail="Missing required parameters")
 
     # if "deployment" in params:
     # if "language" in params:
@@ -297,16 +356,16 @@ def lambda_handler(
     # elif program == "all":
     #     result = get_program_list(connection, email)
     # else:
-    result = get_uf_data(
-        program=program,
-        deployment_number=deployment,
-        language=language,
-        uuid=params.get(
-            "uuid",
-        ),
-        skipped_messages=skipped_messages,
-        db=db,
-    )
+    # result = get_uf_data(
+    #     program=program_id,
+    #     deployment_number=deployment,
+    #     language=language,
+    #     uuid=params.get(
+    #         "uuid",
+    #     ),
+    #     skipped_messages=skipped_messages,
+    #     db=db,
+    # )
 
     # Return the response object
-    return ApiResponse(data=[result])
+    # return ApiResponse(data=[result])

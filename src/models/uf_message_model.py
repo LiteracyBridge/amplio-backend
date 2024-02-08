@@ -3,8 +3,7 @@ from typing import Dict, List, Optional
 
 from sqlalchemy import JSON, Boolean, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship, synonym
-from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
 
 from database import BaseModel
 from models.content_metadata_model import ContentMetadata
@@ -35,3 +34,18 @@ class UserFeedbackMessage(BaseModel):
         primaryjoin="and_(foreign(Recipient.id) == UserFeedbackMessage.recipient_id)",
         viewonly=True,
     )
+
+    url = column_property(
+        "https://amplio-uf.s3.us-west-2.amazonaws.com/collected/"
+        + program_id
+        + "/"
+        + deployment_number
+        + "/"
+        + message_uuid
+        + ".mp3"
+    )
+    # url +=
+
+    # @hybrid_property
+    # def url(self) -> str:
+    #     return f"https://amplio-uf.s3.us-west-2.amazonaws.com/collected/{self.program_id}/{self.deployment_number}/{self.message_uuid}.mp3"
