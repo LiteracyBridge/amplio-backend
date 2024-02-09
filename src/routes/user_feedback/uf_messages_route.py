@@ -24,7 +24,6 @@ def get_message(
     program_id: str,
     deployment: str,
     language: str,
-    message_id: Optional[str] = None,
     skipped_messages: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
@@ -36,27 +35,6 @@ def get_message(
         skip = []
     else:
         skip = skipped_messages.split(",")
-
-    # If message id is provided, only query for that message and return it
-    if message_id is not None and message_id != "null":
-        result = (
-            db.query(UserFeedbackMessage)
-            .where(
-                UserFeedbackMessage.message_uuid == message_id,
-                UserFeedbackMessage.language == language,
-                UserFeedbackMessage.program_id == program_id,
-                Message.deployment_number == deployment,
-            )
-            .options(
-                subqueryload(UserFeedbackMessage.recipient),
-                subqueryload(UserFeedbackMessage.content_metadata),
-            )
-            .first()
-        )
-        if result is None:
-            raise HTTPException(status_code=404, detail="Message not found")
-
-        return ApiResponse(data=[result])
 
     subquery = select(Analysis.message_uuid).where(
         Analysis.message_uuid == Message.message_uuid
