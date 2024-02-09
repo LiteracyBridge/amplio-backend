@@ -61,7 +61,7 @@ def get_statistics(
     user_feedback = list(filter(lambda x: x.analyst_email == email, analysis))
 
     data = {
-        "user_feedback": len(user_feedback),
+        "by_current_user": len(user_feedback),
         "total_analysed": len(analysis),
         "total_useless": len(list(filter(lambda x: x.is_useless is True, messages))),
         "total_messages": len(messages),
@@ -95,6 +95,32 @@ def get_analysed_messages(
     )
 
     return ApiResponse(data=query)
+
+
+@router.delete("/{survey_id}/submissions/{message_id}")
+def delete_submission(survey_id: int, message_id: str, db: Session = Depends(get_db)):
+    """Delete an analysis submission
+    This also deletes the choices associated with the analysis
+    """
+
+    analysis = (
+        db.query(Analysis)
+        .filter(
+            Analysis.message_uuid == message_id,
+            exists(Question).where(
+                Question.survey_id == survey_id, Question.id == Analysis.question_id
+            ),
+        )
+        .all()
+    )
+
+    for item in analysis:
+        db.delete(item)
+        db.query(AnalysisChoice).filter(AnalysisChoice.analysis_id == item.id).delete()
+
+    db.commit()
+
+    return ApiResponse(data=[])
 
 
 class AnalysisDto(BaseModel):

@@ -1,4 +1,5 @@
 import itertools
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import and_
@@ -18,11 +19,16 @@ def get_report(
     survey_id: int,
     deployment: str,
     language: str,
+    message_id: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
-    analysis = (
-        db.query(Analysis)
-        .join(
+    query = db.query(Analysis)
+
+    if (message_id is not None) or message_id != "null":
+        query = query.filter(Analysis.message_uuid == message_id)
+
+    query = (
+        query.join(
             Message,
             and_(
                 Message.message_uuid == Analysis.message_uuid,
@@ -42,8 +48,9 @@ def get_report(
             subqueryload(Analysis.choices).options(subqueryload(AnalysisChoice.choice)),
             subqueryload(Analysis.question),
         )
-        .all()
     )
+
+    analysis = query.all()
 
     questions = db.query(Question).filter(Question.survey_id == survey_id).all()
 

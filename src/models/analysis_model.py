@@ -32,7 +32,7 @@ class Analysis(BaseModel, SoftDeleteMixin):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     # is_useless: Mapped[bool] = mapped_column(Boolean, default=False)
     message_uuid: Mapped[str] = mapped_column(ForeignKey("uf_messages.message_uuid"))
-    analyst_email: Mapped[str]  # TODO: replace with user_id
+    analyst_email: Mapped[str] = mapped_column(String)
     start_time: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
