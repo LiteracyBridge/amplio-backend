@@ -1,8 +1,8 @@
 from itertools import count
-from typing import Optional
+from typing import Annotated, Optional
 
 import boto3 as boto3
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session, subqueryload
 from sqlalchemy.sql.functions import random
@@ -106,3 +106,25 @@ def get_message_samples(
     )
 
     return ApiResponse(data=result)
+
+
+@router.post("/{program_id}/transcribe")
+def transcribe_message(
+    program_id: str,
+    message_id: Annotated[str, Body(...)],
+    transcription: Annotated[str, Body(...)],
+    db: Session = Depends(get_db),
+):
+    message = (
+        db.query(Message)
+        .where(Message.message_uuid == message_id, Message.program_id == program_id)
+        .first()
+    )
+
+    if message is None:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    message.transcription = transcription
+    db.commit()
+
+    return ApiResponse(data=[message])
