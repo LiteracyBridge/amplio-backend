@@ -1,20 +1,20 @@
 ROLES_TEMPLATE = {
     "acm": [
-        "manage-deployment",
-        "manage-playlist",
-        "manage-prompt",
-        "manage-content",
-        "manage-checkout",
+        "manage_deployment",
+        "manage_playlist",
+        "manage_prompt",
+        "manage_content",
+        "manage_checkout",
     ],
     "talking_book_loader": [
-        "deploy-content",
+        "deploy_content",
     ],
-    "user_feedback": ["manage-survey", "analyse-survey", "review-analysis"],
-    "staff": ["manage-staff", "manage-role"],
+    "user_feedback": ["manage_survey", "analyse_survey", "review_analysis"],
+    "staff": ["manage_staff", "manage_role"],
     "program": [
-        "manage-users",
-        "manage-specification",
-        "manage-program",
+        "manage_users",
+        "manage_specification",
+        "manage_program",
     ],
-    "statistics": ["view-tb-analytics", "view-deployment-status"],
+    "statistics": ["view_tb_analytics", "view_deployment_status"],
 }
