@@ -32,7 +32,7 @@ def get_roles(user: User = Depends(current_user), db: Session = Depends(get_db))
 
 
 @router.post("")
-def crate_roles(
+def create_role(
     body: NewRoleDto, db: Session = Depends(get_db), user: User = Depends(current_user)
 ):
     """Create a new role"""

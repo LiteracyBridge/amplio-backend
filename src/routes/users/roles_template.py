@@ -16,4 +16,5 @@ ROLES_TEMPLATE = {
         "manage-specification",
         "manage-program",
     ],
+    "statistics": ["view-tb-analytics", "view-deployment-status"],
 }
