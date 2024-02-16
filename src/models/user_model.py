@@ -41,6 +41,16 @@ class User(TimestampMixin, SoftDeleteMixin, BaseModel):
     )
 
     # TODO: a permissions field, similar to ts
+    permissions: dict[str, bool] = {}
+
+    def load_permissions(self):
+        # Parse roles into a map of permissions that can be used to check permissions in the UI
+        for role in self.roles:
+            for module, actions in role.role.permissions.items():
+                for action in actions:
+                    self.permissions[action] = True
+
+        return self.permissions
 
 
 class ProgramUser(TimestampMixin, BaseModel):

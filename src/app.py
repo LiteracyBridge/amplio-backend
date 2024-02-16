@@ -8,15 +8,22 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 from sentry_sdk.integrations.aws_lambda import AwsLambdaIntegration
+from sqlalchemy.orm import subqueryload
+from sqlalchemy.sql import roles
 
 from config import config
 from handlers.exception_handler import exception_handler
 from handlers.http_exception_handler import http_exception_handler
-from jwt_verifier import CognitoAuthenticator, auth_check
+from jwt_verifier import (
+    USER_CACHE,
+    VERIFIED_JWT_CLAIMS_CACHE,
+    CognitoAuthenticator,
+    auth_check,
+)
 from middlewares.correlation_id_middleware import CorrelationIdMiddleware
 from middlewares.logging_middleware import LoggingMiddleware
 from models import get_db
-from models.user_model import current_user
+from models.user_model import User, UserRole, current_user
 from monitoring import logging_config
 from routes import (
     categories_route,
@@ -28,6 +35,7 @@ from routes import (
 from routes.dashboard_queries import dashboard_queries_route
 from routes.program_spec import program_spec_route
 from routes.users import roles_route, users_route
+from routes.users.roles_template import Permission
 
 if config.sentry_dsn is not None:
     sentry_sdk.init(
@@ -87,9 +95,35 @@ async def verify_jwt(request: Request, call_next):
     if not token:
         raise HTTPException(status_code=401, detail="No access token provided")
 
-    cognito_auth.verify_token(token.replace("Bearer ", ""))
+    token = token.replace("Bearer ", "")
+    cognito_auth.verify_token(token)
+    email = str(VERIFIED_JWT_CLAIMS_CACHE.get(token, {}).get("email"))
 
-    request.state.current_user = current_user(request=request, db=next(get_db()))
+    # Query current user from db and attach to request state
+    if USER_CACHE.get(email, None) is not None and isinstance(
+        USER_CACHE.get(email), User
+    ):
+        # If the user is already in the cache, skip the db query
+        request.state.current_user = USER_CACHE[email]
+    else:
+        user = (
+            next(get_db())
+            .query(User)
+            .filter(User.email == email)
+            .options(subqueryload(User.roles).options(subqueryload(UserRole.role)))
+            .first()
+        )
+
+        if user is None:
+            raise HTTPException(
+                status_code=401,
+                detail="Unauthorized",
+            )
+
+        user.load_permissions()
+        USER_CACHE[email] = user
+        request.state.current_user = user
+
     response = await call_next(request)
 
     return response
@@ -107,7 +141,7 @@ if not config.is_local:
     #   Error handlers configuration                                              #
     ###############################################################################
     app.add_exception_handler(Exception, exception_handler)
-    app.add_exception_handler(HTTPException, http_exception_handler)
+    app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore
 
     ###############################################################################
     #   Middlewares configuration                                                 #
@@ -122,7 +156,7 @@ if not config.is_local:
 #   Routers configuration                                                     #
 ###############################################################################
 @app.get("/me")
-@auth_check(roles=["admin"])
+@auth_check(roles=[Permission.manage_playlist])
 def test(request: Request):
     return {"message": "Hello World"}
 

@@ -6,31 +6,40 @@ import json
 import logging
 import os
 import time
-from typing import Dict, List
+from functools import wraps
+from typing import Any, Dict, List
 
+from fastapi import Depends, Request
 from jose import jwk, jwt
 from jose.exceptions import JWTError
 from jose.utils import base64url_decode
 from pydantic import BaseModel
+
 from config import config
-from functools import wraps
 
-VERIFIED_JWT_CLAIMS_CACHE = {}
-CACHED_USERS = {}
+# from models.user_model import User
+from routes.users.roles_template import Permission
+
+VERIFIED_JWT_CLAIMS_CACHE: Dict[str, dict] = {}
+USER_CACHE: Dict[str, Any] = {}  # {email: <user object>}
 
 
-
-def auth_check(roles):
+def auth_check(
+    roles: Permission | list[Permission], request: Request = Depends(Request)
+):
     def decorator_auth(func):
 
         @wraps(func)
         def wrapper_auth(*args, **kwargs):
+            print(request)
+
             print(args)
             print(kwargs)
-            print(kwargs['request'].state.current_user)
+            print(kwargs["request"].state.current_user)
             return func(*args, **kwargs)
 
         return wrapper_auth
+
     return decorator_auth
 
 
