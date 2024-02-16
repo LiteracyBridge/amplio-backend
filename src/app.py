@@ -18,7 +18,7 @@ from jwt_verifier import (
     USER_CACHE,
     VERIFIED_JWT_CLAIMS_CACHE,
     CognitoAuthenticator,
-    auth_check,
+    has_permission,
 )
 from middlewares.correlation_id_middleware import CorrelationIdMiddleware
 from middlewares.logging_middleware import LoggingMiddleware
@@ -155,8 +155,8 @@ if not config.is_local:
 ###############################################################################
 #   Routers configuration                                                     #
 ###############################################################################
-@app.get("/me")
-@auth_check(roles=[Permission.manage_playlist])
+@app.get("/me", dependencies=[Depends(has_permission(Permission.review_analysis))])
+# @auth_check(roles=[Permission.manage_playlist])
 def test(request: Request):
     return {"message": "Hello World"}
 

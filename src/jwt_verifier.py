@@ -9,7 +9,7 @@ import time
 from functools import wraps
 from typing import Any, Dict, List
 
-from fastapi import Depends, Request
+from fastapi import Depends, HTTPException, Request
 from jose import jwk, jwt
 from jose.exceptions import JWTError
 from jose.utils import base64url_decode
@@ -24,23 +24,43 @@ VERIFIED_JWT_CLAIMS_CACHE: Dict[str, dict] = {}
 USER_CACHE: Dict[str, Any] = {}  # {email: <user object>}
 
 
-def auth_check(
-    roles: Permission | list[Permission], request: Request = Depends(Request)
-):
-    def decorator_auth(func):
+def has_permission(action: Permission | List[Permission]):
 
-        @wraps(func)
-        def wrapper_auth(*args, **kwargs):
-            print(request)
+    def _can(request: Request) -> bool:
+        permissions = request.state.current_user.permissions
+        has = False
 
-            print(args)
-            print(kwargs)
-            print(kwargs["request"].state.current_user)
-            return func(*args, **kwargs)
+        if isinstance(action, list):
+            has = any(permissions.get(a.value, False) == True for a in action)
+        else:
+            has = permissions.get(action.value, False) == True
 
-        return wrapper_auth
+        if not has:
+            raise HTTPException(
+                status_code=403, detail="Not enough permission to perform this action"
+            )
 
-    return decorator_auth
+        return True
+
+    return _can
+
+
+# def auth_check(roles: Permission | list[Permission], request: Request):
+#     print(roles)
+# def decorator_auth(func):
+
+#     @wraps(func)
+#     def wrapper_auth(*args, **kwargs):
+#         print(request)
+
+#         print(args)
+#         print(kwargs)
+#         print(kwargs["request"].state.current_user)
+#         return func(*args, **kwargs)
+
+#     return wrapper_auth
+
+# return decorator_auth
 
 
 class JWK(BaseModel):
