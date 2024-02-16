@@ -1,20 +1,14 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from sqlalchemy import (
-    JSON,
-    Boolean,
-    ForeignKey,
-    Integer,
-    String,
-)
+from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from database import BaseModel, SessionLocal
-from models.timestamps_model import SoftDeleteMixin, TimestampMixin
 from models.organisation_model import Organisation
+from models.timestamps_model import SoftDeleteMixin, TimestampMixin
 
 
 class Role(BaseModel, SoftDeleteMixin, TimestampMixin):
