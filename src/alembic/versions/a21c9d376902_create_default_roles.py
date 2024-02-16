@@ -8,6 +8,7 @@ Create Date: 2024-02-16 15:53:56.049553
 
 """
 
+from datetime import date, datetime
 from json import dumps
 
 import sqlalchemy as sa
@@ -44,14 +45,22 @@ def upgrade() -> None:
         "statistics": ["view_tb_analytics", "view_deployment_status"],
     }
 
-    names = ["Administrator", "Program Officer", "Content Officer", "Field Officer"]
+    names = ["Administrator", "Program Manager", "Content Officer", "Field Officer"]
     organisations = (
         op.get_bind().execute(sa.text("SELECT id FROM organisations")).fetchall()
     )
     for org in organisations:
         for name in names:
             op.execute(
-                f"INSERT INTO roles (name, description, organisation_id, permissions) VALUES ('{name}', '{name} role', {org[0]}, '{dumps(PERMISSIONS)}')"
+                sa.text(
+                    "INSERT INTO roles (name, description, organisation_id, permissions, created_at, updated_at) VALUES (:name, :desc, :org, :permissions, :date, :date)"
+                ).bindparams(
+                    date=datetime.now(),
+                    desc=f"{name} role",
+                    name=name,
+                    org=org[0],
+                    permissions=dumps(PERMISSIONS),
+                )
             )
 
 
