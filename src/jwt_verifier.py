@@ -2,14 +2,12 @@
 # Source: https://stackoverflow.com/a/70688292
 #
 
-import json
-import logging
-import os
+
 import time
 from functools import wraps
 from typing import Any, Dict, List
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import HTTPException, Request
 from jose import jwk, jwt
 from jose.exceptions import JWTError
 from jose.utils import base64url_decode
@@ -40,27 +38,9 @@ def has_permission(action: Permission | List[Permission]):
                 status_code=403, detail="Not enough permission to perform this action"
             )
 
-        return True
+        return has
 
     return _can
-
-
-# def auth_check(roles: Permission | list[Permission], request: Request):
-#     print(roles)
-# def decorator_auth(func):
-
-#     @wraps(func)
-#     def wrapper_auth(*args, **kwargs):
-#         print(request)
-
-#         print(args)
-#         print(kwargs)
-#         print(kwargs["request"].state.current_user)
-#         return func(*args, **kwargs)
-
-#     return wrapper_auth
-
-# return decorator_auth
 
 
 class JWK(BaseModel):

@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship, subqueryload
 
 from database import BaseModel, get_db
-from jwt_verifier import VERIFIED_JWT_CLAIMS_CACHE
+from jwt_verifier import USER_CACHE, VERIFIED_JWT_CLAIMS_CACHE
 from models.organisation_model import Organisation
 from models.program_model import Program
 from models.role_model import Role
@@ -121,23 +121,7 @@ class Invitation(TimestampMixin, SoftDeleteMixin, BaseModel):
         return user
 
 
-def current_user(request: Request, db: Session = Depends(get_db)) -> User:
+def current_user(request: Request) -> User:
     """Returns the current user object from the request object"""
 
-    token: str = str(request.headers.get("Authorization").replace("Bearer ", ""))  # type: ignore
-    email = VERIFIED_JWT_CLAIMS_CACHE.get(token, {}).get("email")
-    if email is None:
-        raise HTTPException(
-            status_code=401,
-            detail="Unauthorized",
-        )
-
-    user = db.query(User).filter(User.email == email).first()
-
-    if user is None:
-        raise HTTPException(
-            status_code=401,
-            detail="Unauthorized",
-        )
-
-    return user
+    return request.state.current_user
