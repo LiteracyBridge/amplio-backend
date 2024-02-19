@@ -1,46 +1,43 @@
-Code Red:
-    ☐ add current user to request object (after jwt verification) => request.state = current_user
-    ☐
 
 Settings:
     User roles:
-        ☐ remove `program_id` from user_roles table
-        ✔ programs queries restriction @done(24-01-24 21:35)
-        ✔ roles assignment @done(24-01-24 21:35)
-            ✔ move it to users table @done(24-01-24 21:35)
-            ✔ show program names @done(24-01-24 21:35)
         ☐ add user profile page
 
     Programs:
         ☐ permissions check
-        ☐ add users drawer
-            ☐ remove user from program
-            ☐ add user to program
         ☐ archive program
 
 Program Language Selection:
     ☐ database update on spec-put
     ☐ handle message_language code verification in app since constraint has been removed
 
-
-    ✔ Deployment: @done(23-11-02 17:12)
-        ✔ IAM db access permision @done(23-11-02 17:12)
-        ✔ IAM secrets access permision @done(23-11-02 17:12)
     Sheet upload:
-        ✔ diff and update program languages @done(23-10-09 07:12)
         ☐ diff and update supported languages
         ☐ add validation to ensure message languages are also in program languages
-    Sheet Downlload:
-        ☐ add supported languages worksheet
-        ☐ update program languages worksheet with the project languages
 
     Update via ui:
-        ☐ add new docker deplyment url
         ☐ update ui to support adding new languages
             ☐ diff and update program languages on update
 
-Suite Frontend:
-    ☐ vue3 migration
-        ☐ program spec -> deployments & content -># draggable not updating deployments order
-        ✔ setup tsc @done(23-10-21 12:33)
-        ✔ setup vue3-compact @done(23-10-21 12:33)
+
+Archive:
+  ✔ vue3 migration @done(24-02-19 22:56) @project(Program Language Selection)
+  ✔ program spec -> deployments & content -># draggable not updating deployments order @done(24-02-19 22:56) @project(Program Language Selection)
+  ✔ remove `program_id` from user_roles table @done(24-02-19 22:55) @project(Settings.User roles)
+  ✔ add users drawer @done(24-02-19 22:55) @project(Settings.Programs)
+  ✔ remove user from program @done(24-02-19 22:55) @project(Settings.Programs)
+  ✔ add user to program @done(24-02-19 22:55) @project(Settings.Programs)
+  ✔ add supported languages worksheet @done(24-02-19 22:55) @project(Program Language Selection.Sheet Downlload)
+  ✔ update program languages worksheet with the project languages @done(24-02-19 22:55) @project(Program Language Selection.Sheet Downlload)
+  ✔ add new docker deplyment url @done(24-02-19 22:55) @project(Program Language Selection.Update via ui)
+  ✔ add current user to request object (after jwt verification) => request.state = current_user @done(24-02-19 22:55) @project(Code Red)
+  ✔ programs queries restriction @done(24-01-24 21:35) @project(Settings.User roles)
+  ✔ roles assignment @done(24-01-24 21:35) @project(Settings.User roles)
+  ✔ move it to users table @done(24-01-24 21:35) @project(Settings.User roles)
+  ✔ show program names @done(24-01-24 21:35) @project(Settings.User roles)
+  ✔ Deployment: @done(23-11-02 17:12) @project(Program Language Selection)
+  ✔ IAM db access permision @done(23-11-02 17:12) @project(Program Language Selection)
+  ✔ IAM secrets access permision @done(23-11-02 17:12) @project(Program Language Selection)
+  ✔ diff and update program languages @done(23-10-09 07:12) @project(Program Language Selection.Sheet upload)
+  ✔ setup tsc @done(23-10-21 12:33) @project(Suite Frontend)
+  ✔ setup vue3-compact @done(23-10-21 12:33) @project(Suite Frontend)
