@@ -23,27 +23,6 @@ VERIFIED_JWT_CLAIMS_CACHE: Dict[str, dict] = {}
 USER_CACHE: Dict[str, Any] = {}  # {email: <user object>}
 
 
-def has_permission(action: Permission | List[Permission]):
-
-    def _can(request: Request) -> bool:
-        permissions = request.state.current_user.permissions
-        has = False
-
-        if isinstance(action, list):
-            has = any(permissions.get(a.value, False) == True for a in action)
-        else:
-            has = permissions.get(action.value, False) == True
-
-        if not has:
-            raise HTTPException(
-                status_code=403, detail="Not enough permission to perform this action"
-            )
-
-        return has
-
-    return _can
-
-
 class JWK(BaseModel):
     """A JSON Web Key (JWK) model that represents a cryptographic key.
 
