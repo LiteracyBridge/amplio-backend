@@ -33,6 +33,7 @@ types-psycopg2 = "*"
 pyright = "*"
 types-python-dateutil = "*"
 boto3-stubs = "*"
+types-requests = "*"
 
 [requires]
 python_version = "^3.11"

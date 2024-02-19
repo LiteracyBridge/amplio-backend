@@ -155,17 +155,14 @@ if not config.is_local:
 ###############################################################################
 #   Routers configuration                                                     #
 ###############################################################################
-@app.get("/me", dependencies=[Depends(has_permission(Permission.review_analysis))])
-# @auth_check(roles=[Permission.manage_playlist])
-def test(request: Request):
-    return {"message": "Hello World"}
-
-
 app.include_router(
     program_spec_route.router,
     prefix="/program-spec",
     tags=["program-spec"],
-    dependencies=[Depends(get_db)],
+    dependencies=[
+        Depends(get_db),
+        Depends(has_permission(Permission.manage_specification)),
+    ],
 )
 app.include_router(
     program_route.router,
@@ -189,7 +186,7 @@ app.include_router(
     roles_route.router,
     prefix="/users/roles",
     tags=["user-roles"],
-    dependencies=[Depends(get_db)],
+    dependencies=[Depends(get_db), Depends(has_permission(Permission.manage_role))],
 )
 app.include_router(
     language_route.router,

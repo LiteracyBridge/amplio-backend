@@ -7,6 +7,7 @@ import time
 from functools import wraps
 from typing import Any, Dict, List
 
+import requests
 from fastapi import HTTPException, Request
 from jose import jwk, jwt
 from jose.exceptions import JWTError
@@ -76,7 +77,6 @@ class CognitoAuthenticator:
         Raises:
             Exception when JWKS endpoint does not contain any keys
         """
-        import requests
 
         res = requests.get(self.issuer)
         if res.status_code == 200:
