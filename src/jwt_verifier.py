@@ -16,9 +16,6 @@ from pydantic import BaseModel
 
 from config import config
 
-# from models.user_model import User
-from routes.users.roles_template import Permission
-
 VERIFIED_JWT_CLAIMS_CACHE: Dict[str, dict] = {}
 USER_CACHE: Dict[str, Any] = {}  # {email: <user object>}
 

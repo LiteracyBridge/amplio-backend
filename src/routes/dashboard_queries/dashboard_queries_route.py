@@ -8,11 +8,17 @@ from models.recipient_model import Recipient
 from models.tb_deployed_model import TalkingBookDeployed
 from routes.dashboard_queries.tb_status import get_status
 from schema import ApiResponse
+from utilities.roles import Permission, has_permission
 
 router = APIRouter()
 
 
-@router.get("/{program_id}/status")
+@router.get(
+    "/{program_id}/status",
+    dependencies=[
+        Depends(has_permission([Permission.view_deployment_status])),
+    ],
+)
 def status(program_id: str, selector: str, db: Session = Depends(get_db)):
     return ApiResponse(
         data=get_status(
@@ -22,7 +28,12 @@ def status(program_id: str, selector: str, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/{program_id}/recipients/{deployment}")
+@router.get(
+    "/{program_id}/recipients/{deployment}",
+    dependencies=[
+        Depends(has_permission(Permission.view_tb_analytics)),
+    ],
+)
 def recipients(program_id: str, deployment: str, db: Session = Depends(get_db)):
     return ApiResponse(
         data=db.query(Recipient)

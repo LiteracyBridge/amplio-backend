@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session, subqueryload
 
 from models import Program, Role, User, current_user, get_db
 from models.user_model import ProgramUser, UserRole
-from routes.users.roles_template import ROLES_LIST
 from routes.users.users_route import get_all_users
 from schema import ApiResponse
+from utilities.roles import ROLES_LIST
 
 router = APIRouter()
 

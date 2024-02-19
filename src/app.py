@@ -14,12 +14,7 @@ from sqlalchemy.sql import roles
 from config import config
 from handlers.exception_handler import exception_handler
 from handlers.http_exception_handler import http_exception_handler
-from jwt_verifier import (
-    USER_CACHE,
-    VERIFIED_JWT_CLAIMS_CACHE,
-    CognitoAuthenticator,
-    has_permission,
-)
+from jwt_verifier import USER_CACHE, VERIFIED_JWT_CLAIMS_CACHE, CognitoAuthenticator
 from middlewares.correlation_id_middleware import CorrelationIdMiddleware
 from middlewares.logging_middleware import LoggingMiddleware
 from models import get_db
@@ -35,7 +30,7 @@ from routes import (
 from routes.dashboard_queries import dashboard_queries_route
 from routes.program_spec import program_spec_route
 from routes.users import roles_route, users_route
-from routes.users.roles_template import Permission
+from utilities.roles import Permission, has_permission
 
 if config.sentry_dsn is not None:
     sentry_sdk.init(
