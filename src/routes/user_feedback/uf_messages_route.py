@@ -11,6 +11,7 @@ from models import Analysis
 from models import UserFeedbackMessage as Message
 from models import get_db
 from models.uf_message_model import UserFeedbackMessage
+from models.user_model import User, current_user
 from schema import ApiResponse
 
 MINIMUM_SECONDS_FILTER = 0  # filters out any UF messages of less than this # of seconds
@@ -125,6 +126,27 @@ def transcribe_message(
         raise HTTPException(status_code=404, detail="Message not found")
 
     message.transcription = transcription
+    db.commit()
+
+    return ApiResponse(data=[message])
+
+
+@router.post("/{program_id}/not-feedback/{message_id}")
+def mark_as_not_feedback(
+    program_id: str,
+    message_id: str,
+    db: Session = Depends(get_db),
+):
+    message = (
+        db.query(Message)
+        .where(Message.message_uuid == message_id, Message.program_id == program_id)
+        .first()
+    )
+
+    if message is None:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    message.is_useless = True
     db.commit()
 
     return ApiResponse(data=[message])
