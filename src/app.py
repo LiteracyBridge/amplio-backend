@@ -109,6 +109,7 @@ async def verify_jwt(request: Request, call_next):
             .first()
         )
 
+        # TODO: check if user is accepting invitation, path  -> /me
         if user is None:
             raise HTTPException(
                 status_code=401,

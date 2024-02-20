@@ -18,7 +18,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, foreign, mapped_column, relationship, validates
 
-from database import BaseModel, SessionLocal
+from database import BaseModel, SessionLocal, get_db
 from models.message_models import Message
 
 
@@ -73,12 +73,14 @@ class Playlist(BaseModel):
 
         # TODO: optimize this
         query = (
-            select([func.coalesce(func.max(Playlist.position), 0)])
+            select(func.coalesce(func.max(Playlist.position), 0))
             .where(Playlist.program_id == kwargs["program_id"])
             .where(Playlist.deployment_id == kwargs["deployment_id"])
-        )
+        )  # Type: ignore
 
-        position = SessionLocal.execute(query).scalar() + 1
+        results = next(get_db()).execute(query).scalar()
+        position = 0 if results is None else results + 1
+
         kwargs["position"] = position
         kwargs["title"] = f"Playlist {position}"
 

@@ -24,6 +24,8 @@ def get_jwt(user: User = Depends(current_user)):
     headers = {"kid": config.tableau_secret_id, "iss": config.tableau_client_id}
     # Tableau is unclear on this; the example mentions "key", which is undoc'd
     algorithm = "HS256"
-    token = jwt.encode(claims, config.tableau_secret_value, algorithm, headers=headers)
+    token = jwt.encode(
+        claims, str(config.tableau_secret_value), algorithm, headers=headers
+    )
 
     return ApiResponse(data=[token])

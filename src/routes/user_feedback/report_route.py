@@ -83,19 +83,19 @@ def get_report(
             value = a.response
 
             if len(a.choices) > 0:
-                value = ", ".join([c.choice.value for c in a.choices])
+                value = ", ".join([c.choice.value for c in a.choices])  # type: ignore
 
-            row[1] = a.message.transcription
-            row[mapped[str(a.question_id)]] = value
+            row[1] = a.message.transcription  # type: ignore
+            row[mapped[str(a.question_id)]] = value  # type: ignore
 
             if a.message.content_metadata is not None:
-                row[0] = a.message.content_metadata.title
+                row[0] = a.message.content_metadata.title  # type: ignore
 
             if a.message.recipient is not None:
-                row[2] = a.message.recipient.district
-                row[3] = a.message.recipient.community_name
-                row[4] = a.message.recipient.group_name
+                row[2] = a.message.recipient.district  # type: ignore
+                row[3] = a.message.recipient.community_name  # type: ignore
+                row[4] = a.message.recipient.group_name  # type: ignore
 
-        rows.append(row)
+        rows.append(row)  # type: ignore
 
     return ApiResponse(data=rows)

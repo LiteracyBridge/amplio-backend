@@ -53,7 +53,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     """
 
     token: str = str(request.headers.get("Authorization").replace("Bearer ", ""))  # type: ignore
-    email = VERIFIED_JWT_CLAIMS_CACHE[token].get("email")
+    email = str(VERIFIED_JWT_CLAIMS_CACHE[token].get("email"))
 
     user = (
         db.query(User)
