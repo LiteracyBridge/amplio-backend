@@ -87,7 +87,7 @@ def get_message_samples(
     )
 
     # Limit results to 51% of the total messages
-    limit = int(total_messages * 0.51)
+    limit = int(total_messages * 0.12)
 
     result = (
         db.query(UserFeedbackMessage)
