@@ -30,7 +30,7 @@ class User(TimestampMixin, SoftDeleteMixin, BaseModel):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     first_name: Mapped[str] = mapped_column(String, nullable=True)
     last_name: Mapped[str] = mapped_column(String, nullable=True)
-    email: Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     phone_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     organisation_id: Mapped[int] = mapped_column(ForeignKey("organisations.id"))
 
@@ -61,23 +61,6 @@ class ProgramUser(TimestampMixin, BaseModel):
 
     user: Mapped[User] = relationship("User", back_populates="programs")
     program: Mapped[Program] = relationship("Program")
-    # roles: Mapped[List[UserRole]] = relationship(
-    #     "UserRole",
-    #     primaryjoin="and_(ProgramUser.program_id == foreign(UserRole.program_id), ProgramUser.user_id == foreign(UserRole.user_id))",
-    #     overlaps="program",
-    #     viewonly=True,
-    # )
-
-    # @staticmethod
-    # def add_user(user_id: int, program_id: int, db: Session):
-    #     program_user = ProgramUser()
-    #     program_user.user_id = user_id
-    #     program_user.program_id = program_id
-
-    #     db.add(program_user)
-    #     db.commit()
-
-    #     return program_user
 
 
 class Invitation(TimestampMixin, SoftDeleteMixin, BaseModel):

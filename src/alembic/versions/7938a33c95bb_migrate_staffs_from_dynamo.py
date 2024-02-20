@@ -57,7 +57,6 @@ def upgrade() -> None:
                 .fetchall()
             )
 
-            print(email, S)
             roles = S.split(",")
             for role_key in roles:
                 if role_key == "*":
