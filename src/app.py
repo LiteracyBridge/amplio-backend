@@ -194,7 +194,10 @@ app.include_router(
     tableau_route.router,
     prefix="/tableau",
     tags=["tableau"],
-    dependencies=[Depends(get_db)],
+    dependencies=[
+        Depends(get_db),
+        Depends(has_permission(Permission.view_tb_analytics)),
+    ],
 )
 app.include_router(
     dashboard_queries_route.router,
