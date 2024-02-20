@@ -2,6 +2,8 @@
 
 This project uses FastAPI and is deployed as a Lambda function using AWS ECR.
 
+[![Checked with pyright](https://microsoft.github.io/pyright/img/pyright_badge.svg)](https://microsoft.github.io/pyright/)
+
 ## Prerequisites
 
 - Python 3.8 or higher
