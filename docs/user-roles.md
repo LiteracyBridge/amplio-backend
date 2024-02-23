@@ -1,49 +1,14 @@
-# User Roles
+# Roles and Permissions
 
 ## Overview
 
-The roles are used to define the permissions of the users. Users can be assigned multiple roles, based on the permissions they need. If a user has multiple roles, the permissions of all the roles are combined as a union.
+A role comprises of a set of permissions. An **administrator** role, for example, can consists of permission to manage user accounts, create or delete deployments,update program specification and manage programs. In addition, a user can be assigned multiple roles.
 
-Roles are defined at the organisation level. An organisation can have has its own set of roles.
+## Permissions Structure
 
-![Roles database structure](assets/images/user-roles-db-structure.png)
+To simply implementation, permission are grouped by their modules. For example,
+the **statistics** module consists `view_tb_analytics` and `view_deployment_status` permissions. The permissions list can be found in [roles.py](https://github.com/LiteracyBridge/amplio-suite-api/blob/dev/src/utilities/roles.py#L7). Thus, a role consists of multiple modules and each module has one or more permissions.
 
-## Endpoints
+Roles are created at the organisation level, and can be assigned **only** to users in that organisation.
 
-> `GET /api/roles`
-
-Returns the list of the organisation's roles.
-
-```json
-{
-    "data": [
-        {
-            "id": 1,
-            "name": "Admin",
-            "permissions": [
-                { "module": ["...permissions"] },
-                { "acm_tbloader": ["can-create-deployment", "can-update-playlist"] }
-            ]
-        }
-    ]
-}
-```
-
-> `POST /api/roles`
-
-Creates a new role for the organisation.
-
-> `DELETE /api/roles/:id`
-
-Deletes the role with the given id.
-
-> `POST /api/roles/assign`
-
-Assigns a role(s) to a user. Request format:
-
-```json
-{
-    "user_id": 1,
-    "role_ids": [1, 2]
-}
-```
+## Permissions in User Object
