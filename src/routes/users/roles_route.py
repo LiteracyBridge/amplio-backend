@@ -9,7 +9,7 @@ from models import Program, Role, User, current_user, get_db
 from models.user_model import ProgramUser, UserRole
 from routes.users.users_route import get_all_users
 from schema import ApiResponse
-from utilities.roles import ROLES_LIST
+from utilities.permissions import PERMISSIONS_TEMPLATE
 
 router = APIRouter()
 
@@ -138,4 +138,4 @@ def delete_role(
 
 @router.get("/template")
 def get_template():
-    return ApiResponse(data=[ROLES_LIST])
+    return ApiResponse(data=[PERMISSIONS_TEMPLATE])

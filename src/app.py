@@ -30,7 +30,7 @@ from routes import (
 from routes.dashboard_queries import dashboard_queries_route
 from routes.program_spec import program_spec_route
 from routes.users import roles_route, users_route
-from utilities.roles import Permission, has_permission
+from utilities.permissions import Permission, has_permission
 
 if config.sentry_dsn is not None:
     sentry_sdk.init(

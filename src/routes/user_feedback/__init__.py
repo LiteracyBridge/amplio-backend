@@ -7,7 +7,7 @@ from routes.user_feedback import (
     survey_route,
     uf_messages_route,
 )
-from utilities.roles import Permission, has_permission
+from utilities.permissions import Permission, has_permission
 
 uf_routes = APIRouter()
 

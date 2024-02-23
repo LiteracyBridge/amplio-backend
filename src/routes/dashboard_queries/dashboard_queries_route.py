@@ -8,7 +8,7 @@ from models.recipient_model import Recipient
 from models.tb_deployed_model import TalkingBookDeployed
 from routes.dashboard_queries.tb_status import get_status
 from schema import ApiResponse
-from utilities.roles import Permission, has_permission
+from utilities.permissions import Permission, has_permission
 
 router = APIRouter()
 
