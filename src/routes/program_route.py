@@ -19,7 +19,6 @@ from routes.program_spec.db import _ensure_content_view
 from routes.users.users_route import get_all_users
 from schema import ApiResponse
 from utilities.rolemanager import manager
-from utilities.rolemanager.role_checker import current_user as curr_user
 from utilities.rolemanager.rolesdb import RolesDb
 
 router = APIRouter()
@@ -35,6 +34,7 @@ STATUS_MISSING_PARAMETER = "Missing parameter"
 DEFAULT_REPOSITORY = "dbx"
 
 
+# TODO: Rewrite this with new roles
 def get_program_info_for_user(email: str) -> Tuple[Dict[str, Dict[str, str]], str]:
     # Start with the user's roles in programs, because that gets the list of relevant programs
     # {program: roles}
@@ -47,9 +47,9 @@ def get_program_info_for_user(email: str) -> Tuple[Dict[str, Dict[str, str]], st
 
     # Add the friendly name, and collect repository info.
     # {repo: [prog1, prog2, ...]}
-    repository_programs: Dict[
-        str, List[str]
-    ] = {}  # list of programs in each repository.
+    repository_programs: Dict[str, List[str]] = (
+        {}
+    )  # list of programs in each repository.
     programs_table_items = (
         RolesDb().get_program_items()
     )  # programs_table.scan()['Items']
@@ -195,7 +195,7 @@ def _add_deployment_revs(
 def get_programs(
     depls: bool = False,
     use_async: bool = False,
-    email: str = Depends(curr_user),
+    email: str = Depends(current_user),
 ):
     # TODO: rewrite to use programs of the current user
 
