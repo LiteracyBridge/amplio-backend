@@ -57,4 +57,4 @@ class Question(BaseModel):
 
     # Relationships
     choices: Mapped[List[Choice]] = relationship("Choice")
-    analysis: Mapped[List["Analysis"]] = relationship("Analysis")  # type: ignore
+    analysis: Mapped[List["Analysis"]] = relationship("Analysis", back_populates="question")  # type: ignore

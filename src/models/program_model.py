@@ -56,8 +56,10 @@ class Project(BaseModel):
 
     deployments: Mapped[List[Deployment]] = relationship("Deployment")
     recipients: Mapped[List[Recipient]] = relationship("Recipient")
-    program: Mapped["Program"] = relationship("Program")
-    general: Mapped["Program"] = relationship("Program")  # This is for spec frontend
+    program: Mapped["Program"] = relationship("Program", back_populates="project")
+    general: Mapped["Program"] = relationship(
+        "Program", viewonly=True
+    )  # This is for spec frontend
 
 
 class Program(BaseModel):
@@ -84,11 +86,11 @@ class Program(BaseModel):
     # partner = Column(String, nullable=False)
     # affiliate = Column(String, nullable=False)
 
-    project: Mapped[Project] = relationship("Project")
+    project: Mapped[Project] = relationship("Project", back_populates="program")
     organisations: Mapped[List["OrganisationProgram"]] = relationship(
-        "OrganisationProgram"
+        "OrganisationProgram", back_populates="program"
     )
-    users: Mapped[List["ProgramUser"]] = relationship("ProgramUser")  # type: ignore
+    users: Mapped[List["ProgramUser"]] = relationship("ProgramUser", back_populates="program")  # type: ignore
 
     # @validates("deployments_length")
     # def validate_deployments_length(self, key, deployments_length):
@@ -162,7 +164,7 @@ class OrganisationProgram(BaseModel, SoftDeleteMixin, TimestampMixin):
     )
 
     organisation: Mapped[Organisation] = relationship("Organisation")
-    program: Mapped[Program] = relationship("Program")
+    program: Mapped[Program] = relationship("Program", back_populates="organisations")
 
 
 # should validate_list_input belong to a utils package of some sort?

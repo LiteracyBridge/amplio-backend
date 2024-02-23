@@ -40,13 +40,28 @@ class User(TimestampMixin, SoftDeleteMixin, BaseModel):
         "ProgramUser", back_populates="user"
     )
 
-    # TODO: a permissions field, similar to ts
-    permissions: dict[str, bool] = {}
+    permissions: dict[str, bool] = {}  # Map for permission { "action": True/False }
+
+    def to_dict(self):
+        user_dict = {
+            "id": self.id,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "email": self.email,
+            "phone_number": self.phone_number,
+            "organisation_id": self.organisation_id,
+            "permissions": self.permissions,
+            "organisation": self.organisation,
+            "roles": self.roles,
+            "programs": self.programs,
+        }
+
+        return user_dict
 
     def load_permissions(self):
         # Parse roles into a map of permissions that can be used to check permissions in the UI
         for role in self.roles:
-            for module, actions in role.role.permissions.items():
+            for _, actions in role.role.permissions.items():
                 for action in actions:
                     self.permissions[action] = True
 
@@ -60,7 +75,7 @@ class ProgramUser(TimestampMixin, BaseModel):
     program_id: Mapped[int] = mapped_column(ForeignKey("programs.id"), primary_key=True)
 
     user: Mapped[User] = relationship("User", back_populates="programs")
-    program: Mapped[Program] = relationship("Program")
+    program: Mapped[Program] = relationship("Program", back_populates="users")
 
 
 class Invitation(TimestampMixin, SoftDeleteMixin, BaseModel):

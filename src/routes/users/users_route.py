@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated, Optional, cast
 
 import boto3
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
@@ -90,7 +90,9 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
             .first()
         )
 
-    return ApiResponse(data=[user])
+    cast(User, user).load_permissions()
+
+    return ApiResponse(data=[cast(User, user).to_dict()])
 
 
 @router.get("")

@@ -64,6 +64,6 @@ class Analysis(BaseModel, SoftDeleteMixin):
     # )
 
     # Relationships
-    question: Mapped[Question] = relationship("Question")
+    question: Mapped[Question] = relationship("Question", back_populates="analysis")
     message: Mapped[UserFeedbackMessage] = relationship("UserFeedbackMessage")
     choices: Mapped[List[AnalysisChoice]] = relationship("AnalysisChoice")

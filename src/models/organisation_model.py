@@ -19,5 +19,5 @@ class Organisation(BaseModel):
         "Organisation", remote_side=[id]
     )
     children: Mapped[Optional["Organisation"]] = relationship(
-        "Organisation", remote_side=[parent_id]
+        "Organisation", remote_side=[parent_id], viewonly=True
     )
