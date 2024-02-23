@@ -63,6 +63,8 @@ def upgrade() -> None:
                     continue
 
                 name = role_names_map[role_key]
+                if len(staffId) == 0:
+                    continue
 
                 op.execute(
                     sa.text(
