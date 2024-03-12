@@ -2,9 +2,15 @@
 Settings:
     User roles:
         ☐ add user profile page
+        ☐ re-import user programs
+            ☐ roles
+        ☐ fix new role creation bug
+        ☐ fix invite login bug
+        ☐ fix program spec message language update
+            ☐ use program language in publishing spec
 
     Programs:
-        ☐ permissions check
+        ✔ permissions check @done(24-03-12 10:38)
         ☐ archive program
 
 Program Language Selection:
@@ -16,7 +22,7 @@ Program Language Selection:
         ☐ add validation to ensure message languages are also in program languages
 
     Update via ui:
-        ☐ update ui to support adding new languages
+        ✔ update ui to support adding new languages @done(24-03-12 10:39)
             ☐ diff and update program languages on update
 
 
