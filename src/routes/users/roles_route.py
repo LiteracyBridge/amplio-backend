@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated, Dict, List, Optional
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Request, UploadFile
@@ -42,6 +43,8 @@ def create_role(
     role.permissions = body.permissions
     role.description = body.description
     role.organisation_id = user.organisation_id
+    role.updated_at = datetime.now()
+    role.created_at = datetime.now()
 
     db.add(role)
     db.commit()
