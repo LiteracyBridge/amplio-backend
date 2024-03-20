@@ -39,7 +39,7 @@ class CognitoAuthenticator:
     def __init__(self) -> None:
         self.pool_region = "us-west-2"
         self.pool_id = config.user_pool_id
-        self.client_id = config.user_pool_client_id
+        self.client_id: list[str] = config.user_pool_client_id
         self.issuer = f"https://cognito-idp.{self.pool_region}.amazonaws.com/{config.user_pool_id}/.well-known/jwks.json"
 
         self.jwks = self.__get_jwks()
@@ -180,7 +180,7 @@ class CognitoAuthenticator:
 
         # verify audience
         # note: claims["client_id"] for access token, claims["aud"] otherwise
-        if claims.get("client_id", claims.get("aud")) != self.client_id:
+        if claims.get("client_id", claims.get("aud")) not in self.client_id:
             print("Invalid audience claim")
             raise InvalidAudienceError
 

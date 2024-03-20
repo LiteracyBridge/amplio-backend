@@ -90,7 +90,7 @@ async def verify_jwt(request: Request, call_next):
     if not token:
         raise HTTPException(status_code=401, detail="No access token provided")
 
-    token = token.replace("Bearer ", "")
+    token = token.replace("Bearer ", "").replace("Authorization: ", "")
     cognito_auth.verify_token(token)
     email = str(VERIFIED_JWT_CLAIMS_CACHE.get(token, {}).get("email"))
 

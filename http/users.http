@@ -1,3 +1,11 @@
+### Account Info
+GET {{apiUrl}}/users/me
+Accept: application/json  {{host}}
+Content-Type: application/json
+Authorization: Bearer {{ accessToken }}
+domain: {{ domain }}
+
+
 ### invite user
 POST {{apiUrl}}/users/invite
 Accept: application/json  {{host}}

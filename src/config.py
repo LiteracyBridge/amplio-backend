@@ -21,7 +21,7 @@ class Config:
     dynamodb_url: Optional[str] = None
 
     user_pool_id: Optional[str] = None
-    user_pool_client_id: Optional[str] = None
+    user_pool_client_id: list[str] = []
 
     sentry_dsn: Optional[str] = None
     sentry_environment: Optional[str] = None
@@ -47,7 +47,7 @@ class Config:
             self.sentry_environment = getenv("SENTRY_ENVIRONMENT", "local")
 
             self.user_pool_id = getenv("AWS_USER_POOL_ID", None)
-            self.user_pool_client_id = getenv("AWS_USER_POOL_CLIENT_ID", None)
+            self.user_pool_client_id = getenv("AWS_USER_POOL_CLIENT_ID", "").split(",")
 
             self.tableau_client_id = getenv("TABLEAU_CLIENT_ID", None)
             self.tableau_secret_id = getenv("TABLEAU_SECRET_ID", None)
@@ -79,7 +79,7 @@ class Config:
             self.sentry_environment = secrets.get("sentry_environment", "prod")
 
             self.user_pool_id = secrets["aws_user_pool_id"]
-            self.user_pool_client_id = secrets["aws_user_pool_client_id"]
+            self.user_pool_client_id = secrets["aws_user_pool_client_id"].split(",")
 
             # Load tableau secrets
             secret_string = client.get_secret_value(
