@@ -24,7 +24,7 @@ def get_report(
 ):
     query = db.query(Analysis)
 
-    if (message_id is not None) or message_id != "null":
+    if (message_id is not None) and message_id != "null":
         query = query.filter(Analysis.message_uuid == message_id)
 
     query = (
@@ -51,21 +51,26 @@ def get_report(
     )
 
     analysis = query.all()
-
     questions = db.query(Question).filter(Question.survey_id == survey_id).all()
 
-    # Map the questions into the form {question_id: index}
-    rows = []
-    questions_cols_start_index = 5  # Index of the first question column
-    rows.append(
-        ["Message", "Transcription", "District", "Community", "Group"]
-        + [q.question_label for q in questions]
-    )
+    # Create row header, each header item must have unique key.
+    # The key is used to create the row.
+    # NOTE: This structure is used because https://www.npmjs.com/package/exceljs#rows
+    # library used by the frontend
+    excel_headers: list[dict] = [
+        {"header": "Message", "key": "message"},
+        {"header": "Transcription", "key": "transcription", "width": 30},
+        {"header": "District", "key": "district"},
+        {"header": "Community", "key": "community"},
+        {"header": "Group", "key": "group"},
+        {"header": "Region", "key": "region"},
+        {"header": "Language", "key": "language"},
+        {"header": "Agent", "key": "agent"},
+    ]
+    for q in questions:
+        excel_headers.append({"header": q.question_label, "key": str(q.id)})
 
-    mapped = {
-        f"{q.id}": index + questions_cols_start_index
-        for index, q in enumerate(questions)
-    }
+    excel_rows: list[dict] = []
 
     # Group analysis by message_uuid
     grouped_analysis = [
@@ -73,29 +78,30 @@ def get_report(
     ]
 
     # Create a row for each message, corresponding to the questions index
-    questions_count = len(questions) + questions_cols_start_index
-
     for messages in grouped_analysis:
         sorted_items = sorted(messages, key=lambda a: a.question_id)
-        row = [None] * questions_count
+        _row: dict = {}
 
         for a in sorted_items:
             value = a.response
 
+            # For multiple/single choice response, combine the response into one value
             if len(a.choices) > 0:
                 value = ", ".join([c.choice.value for c in a.choices])  # type: ignore
 
-            row[1] = a.message.transcription  # type: ignore
-            row[mapped[str(a.question_id)]] = value  # type: ignore
+            _row["transcription"] = a.message.transcription
+            _row[a.question_id] = value  # Set response value
 
             if a.message.content_metadata is not None:
-                row[0] = a.message.content_metadata.title  # type: ignore
+                _row["message"] = a.message.content_metadata.title  # type: ignore
 
             if a.message.recipient is not None:
-                row[2] = a.message.recipient.district  # type: ignore
-                row[3] = a.message.recipient.community_name  # type: ignore
-                row[4] = a.message.recipient.group_name  # type: ignore
+                _row["district"] = a.message.recipient.district  # type: ignore
+                _row["community"] = a.message.recipient.community_name  # type: ignore
+                _row["group"] = a.message.recipient.group_name  # type: ignore
+                _row["agent"] = a.message.recipient.agent  # type: ignore
+                _row["language"] = a.message.recipient.language  # type: ignore
 
-        rows.append(row)  # type: ignore
+        excel_rows.append(_row)
 
-    return ApiResponse(data=rows)
+    return ApiResponse(data=[{"headers": excel_headers, "rows": excel_rows}])
