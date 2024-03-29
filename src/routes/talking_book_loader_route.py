@@ -2,6 +2,7 @@ import json
 import sys
 import time
 import traceback
+from typing import Any
 
 import boto3
 from fastapi import APIRouter, Depends
@@ -69,7 +70,7 @@ def _round_up(x):
 
 
 # region Table Initialization Code
-def create_table(table_name=None, attributes=None):
+def create_table(table_name=None, attributes=[]):
     """
     Creates table with the given name and attributes.
     :param table_name: String, name of the table.
@@ -92,30 +93,6 @@ def create_table(table_name=None, attributes=None):
 
     except Exception as err:
         print("ERROR: " + str(err))
-
-
-def delete_tables():
-    start_time = time.time()
-    num_updated = 0
-
-    def delete(table_name):
-        nonlocal num_updated
-        if table_name in existing_tables:
-            table = dynamodb_resource.Table(table_name)
-            table.delete()
-            # Wait for the table to be deleted before exiting
-            print("Waiting for", table_name, "...")
-            waiter = dynamodb_client.get_waiter("table_not_exists")
-            waiter.wait(TableName=table_name)
-            num_updated += 1
-
-    existing_tables = dynamodb_client.list_tables()["TableNames"]
-    delete(TBLOADERIDS_TABLE)
-
-    end_time = time.time()
-    print(
-        "Deleted {} tables in {:.2g} seconds".format(num_updated, end_time - start_time)
-    )
 
 
 def delete_tables():
@@ -221,11 +198,11 @@ def load_tbloaderids_table(data=None):
                 TBL_HEX_ID: "{:#06x}".format(id),
                 TBL_RESERVE: _round_up(reserved),
             }
-            tbloadersid_table.put_item(Item=item)
+            tbloadersid_table.put_item(Item=item)  # type: ignore
             num_updated += 1
     if max_id > 0:
         item = {TBL_EMAIL: MAX_LOADER_KEY, MAX_TB_LOADER: max_id}
-        tbloadersid_table.put_item(Item=item)
+        tbloadersid_table.put_item(Item=item)  # type: ignore
 
     end_time = time.time()
     print(
@@ -363,12 +340,12 @@ def open_tables():
     tbloadersid_table = dynamodb_resource.Table(TBLOADERIDS_TABLE)
 
 
-def allocate_tbid_item(claims):
-    result = {STATUS: STATUS_FAILURE}
-    email = claims.get("email")
+def allocate_tbid_item(email: str):
+    result: dict[str, Any] = {STATUS: STATUS_FAILURE}
+    # email = claims.get("email")
 
     # Be sure we are able to read the previously allocated tbloader id.
-    max_loader = tbloadersid_table.get_item(
+    max_loader = tbloadersid_table.get_item(  # type: ignore
         Key={TBL_EMAIL: MAX_LOADER_KEY}, ConsistentRead=True
     )
     if not max_loader or "Item" not in max_loader:
@@ -395,7 +372,7 @@ def allocate_tbid_item(claims):
     condition_expression = MAX_TB_LOADER + " = :oldid"
     expression_values = {":oldid": old_max_id, ":newid": new_max_id}
     try:
-        tbloadersid_table.update_item(
+        tbloadersid_table.update_item(  # type: ignore
             Key=key,
             UpdateExpression=update_expression,
             ConditionExpression=condition_expression,
@@ -411,7 +388,7 @@ def allocate_tbid_item(claims):
         return result
 
     # Add the new tbloader id on behalf of the signed-in user email address.
-    tbloadersid_table.put_item(Item=new_item)
+    tbloadersid_table.put_item(Item=new_item)  # type: ignore
 
     # Return the item in the result.
     result[STATUS] = STATUS_OK
@@ -442,23 +419,24 @@ def do_reserve(
     email = user.email
 
     # See if there's an existing tbid for the email
-    tbid_data = tbloadersid_table.get_item(Key={TBL_EMAIL: email})
+    tbid_data = tbloadersid_table.get_item(Key={TBL_EMAIL: email})  # type: ignore
 
     # if so, use it, otherwise try to allocate one
-    item = None
+    item: dict[str, str] = {}
+
     if tbid_data and "Item" in tbid_data:
         item = tbid_data.get("Item")
         id = int(item.get(TBL_ID, 0))
         hex_id = item.get(TBL_HEX_ID)
         cur_value = int(item.get(TBL_RESERVE, 0))
         if not (id and hex_id and cur_value) or cur_value + num > MAX_VALUE:
-            item = None  # force allocation of a new id
+            item = {}  # force allocation of a new id
 
-    if item is None:
-        allocate_result = allocate_tbid_item(claims)
+    if len(item.keys()) == 0:
+        allocate_result = allocate_tbid_item(user.email)
         if allocate_result.get(STATUS) != STATUS_OK:
             return allocate_result
-        item = allocate_result.get("item")
+        item = allocate_result.get("item")  # type: ignore
 
     # verify that we have all of the required fields
     id = int(item.get(TBL_ID, 0))
@@ -475,7 +453,7 @@ def do_reserve(
     condition_expression = TBL_RESERVE + " = :cur_value"
     expression_values = {":cur_value": cur_value, ":new_value": new_value}
     try:
-        tbloadersid_table.update_item(
+        tbloadersid_table.update_item(  # type: ignore
             Key=key,
             UpdateExpression=update_expression,
             ConditionExpression=condition_expression,
@@ -608,4 +586,4 @@ def do_reserve(
 #         test()
 
 #     sys.exit(_main())
-# # endregion
+# endregion
