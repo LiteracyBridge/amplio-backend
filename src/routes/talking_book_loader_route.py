@@ -421,7 +421,7 @@ def allocate_tbid_item(claims):
 
 @router.get("/reserve")
 def do_reserve(
-    n: str,
+    n: int,
     user: User = Depends(current_user),
 ):
     """
@@ -438,7 +438,7 @@ def do_reserve(
         open_tables()
 
     result = {}
-    num = n if n is not None and n != "null" else DEFAULT_RESERVATION
+    num = n if n is not None else DEFAULT_RESERVATION
     email = user.email
 
     # See if there's an existing tbid for the email
