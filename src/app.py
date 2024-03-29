@@ -25,6 +25,7 @@ from routes import (
     language_route,
     program_route,
     tableau_route,
+    talking_book_loader_route,
     user_feedback,
 )
 from routes.dashboard_queries import dashboard_queries_route
@@ -214,6 +215,12 @@ app.include_router(
     user_feedback.uf_routes,
     prefix="/user-feedback",
     tags=["user-feedback"],
+    dependencies=[Depends(get_db)],
+)
+app.include_router(
+    talking_book_loader_route.router,
+    prefix="/tb-loader",
+    tags=["talking-book-loader"],
     dependencies=[Depends(get_db)],
 )
 
