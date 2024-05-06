@@ -33,19 +33,22 @@ def import_geo_data(csv_file_path: str):
             update_query: str = row["RUN THESE STATEMENTS"]
             checks: str = row["CHECK WITH THIS:"]
             count_query: str = (
-                f"SELECT count(*) FROM recipients WHERE latitude IS NOT NULL AND longitude IS NOT NULL AND (FALSE {checks})"
+                f"SELECT count(*) FROM recipients WHERE latitude IS NOT NULL AND longitude IS NOT NULL AND {filter_query}"
             )
 
             # Don't update coordinates if count > 0
             affected_rows = db.scalar(text(count_query))
+            print(affected_rows)
             if affected_rows > 0:
                 print(
-                    f"Skipping {row['name']} because {affected_rows} rows are already populated."
+                    f"Skipping {line_count} because {affected_rows} rows are already populated."
                 )
                 continue
 
             # Update coordinates
             db.execute(text(update_query))
+            db.commit()
+
             line_count += 1
 
         print(f"Processed {line_count} rows.")
