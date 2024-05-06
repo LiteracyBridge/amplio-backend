@@ -6,16 +6,20 @@
 #   2. Update the project, country, region, district, communityname, latitude & longitude columns
 #   3. Save the workbook as a csv file
 #   4. Run the script, with path to the csv file as an argument
+#
+# Execute the script as follows:
+# PYTHONPATH=src python scripts/tableau/tableau_geo_importer.py path/to/file.csv
 
 import csv
+import sys
 
 from sqlalchemy import text
 
 from database import get_db
 
 
-def import_geo_data():
-    with open("tableau_template.csv", mode="r") as csv_file:
+def import_geo_data(csv_file_path: str):
+    with open(csv_file_path, mode="r") as csv_file:
         db = next(get_db())
         csv_reader = csv.DictReader(csv_file)
         line_count = 0
@@ -48,7 +52,10 @@ def import_geo_data():
 
 
 if __name__ == "__main__":
-    import_geo_data()
+    if len(sys.argv) < 2:
+        print("Please provide the path to the CSV file as a command-line argument.")
+        sys.exit(1)
 
-# if __name__ == "__main__":
-#     # Read csv template from cli
+    csv_file_path = sys.argv[1]
+
+    import_geo_data(csv_file_path)
