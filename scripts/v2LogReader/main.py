@@ -5,7 +5,8 @@ from typing import Dict, Optional
 from S3Data import S3Driver
 from tbstats import TbCollectedData
 
-from utils import StorePathAction, get_db_engine
+from database import get_db_engine
+from utilities.argparse_utils import StorePathAction
 
 args: Optional[argparse.Namespace] = None
 verbose = 0
