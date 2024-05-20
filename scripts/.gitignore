@@ -1,3 +1,4 @@
 acm-stats/processed-data
 lib
 acm-stats/AWS-LB/reports/deprecatedQueries
+bin
