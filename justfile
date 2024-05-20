@@ -13,13 +13,6 @@ venv:
 install: venv
 	pipenv install --verbose
 
-# # Default
-# help: helper
-# build: builder
-
-# helper:
-#     echo "help, build"
-
 server: venv
 	{{ PYTHONPATH }} uvicorn src.app:app --reload
 
