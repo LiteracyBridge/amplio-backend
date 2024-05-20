@@ -1,13 +1,12 @@
 VIRTUAL_ENV = $(shell pipenv --venv 2> /dev/null)
+PYTHONPATH = $(shell echo PYTHONPATH=$$PYTHONPATH:${PWD}/src)
 
-export_envs:
-	# export PYTHONPATH=${PYTHONPATH}:${PWD}/src
+venv:
 	export PIPENV_IGNORE_VIRTUALENVS=1
-
-venv: export_envs
 	source $(VIRTUAL_ENV)/bin/activate;
-	export PYTHONPATH=${PYTHONPATH}:${PWD}/src;
 
+install: venv
+	pipenv install --verbose
 
 # # Default
 # help: helper
@@ -17,4 +16,7 @@ venv: export_envs
 #     echo "help, build"
 
 server: venv
-	PYTHONPATH=${PYTHONPATH}:${PWD}/src uvicorn src.app:app --reload
+	$(PYTHONPATH) uvicorn src.app:app --reload
+
+tableau_importer: venv
+	$(PYTHONPATH) python scripts/tableau/tableau_geo_importer.py
