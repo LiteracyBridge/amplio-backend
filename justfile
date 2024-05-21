@@ -21,3 +21,5 @@ tableau_geo *args='': venv
 
 logs_reader *args='':
 	{{ PYTHONPATH }} python scripts/v2LogReader/main.py $@
+
+# TODO: Add a build step to compile acm & copy jars to AWS-LB/bin dir
