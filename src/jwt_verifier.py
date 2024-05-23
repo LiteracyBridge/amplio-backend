@@ -12,6 +12,7 @@ from jose import jwk, jwt
 from jose.exceptions import JWTError
 from jose.utils import base64url_decode
 from pydantic import BaseModel
+
 from config import config
 
 VERIFIED_JWT_CLAIMS_CACHE = {}
@@ -178,7 +179,7 @@ class CognitoAuthenticator:
 
         # verify audience
         # note: claims["client_id"] for access token, claims["aud"] otherwise
-        if claims.get("client_id", claims.get("aud")) != self.client_id:
+        if claims.get("client_id", claims.get("aud")) not in self.client_id:
             print("Invalid audience claim")
             raise InvalidAudienceError
 
