@@ -1,11 +1,11 @@
 import json
+from os import getenv
 from typing import Any, Optional
 
 from boto3 import Session
 from dotenv import load_dotenv
-from pydantic import BaseSettings, BaseModel
+from pydantic import BaseModel, BaseSettings
 from pydantic.env_settings import SettingsSourceCallable
-from os import getenv
 
 AWS_REGION = "us-west-2"
 
@@ -20,7 +20,7 @@ class Config:
     dynamodb_url: Optional[str] = None
 
     user_pool_id: Optional[str] = None
-    user_pool_client_id: Optional[str] = None
+    user_pool_client_id: list[str] = []
 
     sentry_dsn: Optional[str] = None
     sentry_environment: Optional[str] = None
@@ -43,7 +43,7 @@ class Config:
             self.sentry_environment = getenv("SENTRY_ENVIRONMENT", "local")
 
             self.user_pool_id = getenv("AWS_USER_POOL_ID", None)
-            self.user_pool_client_id = getenv("AWS_USER_POOL_CLIENT_ID", None)
+            self.user_pool_client_id = getenv("AWS_USER_POOL_CLIENT_ID", "").split(",")
         else:
             self.load_aws_secrets()
 
@@ -72,7 +72,7 @@ class Config:
             self.sentry_environment = secrets.get("sentry_environment", "prod")
 
             self.user_pool_id = secrets["aws_user_pool_id"]
-            self.user_pool_client_id = secrets["aws_user_pool_client_id"]
+            self.user_pool_client_id = secrets["aws_user_pool_client_id"].split(",")
 
         except Exception as err:
             raise err
