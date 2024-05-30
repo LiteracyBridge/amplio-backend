@@ -31,15 +31,16 @@ def import_geo_data(csv_file_path: str):
 
             filter_query: str = row["FILTER"]
             update_query: str = row["RUN THESE STATEMENTS"]
-            checks: str = row["CHECK WITH THIS:"]
             count_query: str = (
                 f"SELECT count(*) FROM recipients WHERE latitude IS NOT NULL AND longitude IS NOT NULL AND {filter_query}"
             )
 
-            # Don't update coordinates if count > 0
+            # We're probably on the last row
+            if filter_query is None or filter_query == "":
+                continue
+
             affected_rows = db.scalar(text(count_query))
-            print(affected_rows)
-            if affected_rows > 0:
+            if affected_rows >= 0:
                 print(
                     f"Skipping {line_count} because {affected_rows} rows are already populated."
                 )
