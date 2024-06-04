@@ -102,7 +102,7 @@ def delete_tables():
     def delete(table_name):
         nonlocal num_updated
         if table_name in existing_tables:
-            table = dynamodb_resource.Table(table_name)
+            table = dynamodb_resource.Table(table_name)  # type: ignore
             table.delete()
             # Wait for the table to be deleted before exiting
             print("Waiting for", table_name, "...")
@@ -337,7 +337,7 @@ def merge():
 
 def open_tables():
     global tbloadersid_table
-    tbloadersid_table = dynamodb_resource.Table(TBLOADERIDS_TABLE)
+    tbloadersid_table = dynamodb_resource.Table(TBLOADERIDS_TABLE)  # type: ignore
 
 
 def allocate_tbid_item(email: str):
