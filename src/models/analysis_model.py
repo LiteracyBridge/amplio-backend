@@ -53,10 +53,10 @@ class Analysis(BaseModel, SoftDeleteMixin):
     question_id: Mapped[int] = mapped_column(
         ForeignKey("uf_questions.id", ondelete="CASCADE")
     )
-    created_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=func.now()
     )
-    updated_at: Mapped[DateTime] = mapped_column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), onupdate=func.now()
     )
     # deleted_at: Mapped[Optional[DateTime]] = mapped_column(

@@ -213,6 +213,8 @@ def save_or_create_analysis(
             analysis.is_useless = False
             analysis.analyst_email = dto.analyst_email
             analysis.start_time = dto.start_time
+            analysis.created_at = datetime.now()
+            analysis.updated_at = datetime.now()
             analysis.submit_time = (
                 dto.submit_time if dto.submit_time else datetime.now()
             )

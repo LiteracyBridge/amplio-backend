@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/python:3.10
+FROM public.ecr.aws/lambda/python:3.11
 
 COPY ./src ${LAMBDA_TASK_ROOT}
 
@@ -10,32 +10,5 @@ COPY ./src ${LAMBDA_TASK_ROOT}
 RUN yum install --quiet -y gcc python3-devel postgresql-devel git make awk procps-ng
 RUN pip install psycopg2-binary
 RUN pip install -r ${LAMBDA_TASK_ROOT}/requirements.txt --target "${LAMBDA_TASK_ROOT}"
-
-#== START: Install amplio package
-
-# # Clone the repo
-# RUN git clone --no-checkout https://github.com/LiteracyBridge/utilities.git
-# RUN cd utilities && \
-#     git sparse-checkout init --cone && \
-#     git sparse-checkout set pypi && \
-#     git checkout @
-
-# # Build the package
-# RUN mkdir --parent ~/pypi
-# RUN cd utilities/pypi && \
-#     make build  && \
-#     make serve
-
-# # Set the PIP_EXTRA_INDEX_URL environment variable to tell pip where to look
-# ENV PIP_EXTRA_INDEX_URL="http://localhost:8765"
-
-# # Start the HTTP server to serve the local PyPI mirror
-# RUN cd ~/pypi && \
-#     nohup sh -c 'python3 -m http.server 8765' & \
-#     pip install amplio --target "${LAMBDA_TASK_ROOT}" && \
-#     kill $(pgrep -f "python3 -m http.server 8765")
-# #== END: amplio package
-
-# RUN pip3 install -r ${LAMBDA_TASK_ROOT}/requirements.txt --target "${LAMBDA_TASK_ROOT}"
 
 CMD ["app.handler"]

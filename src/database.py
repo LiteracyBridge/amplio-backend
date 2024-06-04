@@ -1,17 +1,16 @@
-import json
-from os import getenv
-from typing import Any, Dict, Generic, List, Optional, Tuple, Type, TypeVar, Union
+from contextlib import contextmanager
+from typing import Any, Dict, Generic, List, Optional
 
 import sqlalchemy.types as types
-from fastapi.encoders import jsonable_encoder
 from psycopg2.extensions import AsIs
 from pydantic import BaseModel as PydanticBaseModel
-from sqlalchemy import create_engine, text
+from sqlalchemy import Engine, MetaData, Table, create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.sql import TableClause
 
 from config import config
-from utils import snake_to_camel
+from utilities import snake_to_camel
 
 engine = create_engine(config.db_url(), echo=config.db_echo)
 
@@ -30,6 +29,41 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def get_db_engine() -> Engine:
+    """Returns the underling sqlalchemy database engine.
+
+    Used for backwards compatibility with migrated scripts
+    """
+
+    return next(get_db()).connection().engine
+
+
+def get_table_metadata(table: str) -> TableClause:
+    table_def = None  # type: ignore
+
+    try:
+        engine = get_db_engine()
+        table_meta = MetaData(engine)  # type:ignore
+        table_def: TableClause = Table(table, table_meta, autoload=True)
+    except Exception as ex:
+        print(ex)
+
+    #     "tbdeployments_pkey" PRIMARY KEY, btree (talkingbookid, deployedtimestamp)
+    return table_def
+
+
+@contextmanager  # type: ignore
+def get_db_connection():
+    """
+    [WAS] A helper to get a db connection and re-establish the 'content' view after a commit or abort.
+
+    [NOW] For backwards compatibility (aka. fixing all imports), this simply returns
+    db instance (which is handled by sqlalchemy)
+
+    """
+    return next(get_db())
 
 
 class BaseSchema(PydanticBaseModel):

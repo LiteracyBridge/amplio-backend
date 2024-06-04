@@ -1,6 +1,7 @@
 {
     "include": [
-      "src"
+      "src",
+      "scripts/tableau",
     ],
 
     "exclude": [
@@ -13,7 +14,7 @@
     "ignore": [
       "src/alembic",
       "src/routes/program_spec",
-      "src/utilities/rolemanager"
+      "src/utilities/rolemanager",
     ],
 
     "defineConstant": {
