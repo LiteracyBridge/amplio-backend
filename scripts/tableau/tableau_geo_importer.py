@@ -29,6 +29,14 @@ def import_geo_data(csv_file_path: str):
                 line_count += 1
                 continue
 
+            if (
+                row["latitude"] is None
+                or row["latitude"] == ""
+                or row["longitude"] is None
+                or row["longitude"] == ""
+            ):
+                continue
+
             filter_query: str = row["FILTER"]
             update_query: str = row["RUN THESE STATEMENTS"]
             count_query: str = (
@@ -39,12 +47,12 @@ def import_geo_data(csv_file_path: str):
             if filter_query is None or filter_query == "":
                 continue
 
-            affected_rows = db.scalar(text(count_query))
-            if affected_rows >= 0:
-                print(
-                    f"Skipping {line_count} because {affected_rows} rows are already populated."
-                )
-                continue
+            # affected_rows = db.scalar(text(count_query))
+            # if affected_rows >= 0:
+            #     print(
+            #         f"Skipping {line_count} because {affected_rows} rows are already populated."
+            #     )
+            #     continue
 
             # Update coordinates
             db.execute(text(update_query))
