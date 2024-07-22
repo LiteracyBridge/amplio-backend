@@ -10,28 +10,26 @@ handle s3 events & event data structure.
 """
 
 import argparse
-from urllib import parse
-from urllib.parse import unquote_plus
 
-import boto3
 from boto3 import client
-from fastapi import APIRouter, Depends, Request
 
-from config import COLLECTED_STATS_BUCKET, PROGRAM_CONTENT_BUCKET
-from utilities import init_sentry
+from config import COLLECTED_STATS_BUCKET, PROGRAM_CONTENT_BUCKET, config
+from utilities.aws_ses import send_email
 
 
 def move_files():
-    s3 = boto3.client("s3")
+    config.init_sentry()
+
+    s3 = client("s3")
     paginator = s3.get_paginator("list_objects_v2")
 
     # List objects within a bucket and a specific prefix
-    # source_bucket = f"${PROGRAM_CONTENT_BUCKET}/staging-android-collected-data"
     source_prefix = "staging-android-collected-data/"
     target_prefix = "collected-data/"
     page_iterator = paginator.paginate(
         Bucket=PROGRAM_CONTENT_BUCKET, Prefix=source_prefix
     )
+    count = 0
 
     for page in page_iterator:
         if "Contents" in page:
@@ -47,6 +45,18 @@ def move_files():
                 s3.delete_object(Bucket=PROGRAM_CONTENT_BUCKET, Key=source_key)
 
                 print(f"Moved {source_key} to {COLLECTED_STATS_BUCKET}/{target_key}")
+                count += 1
+
+    if True:
+        print(
+            f"Moved {count} files from {PROGRAM_CONTENT_BUCKET}/{source_prefix} to {COLLECTED_STATS_BUCKET}/{target_prefix}"
+        )
+
+        subject = "Android Collected Data Moved"
+        body = config.jinja("emails/android_collected_data_moved.html").render(
+            count=count, subject=subject
+        )
+        send_email(subject, body)
 
 
 if __name__ == "__main__":
