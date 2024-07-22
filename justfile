@@ -14,12 +14,21 @@ install: venv
 	pipenv install --verbose
 
 server: venv
+	# Starts the API server using the value of APP_ENV (default to 'production')
 	{{ PYTHONPATH }} uvicorn src.app:app --reload
 
+dev: venv
+	# Starts the API server in development mode
+	APP_ENV=local {{ PYTHONPATH }} uvicorn src.app:app --reload
+
+prod: venv
+	# Starts the API server in production mode
+	APP_ENV=production {{ PYTHONPATH }} uvicorn src.app:app --reload
+
 tableau_geo *args='': venv
-	{{ PYTHONPATH }} python scripts/tableau/tableau_geo_importer.py $@
+	{{ PYTHONPATH }} python scripts/tableau/tableau_geo_importer.py "$@"
 
 logs_reader *args='':
-	{{ PYTHONPATH }} python scripts/v2LogReader/main.py $@
+	{{ PYTHONPATH }} python scripts/v2LogReader/main.py "$@"
 
 # TODO: Add a build step to compile acm & copy jars to AWS-LB/bin dir
