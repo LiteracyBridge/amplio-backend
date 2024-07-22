@@ -6,6 +6,8 @@ from boto3 import Session
 from dotenv import load_dotenv
 
 AWS_REGION = "us-west-2"
+COLLECTED_STATS_BUCKET = "acm-stats"
+PROGRAM_CONTENT_BUCKET = "amplio-program-content"
 
 
 class Config:

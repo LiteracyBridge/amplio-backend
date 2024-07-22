@@ -2,6 +2,7 @@
     "include": [
       "src",
       "scripts/tableau",
+      "scripts/acm-stats/move_android_collected_data.py"
     ],
 
     "exclude": [
@@ -14,7 +15,7 @@
     "ignore": [
       "src/alembic",
       "src/routes/program_spec",
-      "src/utilities/rolemanager",
+      "src/utilities/rolemanager"
     ],
 
     "defineConstant": {
