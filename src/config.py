@@ -15,7 +15,7 @@ COLLECTED_STATS_BUCKET = "acm-stats"
 PROGRAM_CONTENT_BUCKET = "amplio-program-content"
 
 # Mailing
-MAIL_SOURCE_ADDR = "ictnotification@amplio.org"
+MAIL_SOURCE_ADDR = "ictnotifications@amplio.org"
 
 
 class Config:
