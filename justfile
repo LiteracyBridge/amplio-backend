@@ -1,6 +1,7 @@
 set positional-arguments
+set dotenv-load # Enables loading .env values
 
-VIRTUAL_ENV := `pipenv --venv 2> /dev/null`
+VIRTUAL_ENV := `pipenv --venv 2> /dev/null` # TODO: Auto create venv if dir not exists
 PYTHONPATH := "PYTHONPATH=" + env('PYTHONPATH', '') + ":" + invocation_directory() +"/src"
 
 default:
@@ -8,21 +9,21 @@ default:
 
 venv:
 	export PIPENV_IGNORE_VIRTUALENVS=1
-	source {{ VIRTUAL_ENV }}/bin/activate;
+	. {{ VIRTUAL_ENV }}/bin/activate;
 
 install: venv
 	pipenv install --verbose
 
 server: venv
-	# Starts the API server using the value of APP_ENV (default to 'production')
+	@echo "Starting the API server using the value of APP_ENV (default to 'production')"
 	{{ PYTHONPATH }} uvicorn src.app:app --reload
 
 dev: venv
-	# Starts the API server in development mode
+	@echo "Starting the API server in development mode"
 	APP_ENV=local {{ PYTHONPATH }} uvicorn src.app:app --reload
 
 prod: venv
-	# Starts the API server in production mode
+	@echo "Starts the API server in production mode"
 	APP_ENV=production {{ PYTHONPATH }} uvicorn src.app:app --reload
 
 tableau_geo *args='': venv
@@ -32,7 +33,7 @@ logs_reader *args='': venv
 	{{ PYTHONPATH }} python scripts/v2LogReader/main.py "$@"
 
 move_android_collected_data *args='': venv
-	# Moves collected stats data by the Android TB Loader from amplio-program-content to acm-stats bucket
+	@echo "Moves collected stats data by the Android TB Loader from amplio-program-content to acm-stats bucket"
 	{{ PYTHONPATH }} python scripts/acm-stats/move_android_collected_data.py
 
 # TODO: Add a build step to compile acm & copy jars to AWS-LB/bin dir
