@@ -2,14 +2,14 @@ set positional-arguments
 set dotenv-load # Enables loading .env values
 
 VIRTUAL_ENV := `pipenv --venv 2> /dev/null` # TODO: Auto create venv if dir not exists
-PYTHONPATH := "PYTHONPATH=" + env('PYTHONPATH', '') + ":" + invocation_directory() +"/src"
+PYTHONPATH := "PYTHONPATH=src"
 
 default:
 	@just --choose
 
 venv:
 	export PIPENV_IGNORE_VIRTUALENVS=1
-	. {{ VIRTUAL_ENV }}/bin/activate;
+	. {{ VIRTUAL_ENV }}/bin/activate
 
 install: venv
 	pipenv install --verbose
@@ -33,7 +33,7 @@ logs_reader *args='': venv
 	{{ PYTHONPATH }} python scripts/v2LogReader/main.py "$@"
 
 move_android_collected_data *args='': venv
-	@echo "Moves collected stats data by the Android TB Loader from amplio-program-content to acm-stats bucket"
+	@echo "Moving collected stats data by the Android TB Loader from amplio-program-content to acm-stats bucket"
 	{{ PYTHONPATH }} python scripts/acm-stats/move_android_collected_data.py
 
 # TODO: Add a build step to compile acm & copy jars to AWS-LB/bin dir
