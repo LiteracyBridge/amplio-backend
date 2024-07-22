@@ -37,9 +37,7 @@ def move_files():
         if "Contents" in page:
             for obj in page["Contents"]:
                 source_key = obj["Key"]
-                target_key = source_key.replace(
-                    PROGRAM_CONTENT_BUCKET, target_prefix, 1
-                )
+                target_key = source_key.replace(source_prefix, target_prefix, 1)
 
                 # Copy object to the new bucket
                 copy_source = {"Bucket": PROGRAM_CONTENT_BUCKET, "Key": source_key}

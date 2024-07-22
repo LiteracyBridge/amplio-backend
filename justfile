@@ -28,7 +28,11 @@ prod: venv
 tableau_geo *args='': venv
 	{{ PYTHONPATH }} python scripts/tableau/tableau_geo_importer.py "$@"
 
-logs_reader *args='':
+logs_reader *args='': venv
 	{{ PYTHONPATH }} python scripts/v2LogReader/main.py "$@"
+
+move_android_collected_data *args='': venv
+	# Moves collected stats data by the Android TB Loader from amplio-program-content to acm-stats bucket
+	{{ PYTHONPATH }} python scripts/acm-stats/move_android_collected_data.py
 
 # TODO: Add a build step to compile acm & copy jars to AWS-LB/bin dir
