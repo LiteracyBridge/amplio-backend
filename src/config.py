@@ -1,11 +1,21 @@
 import json
-from os import getenv
+from os import getenv, pathsep
+from pathlib import Path
 from typing import Any, Optional
 
+import sentry_sdk
 from boto3 import Session
 from dotenv import load_dotenv
+from jinja2 import Environment, FileSystemLoader
 
 AWS_REGION = "us-west-2"
+
+# Buckets
+COLLECTED_STATS_BUCKET = "acm-stats"
+PROGRAM_CONTENT_BUCKET = "amplio-program-content"
+
+# Mailing
+MAIL_SOURCE_ADDR = "ictnotifications@amplio.org"
 
 
 class Config:
@@ -96,6 +106,29 @@ class Config:
 
     def db_url(self):
         return f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+
+    def init_sentry(self):
+        if self.sentry_dsn is not None:
+            sentry_sdk.init(
+                dsn=self.sentry_dsn,
+                environment=self.sentry_environment,
+                integrations=[],
+                #     # Set traces_sample_rate to 1.0 to capture 100%
+                #     # of transactions for performance monitoring.
+                #     # We recommend adjusting this value in production,
+                #     # traces_sample_rate=1.0,
+            )
+
+    def jinja(self, template):
+        """Loads a Jinja template from the templates directory"""
+
+        file_loader = FileSystemLoader(
+            str(Path(__file__).resolve().parent) + "/templates"
+        )
+        env = Environment(loader=file_loader)
+        template = env.get_template(template)
+
+        return template
 
 
 config = Config()

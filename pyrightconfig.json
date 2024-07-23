@@ -2,7 +2,8 @@
     "include": [
       "src",
       "scripts/tableau",
-      "scripts/new_acm"
+      "scripts/new_acm",
+      "scripts/acm-stats/move_android_collected_data.py"
     ],
 
     "exclude": [
