@@ -1,5 +1,5 @@
 #!/usr/bin/sh
-# "exec" "./acmEnv/bin/python3" "newAcm.py" "$@"
+
 import argparse
 import shutil
 import subprocess
@@ -20,19 +20,18 @@ from dynamoUtils import (
 from sqlUtils import check_for_postgresql_project, populate_postgresql
 from utils import canonical_acm_path_name, canonical_acm_project_name
 
-from utilities.argparse_utils import StorePathAction
+from config import PROGRAM_CONTENT_BUCKET, PROGRAM_LIST_BUCKET, PROGRAM_SPEC_BUCKET
 
 # s3 and projspec, dashboard buckets
 s3_client = boto3.client("s3")
-projspec_bucket: str = "amplio-progspecs"
-content_bucket: str = "amplio-program-content"
-project_list_bucket: str = "dashboard-lb-stats"
+projspec_bucket: str = PROGRAM_SPEC_BUCKET
+content_bucket: str = PROGRAM_CONTENT_BUCKET
+project_list_bucket: str = PROGRAM_LIST_BUCKET
 project_list_key: str = "data/project_list.csv"
 
 # Properties of the two dropbox users: a maintaining user and the processing user.
 
 args = {}
-# dropbox_directory: Optional[Path] = None
 
 # Get the user name and password that we need to sign into the SQL database. Configured through AWS console.
 
@@ -124,35 +123,6 @@ def check_for_programspec(program_id) -> bool:
     return True
 
 
-# noinspection SqlResolve,SqlNoDataSourceInspection,SqlDialectInspection
-
-
-# def project_list_path():
-#     global dropbox_directory
-#     return Path(dropbox_directory, "DashboardReports", "project_list.csv")
-
-
-# def check_for_project_list_entry(program_id) -> bool:
-#     """
-#     Checks for an existing entry in the projects_list.csv file in the DashboardReports directory.
-#     :param program_id: to be checked.
-#     :return: True if there is no row for the acm, False if there already is one.
-#     """
-#     global dropbox_directory
-#     print(
-#         f"Looking for '{program_id}' entry in {dropbox_directory}/DashboardReports/project_list.csv...",
-#         end="",
-#     )
-#     with open(project_list_path(), "r") as pl:
-#         lines = [x.strip().split(",")[0] for x in pl.readlines()]
-#     if program_id in lines:
-#         print("\n  {} exists in project_list".format(program_id))
-#         return False
-
-#     print("ok")
-#     return True
-
-
 def create_and_populate_acm_directory(acm_dir):
     """
     Copies ACM-template as the new project.
@@ -191,7 +161,7 @@ def create_and_populate_s3_object(program_id):
         return False
 
 
-def create_and_populate_content(program_id: str, acm_dir: str) -> bool:
+def create_and_populate_content(program_id: str) -> bool:
     return create_and_populate_s3_object(program_id)
 
 
@@ -265,7 +235,7 @@ def new_acm():
 
     ok = True
     acm = args.acm
-    program_id = canonical_acm_project_name(acm)
+    program_id = str(canonical_acm_project_name(acm))
     acm_dir = program_id
 
     if args.do_content != "none":
@@ -276,6 +246,7 @@ def new_acm():
 
     if args.do_program != "none":
         ok = check_for_program_record(program_id) and ok
+
     if args.do_organization != "none":
         ok = check_for_organization_record(args.org, args.parent) and ok
 
@@ -284,8 +255,9 @@ def new_acm():
     if args.do_sql != "none":
         ok = check_for_postgresql_project(program_id) and ok
 
-    # if args.do_dashboard != "none":
-    #     ok = check_for_project_list_entry(program_id) and ok
+        # if args.do_dashboard != "none":
+        #     ok = check_for_project_list_entry(program_id) and ok
+    print(ok)
 
     if ok and not args.dry_run:
         print(f"\nCreating entries for {program_id}.\n")
@@ -314,7 +286,6 @@ def new_acm():
         if not ok:
             print(f"Errors encountered creating or sharing acm {program_id}")
     else:
-        print()
         if not ok:
             print("Issues detected; ", end="")
         if args.dry_run:
@@ -328,13 +299,7 @@ def main():
     global args
 
     arg_parser = argparse.ArgumentParser(fromfile_prefix_chars="@")
-    # arg_parser.add_argument(
-    #     "--dropbox",
-    #     action=StorePathAction,
-    #     default=expanduser("~/Dropbox"),
-    #     help="Dropbox directory (default is ~/Dropbox).",
-    # )
-    arg_parser.add_argument("acm", metavar="ACM", help="The new ACM name")
+    arg_parser.add_argument("acm", help="The new ACM name")
     arg_parser.add_argument(
         "--s3",
         action="store_true",
@@ -374,12 +339,6 @@ def main():
         help="Do or don't create ACM directory.",
     )
     arg_parser.add_argument(
-        "--do-dropbox",
-        choices=["none", "check", "both"],
-        default="both",
-        help="Do or don't create content folders.",
-    )
-    arg_parser.add_argument(
         "--do-sql",
         choices=["none", "check", "both"],
         default="both",
@@ -416,47 +375,7 @@ def main():
         help="Do or don't check or create an organization record.",
     )
 
-    arg_parser.add_argument(
-        "--db-host",
-        default=None,
-        metavar="HOST",
-        help="Optional host name, default from secrets store.",
-    )
-    arg_parser.add_argument(
-        "--db-port",
-        default=None,
-        metavar="PORT",
-        help="Optional host port, default from secrets store.",
-    )
-    arg_parser.add_argument(
-        "--db-user",
-        default=None,
-        metavar="USER",
-        help="Optional user name, default from secrets store.",
-    )
-    arg_parser.add_argument(
-        "--db-password",
-        default=None,
-        metavar="PWD",
-        help="Optional password, default from secrets store.",
-    )
-    arg_parser.add_argument(
-        "--db-name",
-        default="dashboard",
-        metavar="DB",
-        help='Optional database name, default "dashboard".',
-    )
-
     args = arg_parser.parse_args()
-    # if args.s3 and args.do_dropbox == "both":
-    #     print(
-    #         "Options 's3' and 'do_dropbox both' are incompatible. Setting 'do_dropbox check'."
-    #     )
-    #     args.do_dropbox = "check"
-    # dropbox_directory = args.dropbox
-
-    # if not args.s3 or args.do_dropbox != "none":
-    #     initialize_dbx()
     new_acm()
 
 

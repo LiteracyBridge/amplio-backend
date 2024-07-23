@@ -124,6 +124,7 @@ def create_program_record(
         # expr_values[':rn'] = 'roles'
         # expr_values[':r'] = 'M: {:e : ' + ADMIN_ROLES + ' }'
         # expr_values[':e'] = admin_email
+        pass
     # If this is an S3 program, add "'repository': 's3'" to the record.
     if is_s3:
         # Populate the new record
@@ -151,6 +152,7 @@ def check_for_organization_record(organization: str, parent_organization: str) -
     print("Checking for conflicting organization record in dynamoDb...", end="")
     query = organization_table.get_item(Key={"organization": organization})
     organization_row = query.get("Item")
+
     if organization_row:
         existing_parent = organization_row.get("parent")
         if existing_parent != parent_organization:

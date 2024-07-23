@@ -30,6 +30,9 @@ prod: venv
     @echo "Starts the API server in production mode"
     APP_ENV=production {{ PYTHONPATH }} {{ uvicorn }} src.app:app --reload
 
+new_acm *args='': venv
+	{{ PYTHONPATH }} {{ python }} scripts/new_acm/new_acm.py "$@"
+
 tableau_geo *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/tableau/tableau_geo_importer.py "$@"
 

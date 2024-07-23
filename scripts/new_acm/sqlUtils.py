@@ -3,12 +3,6 @@ from sqlalchemy.sql import text
 from database import get_db
 from models.program_model import Project
 
-connction_overrides = ["host", "port", "user", "password", "database"]
-connection_params = {}
-
-# This will be a connection to the PostgreSQL database
-db_connection = None
-
 
 # noinspection SqlResolve,SqlNoDataSourceInspection
 def check_for_postgresql_project(program_id) -> bool:
@@ -20,8 +14,8 @@ def check_for_postgresql_project(program_id) -> bool:
     print(f"Looking for program '{program_id}' in PostgreSQL...", end="")
 
     cur = next(get_db())
-    cur.execute(text("SELECT projectcode FROM projects;"))
-    rows = [x[0] for x in cur]
+    resp = cur.execute(text("SELECT projectcode FROM projects;"))
+    rows = [x[0] for x in resp]
 
     if program_id in rows:
         print("\n  {} exists in PostgreSQL projects table".format(program_id))
@@ -41,8 +35,9 @@ def populate_postgresql(program_id: str, comment: str) -> bool:
     """
     print(f"Adding '{program_id}' to PostgreSQL projects table...", end="")
     cur = next(get_db())
-    cur.execute(text("SELECT MAX(id) FROM projects;"))
-    rows = [x[0] for x in cur]
+    resp = cur.execute(text("SELECT MAX(id) FROM projects"))
+
+    rows = [x[0] for x in resp]
     new_id = max(rows) + 1
 
     project = Project()
