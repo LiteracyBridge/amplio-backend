@@ -8,7 +8,7 @@ from os.path import expanduser
 from pathlib import Path
 from typing import Optional
 
-import boto3
+from boto3 import client
 from dynamoUtils import (
     check_for_checkout,
     check_for_organization_record,
@@ -20,14 +20,12 @@ from dynamoUtils import (
 from sqlUtils import check_for_postgresql_project, populate_postgresql
 from utils import canonical_acm_path_name, canonical_acm_project_name
 
-from config import PROGRAM_CONTENT_BUCKET, PROGRAM_LIST_BUCKET, PROGRAM_SPEC_BUCKET
+from config import PROGRAM_CONTENT_BUCKET, PROGRAM_SPEC_BUCKET
 
 # s3 and projspec, dashboard buckets
-s3_client = boto3.client("s3")
+s3_client = client("s3")
 projspec_bucket: str = PROGRAM_SPEC_BUCKET
 content_bucket: str = PROGRAM_CONTENT_BUCKET
-project_list_bucket: str = PROGRAM_LIST_BUCKET
-project_list_key: str = "data/project_list.csv"
 
 # Properties of the two dropbox users: a maintaining user and the processing user.
 
@@ -208,27 +206,6 @@ def initialize_programspec(program_id: str, is_s3: bool) -> bool:
     return False
 
 
-# noinspection SqlResolve,SqlNoDataSourceInspection
-
-
-def populate_project_list(program_id: str) -> bool:
-    """
-    Adds the project name to projects_list.csv in DashboardReports, then uploads the files to
-        s3://dashboard-lb-stats/data/project_list.csv
-    :param program_id: to be added
-    :return: True
-    """
-    print(f"Adding '{program_id}' to projects_list...", end="")
-    path = project_list_path()
-    with open(path, "a") as pl:
-        print(f"{program_id},{program_id}/", file=pl)
-    s3_client.upload_file(
-        Filename=str(path), Bucket=project_list_bucket, Key=project_list_key
-    )
-    print("ok")
-    return True
-
-
 # noinspection PyUnresolvedReferences
 def new_acm():
     global args
@@ -252,11 +229,9 @@ def new_acm():
 
     if args.do_progspec != "none":
         ok = check_for_programspec(program_id) and ok
+
     if args.do_sql != "none":
         ok = check_for_postgresql_project(program_id) and ok
-
-        # if args.do_dashboard != "none":
-        #     ok = check_for_project_list_entry(program_id) and ok
     print(ok)
 
     if ok and not args.dry_run:
@@ -279,9 +254,6 @@ def new_acm():
             ok = initialize_programspec(program_id, args.s3) and ok
         if args.do_sql == "both":
             ok = populate_postgresql(program_id, args.name) and ok
-
-        if args.do_dashboard == "both":
-            ok = populate_project_list(program_id) and ok
 
         if not ok:
             print(f"Errors encountered creating or sharing acm {program_id}")
@@ -343,12 +315,6 @@ def main():
         choices=["none", "check", "both"],
         default="both",
         help="Do or don't check or update projects table in PostgreSQL.",
-    )
-    arg_parser.add_argument(
-        "--do-dashboard",
-        choices=["none", "check", "both"],
-        default="both",
-        help="Do or don't check or update projects_list in dashboard.",
     )
     arg_parser.add_argument(
         "--do-checkout",
