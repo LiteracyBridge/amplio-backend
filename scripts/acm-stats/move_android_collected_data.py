@@ -47,7 +47,7 @@ def move_files():
                 print(f"Moved {source_key} to {COLLECTED_STATS_BUCKET}/{target_key}")
                 count += 1
 
-    if True:
+    if count > 0:
         print(
             f"Moved {count} files from {PROGRAM_CONTENT_BUCKET}/{source_prefix} to {COLLECTED_STATS_BUCKET}/{target_prefix}"
         )
