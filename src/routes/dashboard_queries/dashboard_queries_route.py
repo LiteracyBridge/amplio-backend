@@ -51,3 +51,17 @@ def recipients(program_id: str, deployment: str, db: Session = Depends(get_db)):
         )
         .all()
     )
+
+@router.get(
+    "/{program_id}/acms",
+    dependencies=[
+        Depends(has_permission(Permission.manage_content))
+    ],
+)
+def acms(program_id: str, selector: str, db: Session = Depends(get_db)):
+    return ApiResponse(
+        data=get_status(
+            programid=program_id,
+            selector=selector if selector is not None else "content",
+        )
+    )
