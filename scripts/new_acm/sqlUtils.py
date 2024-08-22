@@ -85,7 +85,7 @@ def populate_postgresql(program_id: str, comment: str) -> bool:
     # program_id                          | CRS-GH-ICO
     # languages                           | ["gur", "talni", "maw"]
     # country                             | Ghana
-    # region                              | ["North East", "Upper East"]
+    # region                              | ["North East", "Upper East"] # type: ignore
     # direct_beneficiaries_map            | {"male": "Number of Male", "female": "Number of Female", "youth": "Number of Youth"}
     # direct_beneficiaries_additional_map | {}
     # affiliate                           |

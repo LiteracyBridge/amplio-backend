@@ -22,6 +22,10 @@ server: venv
     @echo "Starting the API server using the value of APP_ENV (default to 'production')"
     {{ PYTHONPATH }} {{ uvicorn }} src.app:app --reload
 
+[doc("Runs pyright linter")]
+lint: venv
+    pyright
+
 dev: venv
     @echo "Starting the API server in development mode"
     APP_ENV=local {{ PYTHONPATH }} {{ uvicorn }} src.app:app --reload

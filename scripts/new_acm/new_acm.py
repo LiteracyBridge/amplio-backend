@@ -6,7 +6,6 @@ import subprocess
 import sys
 from os.path import expanduser
 from pathlib import Path
-from typing import Optional
 
 from boto3 import client
 from dynamoUtils import (
@@ -23,13 +22,13 @@ from utils import canonical_acm_path_name, canonical_acm_project_name
 from config import PROGRAM_CONTENT_BUCKET, PROGRAM_SPEC_BUCKET
 
 # s3 and projspec, dashboard buckets
-s3_client = client("s3")
+s3_client = client("s3")  # type: ignore
 projspec_bucket: str = PROGRAM_SPEC_BUCKET
 content_bucket: str = PROGRAM_CONTENT_BUCKET
 
 # Properties of the two dropbox users: a maintaining user and the processing user.
 
-args = {}
+args = {}  # type: ignore
 
 # Get the user name and password that we need to sign into the SQL database. Configured through AWS console.
 
@@ -211,56 +210,56 @@ def new_acm():
     global args
 
     ok = True
-    acm = args.acm
+    acm = args.acm  # type: ignore
     program_id = str(canonical_acm_project_name(acm))
     acm_dir = program_id
 
-    if args.do_content != "none":
+    if args.do_content != "none":  # type: ignore
         ok = check_for_existing_s3_content(program_id=program_id) and ok
 
-    if args.do_checkout != "none":
+    if args.do_checkout != "none":  # type: ignore
         ok = check_for_checkout(acm_dir) and ok
 
-    if args.do_program != "none":
+    if args.do_program != "none":  # type: ignore
         ok = check_for_program_record(program_id) and ok
 
-    if args.do_organization != "none":
-        ok = check_for_organization_record(args.org, args.parent) and ok
+    if args.do_organization != "none":  # type: ignore
+        ok = check_for_organization_record(args.org, args.parent) and ok  # type: ignore
 
-    if args.do_progspec != "none":
+    if args.do_progspec != "none":  # type: ignore
         ok = check_for_programspec(program_id) and ok
 
-    if args.do_sql != "none":
+    if args.do_sql != "none":  # type: ignore
         ok = check_for_postgresql_project(program_id) and ok
     print(ok)
 
-    if ok and not args.dry_run:
+    if ok and not args.dry_run:  # type: ignore
         print(f"\nCreating entries for {program_id}.\n")
 
-        if args.do_content == "both":
-            ok = create_and_populate_content(program_id, acm_dir) and ok
+        if args.do_content == "both":  # type: ignore
+            ok = create_and_populate_content(program_id) and ok
 
-        if args.do_checkout == "both":
+        if args.do_checkout == "both":  # type: ignore
             ok = create_checkout_record(acm_dir) and ok
-        if args.do_program == "both":
+        if args.do_program == "both":  # type: ignore
             ok = create_program_record(
-                program_id, args.org, args.admin, args.s3, args.name
+                program_id, args.org, args.admin, args.s3, args.name  # type: ignore
             )
 
-        if args.do_organization == "both":
-            ok = create_organization_record(args.org, args.parent)
+        if args.do_organization == "both":  # type: ignore
+            ok = create_organization_record(args.org, args.parent)  # type: ignore
 
-        if args.do_progspec == "both":
-            ok = initialize_programspec(program_id, args.s3) and ok
-        if args.do_sql == "both":
-            ok = populate_postgresql(program_id, args.name) and ok
+        if args.do_progspec == "both":  # type: ignore
+            ok = initialize_programspec(program_id, args.s3) and ok  # type: ignore
+        if args.do_sql == "both":  # type: ignore
+            ok = populate_postgresql(program_id, args.name) and ok  # type: ignore
 
         if not ok:
             print(f"Errors encountered creating or sharing acm {program_id}")
     else:
         if not ok:
             print("Issues detected; ", end="")
-        if args.dry_run:
+        if args.dry_run:  # type: ignore
             print("Dry run; ", end="")
         print("no action attempted.")
 
