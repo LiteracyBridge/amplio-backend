@@ -30,7 +30,7 @@ pytest = "*"
 moto = {extras = ["all"], version = "*"}
 types-python-jose = "*"
 types-psycopg2 = "*"
-pyright = "*"
+pyright = "1.1.377"
 types-python-dateutil = "*"
 boto3-stubs = "*"
 types-requests = "*"
