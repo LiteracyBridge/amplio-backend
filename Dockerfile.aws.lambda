@@ -2,9 +2,6 @@ FROM public.ecr.aws/lambda/python:3.11
 
 COPY ./src ${LAMBDA_TASK_ROOT}
 
-RUN yum install --quiet -y gcc python3-devel postgresql-devel git make awk procps-ng
-
-RUN pip install psycopg2-binary
 RUN pip install -r ${LAMBDA_TASK_ROOT}/requirements.txt --target "${LAMBDA_TASK_ROOT}"
 
 CMD ["app.handler"]

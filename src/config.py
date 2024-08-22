@@ -13,6 +13,8 @@ AWS_REGION = "us-west-2"
 # Buckets
 COLLECTED_STATS_BUCKET = "acm-stats"
 PROGRAM_CONTENT_BUCKET = "amplio-program-content"
+PROGRAM_SPEC_BUCKET = "amplio-progspecs"
+# PROGRAM_LIST_BUCKET = "dashboard-lb-stats"
 
 # Mailing
 MAIL_SOURCE_ADDR = "ictnotifications@amplio.org"

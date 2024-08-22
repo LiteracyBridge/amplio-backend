@@ -6,8 +6,8 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, subqueryload
 
-from models import Program, Role, User, current_user, get_db
-from models.user_model import ProgramUser, UserRole
+from models import Role, User, current_user, get_db
+from models.user_model import UserRole
 from routes.users.users_route import get_all_users
 from schema import ApiResponse
 from utilities.permissions import PERMISSIONS_TEMPLATE

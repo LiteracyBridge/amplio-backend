@@ -15,8 +15,6 @@ from models import get_db
 from models.organisation_model import Organisation
 from models.program_model import OrganisationProgram, Program
 from models.user_model import ProgramUser, User, UserRole, current_user
-from routes.program_spec.db import _ensure_content_view
-from routes.users.users_route import get_all_users
 from schema import ApiResponse
 from utilities.rolemanager import manager
 from utilities.rolemanager.rolesdb import RolesDb

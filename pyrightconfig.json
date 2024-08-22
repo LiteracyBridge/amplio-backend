@@ -2,7 +2,9 @@
     "include": [
       "src",
       "scripts/tableau",
-      "scripts/acm-stats/move_android_collected_data.py"
+      "scripts/new_acm",
+      "scripts/acm-stats/move_android_collected_data.py",
+      "scripts/migrate_staffs_from_dynamo.py"
     ],
 
     "exclude": [
