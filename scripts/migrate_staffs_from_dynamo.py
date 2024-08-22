@@ -18,12 +18,13 @@ role_names_map = {
 
 
 def run():
-    _dynamodb_client = boto3.client("dynamodb")  # specify amazon service to be used
     _dynamodb_resource = boto3.resource("dynamodb")
     db = next(get_db())
 
     # Copy organisations from dynamo db into psql
     organizations = _dynamodb_resource.Table("organizations").scan()["Items"]
+    programs = _dynamodb_resource.Table("programs").scan()["Items"]
+
     for row in organizations:
         org_name = row["organization"]
         # Create staffs
@@ -63,6 +64,40 @@ def run():
                 )
 
             # Create program records for the user
+    db.commit()
+
+    for row in programs:
+        program_id = row["program"]
+        # Create staffs
+        staffs = row.get("roles", {})
+
+        for email, S in staffs.items():
+            user = db.execute(
+                sa.text("SELECT id FROM users WHERE email=:email LIMIT 1").bindparams(
+                    email=email
+                )
+            ).fetchall()
+            if len(user) == 0:
+                continue
+
+            program = db.execute(
+                sa.text(
+                    "SELECT id FROM programs WHERE program_id=:program_id LIMIT 1"
+                ).bindparams(program_id=program_id)
+            ).fetchall()
+
+            if len(program) == 0:
+                continue
+
+            staffId = db.execute(
+                sa.text(
+                    "INSERT INTO program_users (user_id, program_id, created_at, updated_at) VALUES (:user_id, :program_id, :date, :date) ON CONFLICT DO NOTHING RETURNING (user_id, program_id)"
+                ).bindparams(
+                    user_id=user[0][0],
+                    program_id=program[0][0],
+                    date=datetime.now(),
+                ),
+            ).fetchall()
 
         db.commit()
 
