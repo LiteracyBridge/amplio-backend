@@ -1,13 +1,10 @@
-import json
-import sys
 import time
-import traceback
 from typing import Any
 
 import boto3
 from fastapi import APIRouter, Depends
 
-from models.user_model import ProgramUser, User, UserRole, current_user
+from models.user_model import User, current_user
 from schema import ApiResponse
 
 """
