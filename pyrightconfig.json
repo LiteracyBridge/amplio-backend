@@ -3,7 +3,8 @@
       "src",
       "scripts/tableau",
       "scripts/new_acm",
-      "scripts/acm-stats/move_android_collected_data.py"
+      "scripts/acm-stats/move_android_collected_data.py",
+      "scripts/acm-stats/migrate_staffs_from_dynamo.py"
     ],
 
     "exclude": [

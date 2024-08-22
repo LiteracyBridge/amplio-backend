@@ -43,4 +43,8 @@ move_android_collected_data *args='': venv
     @echo "Moving collected stats data by the Android TB Loader from amplio-program-content to acm-stats bucket"
     {{ PYTHONPATH }} {{ python }} scripts/acm-stats/move_android_collected_data.py
 
+[doc("Executes a python script. Usage: just run_script <script_name.py> <args>")]
+run_script *args='': venv
+    {{ PYTHONPATH }} {{ python }} "$@"
+
 # TODO: Add a build step to compile acm & copy jars to AWS-LB/bin dir
