@@ -2,6 +2,7 @@
 """
 
 from datetime import datetime
+from json import dumps
 
 import boto3
 import sqlalchemy as sa
@@ -17,7 +18,164 @@ role_names_map = {
 }
 
 
-def run():
+def createDefaultRoles(orgId: int):
+    db = next(get_db())
+
+    roles = [
+        {
+            "name": "Administrator",
+            "permissions": {
+                "acm": [
+                    "manage_deployment",
+                    "manage_playlist",
+                    "manage_prompt",
+                    "manage_content",
+                    "manage_checkout",
+                ],
+                "talking_book_loader": [
+                    "deploy_content",
+                ],
+                "user_feedback": ["manage_survey", "analyse_survey", "review_analysis"],
+                "staff": ["manage_staff", "manage_role"],
+                "program": [
+                    "manage_users",
+                    "manage_specification",
+                    "manage_program",
+                ],
+                "statistics": ["view_tb_analytics", "view_deployment_status"],
+            },
+        },
+        {
+            "name": "Program Manager",
+            "permissions": {
+                "acm": [
+                    "manage_deployment",
+                    "manage_playlist",
+                    "manage_prompt",
+                    "manage_content",
+                    "manage_checkout",
+                ],
+                "talking_book_loader": [
+                    "deploy_content",
+                ],
+                "user_feedback": ["manage_survey", "analyse_survey", "review_analysis"],
+                "program": [
+                    "manage_users",
+                    "manage_specification",
+                    "manage_program",
+                ],
+                "statistics": ["view_tb_analytics", "view_deployment_status"],
+            },
+        },
+        {
+            "name": "Content Officer",
+            "permissions": {
+                "acm": [
+                    "manage_deployment",
+                    "manage_playlist",
+                    "manage_prompt",
+                    "manage_content",
+                    "manage_checkout",
+                ],
+                "talking_book_loader": [
+                    "deploy_content",
+                ],
+                "program": [
+                    "manage_users",
+                    "manage_specification",
+                    "manage_program",
+                ],
+            },
+        },
+        {
+            "name": "Field Officer",
+            "permissions": {
+                "acm": [
+                    "manage_deployment",
+                    "manage_playlist",
+                    "manage_prompt",
+                    "manage_content",
+                    "manage_checkout",
+                ],
+                "talking_book_loader": [
+                    "deploy_content",
+                ],
+            },
+        },
+    ]
+
+    for role in roles:
+        db.execute(
+            sa.text(
+                "INSERT INTO roles (name, description, organisation_id, permissions, created_at, updated_at) VALUES (:name, :desc, :org, :permissions, :date, :date)"
+            ).bindparams(
+                date=datetime.now(),
+                desc=f"{role['name']} role",
+                name=role["name"],
+                org=orgId,
+                permissions=dumps(role["permissions"]),
+            )
+        )
+    db.commit()
+
+
+def migrateOrganizations():
+    ORGANIZATIONS_TABLE = "organizations"
+    PROGRAMS_TABLE = "programs"
+
+    _dynamodb_resource = boto3.resource("dynamodb")
+    db = next(get_db())
+
+    # Copy organisations from dynamo db into psql
+    organizations = _dynamodb_resource.Table(ORGANIZATIONS_TABLE).scan()["Items"]
+    for row in organizations:
+        db.execute(
+            sa.text(
+                "INSERT INTO organisations (name, parent_id) VALUES (:name, (SELECT id FROM organisations WHERE name = :parent LIMIT 1)) ON CONFLICT DO NOTHING RETURNING id"
+            ).bindparams(name=row["organization"], parent=row.get("parent", None)),
+        )
+
+        orgId = db.execute(
+            sa.text("SELECT id FROM organisations WHERE name = :name").bindparams(
+                name=row["organization"]
+            )
+        ).fetchone()
+
+        if orgId is not None:
+            createDefaultRoles(orgId[0])
+
+    db.commit()
+
+    # Copy programs from dynamo db into psql
+    programs = _dynamodb_resource.Table(PROGRAMS_TABLE).scan()["Items"]
+    for row in programs:
+        # Skip programs which do not exists in programs table
+        if row["program"] in [
+            "MEDA",
+            "UWR",
+            "CBCC",
+            "TEST-TS-NG",
+            "CARE",
+            "LBG-F",
+            "LBG-FL",
+        ]:
+            continue
+
+        try:
+            db.execute(
+                sa.text(
+                    "INSERT INTO organisation_programs (organisation_id, program_id) VALUES ((SELECT id FROM organisations WHERE name = :org LIMIT 1), (SELECT id FROM programs WHERE program_id = :program LIMIT 1)) ON CONFLICT DO NOTHING"
+                ).bindparams(org=row["organization"], program=row.get("program")),
+            )
+            db.commit()
+        except (
+            sa.exc.IntegrityError
+        ) as e:  # Programs which do not exists in programs table will raise an error
+            # print(e)
+            pass
+
+
+def migrateUsers():
     _dynamodb_resource = boto3.resource("dynamodb")
     db = next(get_db())
 
@@ -68,9 +226,9 @@ def run():
 
     for row in programs:
         program_id = row["program"]
-        # Create staffs
         staffs = row.get("roles", {})
 
+        # Create staffs
         for email, S in staffs.items():
             user = db.execute(
                 sa.text("SELECT id FROM users WHERE email=:email LIMIT 1").bindparams(
@@ -103,4 +261,5 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    migrateOrganizations()
+    migrateUsers()

@@ -18,47 +18,8 @@ depends_on = None
 
 
 def upgrade() -> None:
-    import boto3
-
-    ORGANIZATIONS_TABLE = "organizations"
-    PROGRAMS_TABLE = "programs"
-
-    _dynamodb_client = boto3.client("dynamodb")  # specify amazon service to be used
-    _dynamodb_resource = boto3.resource("dynamodb")
-
-    # Copy organisations from dynamo db into psql
-    organizations = _dynamodb_resource.Table(ORGANIZATIONS_TABLE).scan()["Items"]
-    for row in organizations:
-        op.execute(
-            sa.text(
-                "INSERT INTO organisations (name, parent_id) VALUES (:name, (SELECT id FROM organisations WHERE name = :parent LIMIT 1)) ON CONFLICT DO NOTHING"
-            ).bindparams(name=row["organization"], parent=row.get("parent", None)),
-        )
-        # TODO: migrate org roles to the corresponding users
-
-    # Copy programs from dynamo db into psql
-    programs = _dynamodb_resource.Table(PROGRAMS_TABLE).scan()["Items"]
-    for row in programs:
-        # Skip programs which do not exists in programs table
-        if row["program"] in [
-            "MEDA",
-            "UWR",
-            "TUDRIDEP",
-            "SF-9RDMSAAG",
-            "CBCC",
-            "CBCC-DEMO",
-            "TEST-TS-NG",
-            "CARE",
-            "LBG-F",
-            "LBG-FL",
-        ]:
-            continue
-
-        op.execute(
-            sa.text(
-                "INSERT INTO organisation_programs (organisation_id, program_id) VALUES ((SELECT id FROM organisations WHERE name = :org LIMIT 1), (SELECT id FROM programs WHERE program_id = :program LIMIT 1)) ON CONFLICT DO NOTHING"
-            ).bindparams(org=row["organization"], program=row.get("program")),
-        )
+    # Code has been moved to scripts/migrate_staffs_from_dynamo.py
+    pass
 
 
 def downgrade() -> None:
