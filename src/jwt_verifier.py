@@ -82,6 +82,7 @@ class CognitoAuthenticator:
             True if valid, False otherwise
         """
 
+        # If the token is already cached(verified), skip the verification process
         if VERIFIED_JWT_CLAIMS_CACHE.get(token, None) is not None:
             return True
 
@@ -91,7 +92,8 @@ class CognitoAuthenticator:
             self._get_verified_claims(token)
         except Exception as e:
             print(e)
-            return False
+            raise HTTPException(status_code=401, detail="Unauthorized")
+
         return True
 
     def _is_jwt(self, token: str) -> bool:
