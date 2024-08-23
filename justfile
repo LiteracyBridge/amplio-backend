@@ -4,7 +4,7 @@ set dotenv-load := true
 # Enables loading .env values
 
 VIRTUAL_ENV := `pipenv --venv 2> /dev/null`
-PYTHONPATH := "PYTHONPATH=" + env('PYTHONPATH', '') + ":" + invocation_directory() + "/src"
+PYTHONPATH := "PYTHONPATH=" + env('PYTHONPATH', '') + ":" + source_directory() + "/src"
 python := VIRTUAL_ENV / "bin/python"
 uvicorn := VIRTUAL_ENV / "bin/uvicorn"
 
