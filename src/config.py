@@ -10,10 +10,14 @@ from jinja2 import Environment, FileSystemLoader
 
 AWS_REGION = "us-west-2"
 
+# Audio Content Manager
+ACM_PREFIX = "ACM-"
+
 # Buckets
 COLLECTED_STATS_BUCKET = "acm-stats"
 PROGRAM_CONTENT_BUCKET = "amplio-program-content"
 PROGRAM_SPEC_BUCKET = "amplio-progspecs"
+ACM_LOGGING_BUCKET_NAME = "acm-logging"
 # PROGRAM_LIST_BUCKET = "dashboard-lb-stats"
 
 # Mailing

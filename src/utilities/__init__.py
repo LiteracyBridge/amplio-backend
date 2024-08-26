@@ -1,8 +1,11 @@
 import csv
 import io
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
+
+from config import ACM_PREFIX
 
 
 def escape_csv(s: str) -> str:
@@ -63,3 +66,29 @@ def csv_as_str(csv_dict) -> str:
 def snake_to_camel(string: str) -> str:
     words = string.split("_")
     return words[0] + "".join(word.capitalize() for word in words[1:])
+
+
+def cannonical_program_name(acm_name) -> str:
+    """Given a program or ACM name, return just the program name part, uppercased. ACM-TEST -> TEST, test -> TEST"""
+
+    if acm_name is None:
+        return None
+    acm_name = acm_name.upper()
+    if acm_name.startswith(ACM_PREFIX):
+        acm_name = acm_name[len(ACM_PREFIX) :]
+    return acm_name
+
+
+def enquote(v):
+    """Adds quotes to a string with embedded commas. For data destined for a .csv"""
+
+    # escape any quotes
+    v = v.replace('"', '\\"')
+    # if any commas, enclose in quotes
+    if v.find(",") > 0:
+        v = '"' + v + '"'
+    return v
+
+
+def now():
+    return str(datetime.now())
