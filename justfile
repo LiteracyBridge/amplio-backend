@@ -43,6 +43,7 @@ tableau_geo *args='': venv
 logs_reader *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/v2LogReader/main.py "$@"
 
+# START: Statistics related commands
 [doc("Inserts processed stats 'tbsdeployed.csv' and 'tbscollected.csv' files into the database")]
 csv_insert *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/csv_insert.py "$@"
@@ -50,6 +51,12 @@ csv_insert *args='': venv
 move_android_collected_data *args='': venv
     @echo "Moving collected stats data by the Android TB Loader from amplio-program-content to acm-stats bucket"
     {{ PYTHONPATH }} {{ python }} scripts/acm-stats/move_android_collected_data.py
+
+[doc("Updates the usage info of the program(s) in the database")]
+update_usage_info *args='': venv
+    {{ PYTHONPATH }} {{ python }} scripts/acm-stats/usage_info_updater.py "$@"
+
+# END: Statistics related commands
 
 [doc("Executes a python script. Usage: just run_script <script_name.py> <args>")]
 run_script *args='': venv

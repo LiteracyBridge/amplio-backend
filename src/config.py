@@ -1,5 +1,5 @@
 import json
-from os import getenv, pathsep
+from os import getenv
 from pathlib import Path
 from typing import Any, Optional
 
