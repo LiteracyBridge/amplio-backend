@@ -3,7 +3,7 @@ import io
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from config import ACM_PREFIX
 
@@ -68,7 +68,7 @@ def snake_to_camel(string: str) -> str:
     return words[0] + "".join(word.capitalize() for word in words[1:])
 
 
-def cannonical_program_name(acm_name) -> str:
+def cannonical_program_name(acm_name) -> Optional[str]:
     """Given a program or ACM name, return just the program name part, uppercased. ACM-TEST -> TEST, test -> TEST"""
 
     if acm_name is None:

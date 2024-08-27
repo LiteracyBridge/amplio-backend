@@ -1,6 +1,5 @@
 set positional-arguments := true
 set dotenv-load := true
-
 # Enables loading .env values
 
 VIRTUAL_ENV := `pipenv --venv 2> /dev/null`
@@ -16,7 +15,7 @@ venv:
     . {{ VIRTUAL_ENV }}/bin/activate
 
 install: venv
-    pipenv install --verbose
+    pipenv install --verbose "$@"
 
 server: venv
     @echo "Starting the API server using the value of APP_ENV (default to 'production')"
