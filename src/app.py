@@ -21,6 +21,7 @@ from models import get_db
 from models.user_model import User, UserRole, current_user
 from monitoring import logging_config
 from routes import (
+    acm_checkout_router,
     categories_route,
     language_route,
     program_route,
@@ -223,7 +224,15 @@ app.include_router(
     tags=["talking-book-loader"],
     dependencies=[Depends(get_db)],
 )
-
+app.include_router(
+    tableau_route.router,
+    prefix="/acm-checkout",
+    tags=["acm-checkout"],
+    dependencies=[
+        Depends(get_db),
+        Depends(has_permission(Permission.manage_checkout)),
+    ],
+)
 
 # app.include_router(
 #     analysis_route.router,
