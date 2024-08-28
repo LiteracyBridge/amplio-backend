@@ -62,7 +62,7 @@ update-usage-info *args='': venv
 [doc("Apply migrations to the database")]
 [group("migration")]
 migration-run *args='': venv
-    cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic upgrade head
+    cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic upgrade heads
 
 [doc("Reverts migration given the revision number")]
 [group("migration")]

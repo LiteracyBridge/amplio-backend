@@ -1,17 +1,18 @@
 """create-organisations-table
 
 Revision ID: afebd2358e37
-Revises:
+Revises: 59cd7297ccc3
 Create Date: 2023-12-11 09:20:16.687517
 
 """
+
 import sqlalchemy as sa
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "afebd2358e37"
-down_revision = None
+down_revision = "59cd7297ccc3"
 branch_labels = None
 depends_on = None
 
