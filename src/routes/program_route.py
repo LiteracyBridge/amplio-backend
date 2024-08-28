@@ -21,7 +21,6 @@ from utilities.rolemanager.rolesdb import RolesDb
 
 router = APIRouter()
 
-manager.open_tables()
 
 STATUS_OK = "ok"
 STATUS_FAILURE = "failure"
@@ -36,6 +35,8 @@ DEFAULT_REPOSITORY = "dbx"
 def get_program_info_for_user(email: str) -> Tuple[Dict[str, Dict[str, str]], str]:
     # Start with the user's roles in programs, because that gets the list of relevant programs
     # {program: roles}
+    manager.open_tables()
+
     programs_and_roles: Dict[str, str] = manager.get_programs_for_user(email)
     # {program: {'roles': roles}}
     result: Dict[str, Dict[str, str]] = {
