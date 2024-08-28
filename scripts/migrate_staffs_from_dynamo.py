@@ -6,6 +6,7 @@ from json import dumps
 
 import boto3
 import sqlalchemy as sa
+from sqlalchemy.orm import Session
 
 from database import get_db
 
@@ -18,8 +19,7 @@ role_names_map = {
 }
 
 
-def createDefaultRoles(orgId: int):
-    db = next(get_db())
+def createDefaultRoles(orgId: int, db: Session):
 
     roles = [
         {
@@ -116,7 +116,7 @@ def createDefaultRoles(orgId: int):
                 permissions=dumps(role["permissions"]),
             )
         )
-    db.commit()
+    # db.commit()
 
 
 def migrateOrganizations():
@@ -129,6 +129,7 @@ def migrateOrganizations():
     # Copy organisations from dynamo db into psql
     organizations = _dynamodb_resource.Table(ORGANIZATIONS_TABLE).scan()["Items"]
     for row in organizations:
+        print(row)
         db.execute(
             sa.text(
                 "INSERT INTO organisations (name, parent_id) VALUES (:name, (SELECT id FROM organisations WHERE name = :parent LIMIT 1)) ON CONFLICT DO NOTHING RETURNING id"
@@ -142,7 +143,7 @@ def migrateOrganizations():
         ).fetchone()
 
         if orgId is not None:
-            createDefaultRoles(orgId[0])
+            createDefaultRoles(orgId[0], db=db)
 
     db.commit()
 
