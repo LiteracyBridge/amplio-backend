@@ -159,20 +159,26 @@ def migrateOrganizations():
             "CARE",
             "LBG-F",
             "LBG-FL",
+            "TUDRIDEP",
+            "CBCC-DEMO",
         ]:
             continue
 
         try:
             db.execute(
                 sa.text(
-                    "INSERT INTO organisation_programs (organisation_id, program_id) VALUES ((SELECT id FROM organisations WHERE name = :org LIMIT 1), (SELECT id FROM programs WHERE program_id = :program LIMIT 1)) ON CONFLICT DO NOTHING"
-                ).bindparams(org=row["organization"], program=row.get("program")),
+                    "INSERT INTO organisation_programs (organisation_id, program_id, updated_at, deleted_at) VALUES ((SELECT id FROM organisations WHERE name = :org LIMIT 1), (SELECT id FROM programs WHERE program_id = :program LIMIT 1), :now, :now) ON CONFLICT DO NOTHING"
+                ).bindparams(
+                    org=row["organization"],
+                    program=row.get("program"),
+                    now=datetime.now(),
+                )
             )
             db.commit()
         except (
             sa.exc.IntegrityError
         ) as e:  # Programs which do not exists in programs table will raise an error
-            # print(e)
+            print(e)
             pass
 
 
