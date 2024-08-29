@@ -332,7 +332,7 @@ class _DbWriter:
         if len(additions) > 0:
             command_a = text(
                 f'INSERT INTO recipients (project,{",".join(field_names)}) '
-                f'VALUES (:project,:{",:".join(field_names)});'
+                f'VALUES (:project,:{",:".join(field_names)}) ON CONFLICT DO NOTHING;'
             )
             result_a = self._connection.execute(command_a, additions)
             print(

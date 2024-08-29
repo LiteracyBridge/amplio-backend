@@ -1,10 +1,17 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Depends
-from sqlalchemy.orm import Session
 import binascii
 import datetime
 from typing import Annotated, Any, Dict, Optional
-from models import get_db
+
 import boto3 as boto3
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from sqlalchemy.orm import Session, subqueryload
+
+# from routes.program_spec.ps_updater.XlsExporter import Exporter
+import routes.program_spec.ps_updater.XlsExporter as XlsExporter
+from models import get_db
+from models.deployment_model import Deployment
+from models.playlist_model import Playlist
+from models.program_model import Project
 
 # from amplio.utils import (
 #     LambdaRouter,
@@ -15,20 +22,18 @@ import boto3 as boto3
 #     JsonBody,
 # )
 from routes.program_spec import (
-    read_from_xlsx,
-    read_from_s3,
+    compare_program_specs,
+    export_to_db,
+    publish_to_s3,
     read_from_db,
     read_from_json,
-    write_to_s3,
-    publish_to_s3,
-    export_to_db,
+    read_from_s3,
+    read_from_xlsx,
     write_to_json,
-    compare_program_specs,
+    write_to_s3,
 )
 from routes.program_spec.db import _ensure_content_view
-
-# from routes.program_spec.ps_updater.XlsExporter import Exporter
-import routes.program_spec.ps_updater.XlsExporter as XlsExporter
+from schema import ApiResponse
 from utilities.rolemanager.role_checker import current_user
 
 router = APIRouter()
@@ -282,41 +287,6 @@ def publish(
 #         return {"status": STATUS_FAILURE, "errors": errors}, FAILURE_RESPONSE_400
 
 
-# @handler
-# @router.post("/accept")
-# def accept(
-#     programid: str,
-#     email: str = Depends(current_user),
-#     comment: str = "No comment provided",
-#     publish: bool = False,
-# ):
-#     result = {"status": STATUS_OK}
-#     errors = None
-#     print(
-#         f"Accept pending program spec for program {programid} by {email}. "
-#         + f"Publish ?: {publish}."
-#     )
-#     pending_spec, errors = read_from_s3(programid, PENDING_PROGSPEC_KEY)
-#     if pending_spec:
-#         ok, errors = export_to_db(pending_spec)
-#         if ok:
-#             if publish:
-#                 metadata = {
-#                     "submitter-email": email,
-#                     "submitter-comment": comment,
-#                     "submission-date": datetime.datetime.now().isoformat(),
-#                 }
-#                 ok, errors = publish_to_s3(pending_spec, metadata=metadata)
-#                 if ok:
-#                     pending_key = _make_program_key(programid, PENDING_PROGSPEC_KEY)
-#                     _delete_versions(pending_key)
-#     if errors:
-#         print(f"Errors in accept for {programid}: {nl.join(errors)}")
-#         # return a 400 status code.
-#         result = ({"status": STATUS_FAILURE, "errors": errors}, FAILURE_RESPONSE_400)
-#     return result
-
-
 @router.get("/content")
 def get_content(programid: str, db: Session = Depends(get_db)):
     """
@@ -325,10 +295,26 @@ def get_content(programid: str, db: Session = Depends(get_db)):
     :param email: The user requesting the data.
     :return: a JSON string with the current program spec.
     """
-    _ensure_content_view(engine=None, connection=db.connection())
-    db_spec, errors = read_from_db(programid, engine=None, connection=db.connection())
-    json_spec = write_to_json(db_spec, to_string=False)
-    return json_spec
+
+    results = (
+        db.query(Project)
+        .filter(Project.code == programid)
+        .options(
+            subqueryload(Project.general),
+            subqueryload(Project.recipients),
+            subqueryload(Project.deployments).options(
+                subqueryload(Deployment.playlists).subqueryload(Playlist.messages)
+            ),
+        )
+        .all()
+    )
+
+    return ApiResponse(data=results)
+
+    # _ensure_content_view(engine=None, connection=db.connection())
+    # db_spec, errors = read_from_db(programid, engine=None, connection=db.connection())
+    # json_spec = write_to_json(db_spec, to_string=False)
+    # return json_spec
 
 
 # @handler(roles="AD,PM")
@@ -337,9 +323,10 @@ def get_content(programid: str, db: Session = Depends(get_db)):
 def update_content(
     programid: str,
     data: Dict[Any, Any],
-    email: str = Depends(current_user),
+    # email: str = Depends(current_user),
     return_updated: bool = True,
     return_diff: bool = False,
+    db: Session = Depends(get_db),
 ):
     """
     Update one or more sections of the program spec.
@@ -348,9 +335,11 @@ def update_content(
     :param return_diff: If true, return a diff of the program spec.
     :return: the update status, and the diff if requested.
     """
+
+    # TODO: rewrite program spec update to use the alchemy models
     result = {"status": STATUS_OK}
     errors = None
-    print(f"put content for {programid} by {email}, data: {data}")
+    # print(f"put content for {programid} by {email}, data: {data}")
     json_spec, errors = read_from_json(programid, data)
     if json_spec:
         if return_diff:
@@ -366,24 +355,4 @@ def update_content(
         # return a 400 status code.
         result = ({"status": STATUS_FAILURE, "errors": errors}, FAILURE_RESPONSE_400)
 
-    return result
-
-
-# def lambda_router(event, context):
-#     print(f"Event: {event}")
-#     the_router: LambdaRouter = LambdaRouter(event, context)
-#     action = the_router.path_param(0)
-#     print(
-#         f'Request {action} by user {the_router.claim("email") or "-unknown-"} for program {the_router.queryStringParam("programid") or "None"}'
-#     )
-#     return the_router.dispatch(action)
-
-
-# if __name__ == "__main__":
-#     event = {
-#         "requestContext": {"authorizer": {"claims": {"email": "bill@amplio.org"}}},
-#         "pathParameters": {"proxy": "put_content"},
-#         "queryStringParameters": {"programid": "TEST", "return_diff": "yes"},
-#         "body": '{"Nothing": [1,2,3]}',
-#     }
-#     lambda_router(event, {})
+    return get_content(programid=programid, db=db)

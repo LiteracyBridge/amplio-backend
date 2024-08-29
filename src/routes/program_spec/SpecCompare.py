@@ -1,11 +1,11 @@
-from typing import List, Dict
+from typing import Dict, List
 
 from routes.program_spec.spec import (
-    Language,
-    ProgramSpec,
     Deployment,
-    Playlist,
+    Language,
     Message,
+    Playlist,
+    ProgramSpec,
     Recipient,
 )
 

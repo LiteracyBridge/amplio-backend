@@ -27,9 +27,9 @@ jobs:
           output-file: "CHANGELOG.md"
           skip-on-empty: false
 
-      # - name: Merge to stable => master -> production
-      #   run: |
-      #     git fetch origin stable
-      #     git checkout stable
-      #     git merge master
-      #     git push
+      - name: Deploy to production => Merge master -> stable
+        run: |
+          git fetch origin stable
+          git checkout stable
+          git merge master
+          git push

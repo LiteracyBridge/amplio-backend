@@ -1,20 +1,26 @@
-import re
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
-from sqlalchemy.orm import Session
-from typing import Any, Dict, Optional, Tuple, List, Union, Pattern
-from models import get_db
-import boto3 as boto3
 import asyncio
+import re
 from concurrent import futures
-from routes.program_spec.db import _ensure_content_view
-from utilities.rolemanager.role_checker import current_user
+from os.path import join
+from typing import Annotated, Any, Dict, List, Optional, Pattern, Tuple, Union
+
+import boto3 as boto3
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Request, UploadFile
+from pydantic import BaseModel
+from sqlalchemy import and_, exists, or_, select
+from sqlalchemy.exc import MultipleResultsFound, NoResultFound
+from sqlalchemy.orm import Session, subqueryload
+
+from models import get_db
+from models.organisation_model import Organisation
+from models.program_model import OrganisationProgram, Program
+from models.user_model import ProgramUser, User, UserRole, current_user
+from schema import ApiResponse
 from utilities.rolemanager import manager
 from utilities.rolemanager.rolesdb import RolesDb
 
-
 router = APIRouter()
 
-manager.open_tables()
 
 STATUS_OK = "ok"
 STATUS_FAILURE = "failure"
@@ -25,9 +31,12 @@ STATUS_MISSING_PARAMETER = "Missing parameter"
 DEFAULT_REPOSITORY = "dbx"
 
 
+# TODO: Rewrite this with new roles
 def get_program_info_for_user(email: str) -> Tuple[Dict[str, Dict[str, str]], str]:
     # Start with the user's roles in programs, because that gets the list of relevant programs
     # {program: roles}
+    manager.open_tables()
+
     programs_and_roles: Dict[str, str] = manager.get_programs_for_user(email)
     # {program: {'roles': roles}}
     result: Dict[str, Dict[str, str]] = {
@@ -37,9 +46,9 @@ def get_program_info_for_user(email: str) -> Tuple[Dict[str, Dict[str, str]], st
 
     # Add the friendly name, and collect repository info.
     # {repo: [prog1, prog2, ...]}
-    repository_programs: Dict[
-        str, List[str]
-    ] = {}  # list of programs in each repository.
+    repository_programs: Dict[str, List[str]] = (
+        {}
+    )  # list of programs in each repository.
     programs_table_items = (
         RolesDb().get_program_items()
     )  # programs_table.scan()['Items']
@@ -65,7 +74,7 @@ def get_program_info_for_user(email: str) -> Tuple[Dict[str, Dict[str, str]], st
         for programid in program_list:
             # add {'repository':repository} to {program: {'roles':roles, ...}}
             result[programid]["repository"] = repo
-    return (result, implicit_repo) # type: ignore
+    return (result, implicit_repo)  # type: ignore
 
 
 def _add_deployment_revs(
@@ -111,7 +120,7 @@ def _add_deployment_revs(
     global s3
     import boto3
 
-    if s3 is None: # type: ignore
+    if s3 is None:  # type: ignore
         s3 = boto3.client("s3")
 
     dbx_rev_pattern = re.compile(
@@ -180,12 +189,16 @@ def _add_deployment_revs(
                 program_info[program]["deployment_rev"] = rev
 
 
+# TODO: make this get_program_details {program_id}
 @router.get("")
 def get_programs(
     depls: bool = False,
     use_async: bool = False,
     email: str = Depends(current_user),
 ):
+    # TODO: rewrite to use programs of the current user
+
+    # TODO:return data: {program-data}
     print("Executed")
 
     # add_deployments = _bool_arg(depls)
@@ -201,3 +214,172 @@ def get_programs(
             "implicit_repository": implicit_repo,
         }
     }
+
+
+@router.get("/all")
+def get_all_programs(
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    where_exists = exists(OrganisationProgram).where(
+        OrganisationProgram.program_id == Program.id,
+        exists(Organisation).where(
+            or_(
+                Organisation.id.in_(
+                    [OrganisationProgram.organisation_id, user.organisation_id]
+                ),
+                Organisation.parent_id.in_(
+                    [OrganisationProgram.organisation_id, user.organisation_id]
+                ),
+            )
+        ),
+    )
+
+    results = (
+        db.query(Program)
+        .filter(where_exists)
+        .options(
+            subqueryload(Program.project),
+            subqueryload(Program.organisations).options(
+                subqueryload(OrganisationProgram.organisation)
+            ),
+            subqueryload(Program.users).options(subqueryload(ProgramUser.user)),
+        )
+        .all()
+    )
+
+    return ApiResponse(data=results)
+
+
+# # TODO: Add permission check
+@router.get("/{program_id}/organisation-users")
+def get_program_users(
+    program_id: int,
+    db: Session = Depends(get_db),
+):
+    users = (
+        db.query(User)
+        .filter(
+            exists(OrganisationProgram).where(
+                and_(
+                    OrganisationProgram.organisation_id == User.organisation_id,
+                    OrganisationProgram.program_id == program_id,
+                )
+            )
+        )
+        .all()
+    )
+
+    return ApiResponse(data=users)
+
+
+class ManageOrgDto(BaseModel):
+    organisation_id: int
+    program_id: int
+
+
+@router.post("/organisations")
+def add_organisation_to_program(
+    dto: ManageOrgDto,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Add an organisation to a program"""
+
+    try:
+        organisation_program = OrganisationProgram()
+        organisation_program.program_id = dto.program_id
+        organisation_program.organisation_id = dto.organisation_id
+
+        db.merge(organisation_program)
+        db.commit()
+    except MultipleResultsFound as e:
+        raise HTTPException(
+            status_code=400, detail="Organisation already added to program"
+        )
+
+    return get_all_programs(db=db, user=request.state.current_user)
+
+
+@router.delete("/{program_id}/organisations/{organisation_id}")
+def remove_organisation_from_program(
+    program_id: int,
+    organisation_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Remove an organisation from a program"""
+
+    try:
+        organisation_program = (
+            db.query(OrganisationProgram)
+            .filter_by(program_id=program_id, organisation_id=organisation_id)
+            .one()
+        )
+
+        db.delete(organisation_program)
+
+        # Remove all organisation users from the program
+        db.query(ProgramUser).filter(
+            ProgramUser.program_id == program_id,
+            ProgramUser.user_id.in_(
+                select(User.id).where(User.organisation_id == organisation_id)
+            ),
+        ).delete(synchronize_session=False)
+
+        db.commit()
+    except NoResultFound as e:
+        pass
+
+    return get_all_programs(db=db, user=request.state.current_user)
+
+
+@router.post("/users")
+def add_user_to_program(
+    user_id: Annotated[int, Body()],
+    program_id: Annotated[int, Body()],
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    """Add a user to a program"""
+
+    try:
+        program_user = ProgramUser()
+        program_user.program_id = program_id
+        program_user.user_id = user_id
+
+        db.merge(program_user)
+        db.commit()
+    except MultipleResultsFound as e:
+        raise HTTPException(status_code=400, detail="User already added to program")
+
+    return get_all_programs(db=db, user=user)
+
+
+@router.delete("/{program_id}/users")
+def remove_user(
+    program_id: int,
+    user_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    """Remove a user from a program"""
+
+    program_user = (
+        db.query(ProgramUser)
+        .filter(ProgramUser.program_id == program_id, ProgramUser.user_id == user_id)
+        .first()
+    )
+
+    if program_user is None:
+        raise HTTPException(status_code=404, detail="Program User not found")
+
+    # Delete all roles for the user in the program
+    db.query(UserRole).filter(
+        UserRole.program_id == program_id, UserRole.user_id == user_id
+    ).delete()
+
+    db.delete(program_user)
+    db.commit()
+
+    return get_all_programs(db=db, user=user)

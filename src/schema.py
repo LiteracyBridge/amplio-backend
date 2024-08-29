@@ -1,13 +1,20 @@
-from dataclasses import dataclass
-from typing import Any, Generic, List, TypeVar
+from typing import Any, List, TypeVar
 from pydantic import BaseModel
 
 
 T = TypeVar("T")
 
 
-class ApiResponse(BaseModel):
+class ApiResponse():
     data: List[Any]
+    status_code: int = 200
+    status: str = "OK"
 
-    class Config:
-        orm_mode = True
+
+    def __init__(self, data: List[Any], status_code: int = 200, status: str = "OK"):
+        self.data = data
+        self.status_code = status_code
+        self.status = status
+
+    # class Config:
+    #     orm_mode = True

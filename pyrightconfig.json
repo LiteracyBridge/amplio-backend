@@ -1,6 +1,12 @@
 {
     "include": [
-      "."
+      "src",
+      "scripts/tableau",
+      "scripts/new_acm",
+      "scripts/acm-stats/move_android_collected_data.py",
+      "scripts/acm-stats/usage_info_updater.py",
+      "scripts/migrate_staffs_from_dynamo.py",
+      "scripts/csv_insert.py"
     ],
 
     "exclude": [
@@ -11,9 +17,9 @@
     ],
 
     "ignore": [
-      "./alembic",
-      "routes/program_spec",
-      "utilities/rolemanager"
+      "src/alembic",
+      "src/routes/program_spec",
+      "src/utilities/rolemanager"
     ],
 
     "defineConstant": {
@@ -25,13 +31,13 @@
     "reportMissingImports": true,
     "reportMissingTypeStubs": false,
 
-    "pythonVersion": "3.9",
+    "pythonVersion": "3.11",
     "pythonPlatform": "Linux",
 
     "executionEnvironments": [
       {
         "root": "src/web",
-        "pythonVersion": "3.5",
+        "pythonVersion": "3.11",
         "pythonPlatform": "Windows",
         "extraPaths": [
           "src/service_libs"
@@ -39,7 +45,7 @@
       },
       {
         "root": "src/sdk",
-        "pythonVersion": "3.0",
+        "pythonVersion": "3.11",
         "extraPaths": [
           "src/backend"
         ]

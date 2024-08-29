@@ -2,12 +2,13 @@
 # Source: https://stackoverflow.com/a/70688292
 #
 
-import json
-import logging
-import os
-import time
-from typing import Dict, List
 
+import time
+from functools import wraps
+from typing import Any, Dict, List
+
+import requests
+from fastapi import HTTPException, Request
 from jose import jwk, jwt
 from jose.exceptions import JWTError
 from jose.utils import base64url_decode
@@ -15,7 +16,8 @@ from pydantic import BaseModel
 
 from config import config
 
-VERIFIED_JWT_CLAIMS_CACHE = {}
+VERIFIED_JWT_CLAIMS_CACHE: Dict[str, dict] = {}
+USER_CACHE: Dict[str, Any] = {}  # {email: <user object>}
 
 
 class JWK(BaseModel):
@@ -37,7 +39,7 @@ class CognitoAuthenticator:
     def __init__(self) -> None:
         self.pool_region = "us-west-2"
         self.pool_id = config.user_pool_id
-        self.client_id = config.user_pool_client_id
+        self.client_id: list[str] = config.user_pool_client_id
         self.issuer = f"https://cognito-idp.{self.pool_region}.amazonaws.com/{config.user_pool_id}/.well-known/jwks.json"
 
         self.jwks = self.__get_jwks()
@@ -51,7 +53,6 @@ class CognitoAuthenticator:
         Raises:
             Exception when JWKS endpoint does not contain any keys
         """
-        import requests
 
         res = requests.get(self.issuer)
         if res.status_code == 200:
@@ -81,6 +82,7 @@ class CognitoAuthenticator:
             True if valid, False otherwise
         """
 
+        # If the token is already cached(verified), skip the verification process
         if VERIFIED_JWT_CLAIMS_CACHE.get(token, None) is not None:
             return True
 
@@ -90,7 +92,8 @@ class CognitoAuthenticator:
             self._get_verified_claims(token)
         except Exception as e:
             print(e)
-            return False
+            raise HTTPException(status_code=401, detail="Unauthorized")
+
         return True
 
     def _is_jwt(self, token: str) -> bool:
