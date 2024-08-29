@@ -1,5 +1,6 @@
 version: "3.8"
 services:
+  # Local dynamo
   dynamodb-local:
     command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
     image: "amazon/dynamodb-local:latest"
@@ -9,3 +10,11 @@ services:
     volumes:
       - "./docker/dynamodb:/home/dynamodblocal/data"
     working_dir: /home/dynamodblocal
+
+  # Local cognito with https://github.com/jagregory/cognito-local
+  cognito-local:
+    image: jagregory/cognito-local:latest
+    ports:
+      - "9229:9229"
+    volumes:
+      - "./docker/cognito:/app/.cognito"

@@ -1,7 +1,10 @@
 from functools import wraps
 from typing import Union
-from fastapi import Request, HTTPException
+from fastapi import Depends, Request, HTTPException
+from sqlalchemy.orm import Session
 from jwt_verifier import VERIFIED_JWT_CLAIMS_CACHE
+from models import get_db
+from models.user_model import User
 from utilities.rolemanager import manager
 
 ALLOWED_ROLES: str = "AD,PM,CO,FO"
