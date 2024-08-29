@@ -59,8 +59,11 @@ update-usage-info *args='': venv
 
 # START: Migration commands
 
-[doc("Apply migrations to the database")]
+[doc("Executes alembic")]
 [group("migration")]
+alembic *args='': venv
+    cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic "$@"
+
 migration-run *args='': venv
     cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic upgrade heads
 
