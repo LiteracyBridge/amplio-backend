@@ -1,6 +1,5 @@
 import re
 import uuid
-from functools import wraps
 
 import sentry_sdk
 import uvicorn
@@ -9,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 from sentry_sdk.integrations.aws_lambda import AwsLambdaIntegration
 from sqlalchemy.orm import subqueryload
-from sqlalchemy.sql import roles
 
 from config import config
 from handlers.exception_handler import exception_handler
@@ -18,10 +16,10 @@ from jwt_verifier import USER_CACHE, VERIFIED_JWT_CLAIMS_CACHE, CognitoAuthentic
 from middlewares.correlation_id_middleware import CorrelationIdMiddleware
 from middlewares.logging_middleware import LoggingMiddleware
 from models import get_db
-from models.user_model import User, UserRole, current_user
+from models.user_model import User, UserRole
 from monitoring import logging_config
 from routes import (
-    acm_checkout_router,
+    acm_checkout_route,
     categories_route,
     language_route,
     program_route,
@@ -225,7 +223,7 @@ app.include_router(
     dependencies=[Depends(get_db)],
 )
 app.include_router(
-    tableau_route.router,
+    acm_checkout_route.router,
     prefix="/acm-checkout",
     tags=["acm-checkout"],
     dependencies=[

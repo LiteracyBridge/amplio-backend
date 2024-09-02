@@ -48,6 +48,7 @@ from fastapi.datastructures import QueryParams
 
 from config import ACM_PREFIX, AWS_REGION
 from models.user_model import User
+from schema import ApiResponse
 from utilities import cannonical_program_name, now
 
 BUCKET_NAME = "acm-logging"
@@ -75,7 +76,7 @@ table = dynamodb.Table(TABLE_NAME)
 
 
 @router.get("")
-async def list_checkouts(request: Request):
+async def handle_request(request: Request):
     """
     :param event: dict -- POST request passed in through API Gateway
     :param context: object -- can be used to get runtime data (unused but required by AWS lambda)
@@ -96,13 +97,9 @@ async def list_checkouts(request: Request):
             print(f"Lambda integration {body}")
 
             try:
-                body = V1Handler(body, query, user).handle_event()
+                results = V1Handler(body, query, user).handle_event()
                 print("return statusCode: 200")
-                return {
-                    "statusCode": 200,
-                    "headers": {"Access-Control-Allow-Origin": "*"},
-                    "body": json.dumps(body),
-                }
+                return ApiResponse(data=results)
             except Exception as e:
                 logger = logging.getLogger()
                 logger.setLevel(logging.DEBUG)
@@ -167,9 +164,8 @@ class V1Handler:
         self._email = user.email
 
         if query:
-            path_parts = query.get("proxy", "").split("/")
-            self._action = path_parts[0].lower()
-            self._program = path_parts[1] if len(path_parts) > 1 else None
+            self._action = query.get("action")
+            self._program = query.get("program")
             print(f"path parameters: {self._action}, {self._program}")
         else:
             self._action = (query.get("action") or body.get("action", "")).lower()
@@ -188,7 +184,7 @@ class V1Handler:
         )
 
     def handle_event(self):
-        action = self._action.lower()
+        action = self._action.lower()  # type: ignore
         if action == "list":
             return self.list_checkouts()
         elif action == "report":
@@ -326,7 +322,7 @@ class V1Handler:
             if has_access(cannonical_program_name(checkout.get("acm_name"))):
                 acms.append(checkout)
 
-        return {STATUS: STATUS_OK, "acms": acms}
+        return acms
 
     def checkout(self):
         """
