@@ -4,7 +4,7 @@ import boto3
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sentry_sdk import capture_exception
-from sqlalchemy import delete, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import Session, subqueryload
 
 from config import AWS_REGION, config
@@ -53,11 +53,15 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     """
 
     token: str = str(request.headers.get("Authorization").replace("Bearer ", ""))  # type: ignore
-    email = str(VERIFIED_JWT_CLAIMS_CACHE[token].get("email"))
+
+    # NB: The email is intentionally lowercased to avoid query case sensitivity issues.
+    # Since AWS congito allows case insensitive email, there have been cases where the login email is
+    # different from what is stored in db because different case was used to signup.
+    email = str(VERIFIED_JWT_CLAIMS_CACHE[token].get("email")).lower()
 
     user = (
         db.query(User)
-        .filter(User.email == email)
+        .filter(func.lower(User.email) == email)
         .options(
             subqueryload(User.roles).options(subqueryload(UserRole.role)),
             subqueryload(User.programs).options(
