@@ -163,18 +163,45 @@ DROP TABLE usage_info_temp; -- Clean up the temporary table
 
 
 def update_usage_info(program: Optional[str]):
-    print(f"Updating usage info for program: {program}")
+    db = next(get_db())
 
-    template = Template(SQL_QUERY_TEMPLATE)
+    if program is not None:
+        print(f"Updating usage info for program: {program}")
+        print(
+            "BEFORE: Total usage_info records "
+            + db.execute(
+                text("SELECT COUNT(*) FROM usage_info WHERE project = :project"),
+                {"project": program},
+            ).fetchall()[0][0]
+        )
+    else:
+        print("Updating usage info for all programs")
+        print(
+            "BEFORE: Total usage_info records "
+            + db.execute(text("SELECT COUNT(*) FROM usage_info")).fetchall()[0][0]
+        )
 
     # Render the template with the actual project_id
+    template = Template(SQL_QUERY_TEMPLATE)
     rendered_query = template.render(project=program if program != "" else None)
 
-    db = next(get_db())
     db.execute(text(rendered_query))
     db.commit()
 
     print("Usage info updated successfully!")
+    if program is not None:
+        print(
+            "AFTER: Total usage_info records "
+            + db.execute(
+                text("SELECT COUNT(*) FROM usage_info WHERE project = :project"),
+                {"project": program},
+            ).fetchall()[0][0]
+        )
+    else:
+        print(
+            "AFTER: Total usage_info records "
+            + db.execute(text("SELECT COUNT(*) FROM usage_info")).fetchall()[0][0]
+        )
 
 
 if __name__ == "__main__":
