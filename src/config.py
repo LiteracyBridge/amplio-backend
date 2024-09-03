@@ -17,7 +17,8 @@ ACM_PREFIX = "ACM-"
 COLLECTED_STATS_BUCKET = "acm-stats"
 PROGRAM_CONTENT_BUCKET = "amplio-program-content"
 PROGRAM_SPEC_BUCKET = "amplio-progspecs"
-ACM_LOGGING_BUCKET_NAME = "acm-logging"
+ACM_LOGGING_BUCKET = "acm-logging"
+STATISTICS_BUCKET = "acm-stats"
 # PROGRAM_LIST_BUCKET = "dashboard-lb-stats"
 
 # Mailing
