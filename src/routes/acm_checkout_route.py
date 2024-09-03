@@ -114,7 +114,7 @@ async def handle_request(request: Request):
                 "techsupport@amplio.org",
                 "v0 call to acmCheckOut",
                 json.dumps(body),
-                ["lawrence@amplio.org"],
+                ["ictnotifications@amplio.org"],
             )
             print("No apparent cognito info")
 
