@@ -16,6 +16,7 @@ REPORT_FILE = ""  # path to file set in main
 
 S3_BUCKET = f"s3://{STATISTICS_BUCKET}"
 S3_IMPORT = f"{S3_BUCKET}/collected-data"
+S3_USER_FEEDBACK = "s3://amplio-uf/collected"
 
 email = os.path.join(BIN, "sendses.py")
 ufexporter = os.path.join(BIN, "ufUtility/ufUtility.py")
@@ -40,7 +41,7 @@ def gather_files(daily_dir: str, timestamp: str, s3_archive: str):
 
     # save a list of the zip file names. They'll be deleted locally, so get the list now. We'll use
     # the list later, to move the files in s3 to an archival location.
-    statslist = findZips(tmpdir)
+    statslist = find_zips(tmpdir)
 
     try:
         # process into collected-data
@@ -130,6 +131,59 @@ def gather_files(daily_dir: str, timestamp: str, s3_archive: str):
     shutil.rmtree(tmpdir)
 
 
+def import_user_feedback(dailyDir):
+    """Import user feedback to ACM-{project}-FB-{update}"""
+
+    recordings_dir = os.path.join(dailyDir, "userrecordings")
+
+    print(
+        "-------- importUserFeedback: Importing user feedback audio to s3, metadata to database. --------"
+    )
+    print("Checking for user feedback recordings")
+
+    # Check if recordings_dir is a directory
+    if os.path.isdir(recordings_dir):
+        print(
+            "Export user feedback from",
+            recordings_dir,
+            "and upload to",
+            S3_USER_FEEDBACK,
+        )
+
+        # Create a temporary directory
+        tmpname = subprocess.run(
+            ["mktemp", "-d"], capture_output=True, text=True
+        ).stdout.strip()
+        tmpdir = f"~/importUserFeedback{tmpname}"
+        os.makedirs(os.path.expanduser(tmpdir))
+        print("uf temp:", tmpdir)
+
+        # Run the Python script
+        subprocess.run(
+            [
+                "python3.8",
+                ufexporter,
+                "-vv",
+                "extract_uf",
+                recordings_dir,
+                "--out",
+                tmpdir,
+            ]
+        )
+
+        # Upload files to S3
+        subprocess.run(["aws", "s3", "mv", "--recursive", tmpdir, S3_USER_FEEDBACK])
+
+        # List files in the tmpdir directory
+        subprocess.run(["find", tmpdir])
+
+        # Remove files and directory
+        subprocess.run(["rm", "-rf", tmpdir, "*"])
+        subprocess.run(["rmdir", "-p", "--ignore-fail-on-non-empty", tmpdir])
+    else:
+        print("No directory", recordings_dir)
+
+
 def main():
     global REPORT_FILE
 
@@ -146,7 +200,6 @@ def main():
     os.makedirs(timestampedDir, exist_ok=True)
 
     s3archive = f"{S3_BUCKET}/archived-data/{curYear}/{curMonth}/{curDay}"
-    s3uf = "s3://amplio-uf/collected"
 
     recipientsfile = os.path.join(dailyDir, "recipients.csv")
     recipientsmapfile = os.path.join(dailyDir, "recipients_map.csv")
@@ -165,10 +218,10 @@ def main():
     print(f"processed_data in {PROCESSED_DATA_DIR}")
     print(f"s3import in {S3_IMPORT}")
     print(f"s3archive in {s3archive}")
-    print(f"s3uf in {s3uf}")
+    print(f"s3uf in {S3_USER_FEEDBACK}")
 
     gather_files(daily_dir=dailyDir, timestamp=timestamp, s3_archive=s3archive)
-    importUserFeedback(dailyDir)
+    import_user_feedback(dailyDir)
 
     print(f"Gathered? {gatheredAny}")
 
@@ -188,25 +241,13 @@ def main():
     os.rmdir(timestampedDir)
 
 
-def findZips(directory):
+def find_zips(directory):
     zips = []
     for root, dirs, files in os.walk(directory):
         for file in files:
             if file.endswith(".zip"):
                 zips.append(os.path.join(root, file))
     return zips
-
-
-def importUserFeedback(dailyDir):
-    recordingsDir = os.path.join(dailyDir, "userrecordings")
-    print(
-        "-------- importUserFeedback: Importing user feedback audio to s3, metadata to database. --------"
-    )
-    print("Checking for user feedback recordings")
-    if os.path.exists(recordingsDir):
-        shutil.rmtree(recordingsDir)
-    else:
-        print(f"No directory {recordingsDir}")
 
 
 def sendMail():
