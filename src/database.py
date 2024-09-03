@@ -12,7 +12,7 @@ from sqlalchemy.sql import TableClause
 from config import config
 from utilities import snake_to_camel
 
-engine = create_engine(config.db_url(), echo=config.db_echo)
+engine = create_engine(config.db_url())
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

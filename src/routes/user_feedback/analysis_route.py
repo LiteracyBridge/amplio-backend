@@ -29,46 +29,6 @@ def get_analysis(survey_id: int, db: Session = Depends(get_db)):
     return ApiResponse(data=analysis)
 
 
-@router.get("/{survey_id}/statistics")
-def get_statistics(
-    survey_id: int,
-    email: str,
-    language: str,
-    deployment: str,
-    db: Session = Depends(get_db),
-):
-    survey = db.query(Survey).filter(Survey.id == survey_id).first()
-
-    if survey is None:
-        raise HTTPException(status_code=404, detail="Survey not found")
-
-    sub_query = db.query(Question.id).filter(Question.survey_id == survey.id).subquery()
-    analysis = (
-        db.query(Analysis)
-        .distinct(Analysis.message_uuid)
-        .filter(Analysis.question_id.in_(select(sub_query)))
-        .all()
-    )
-    messages = (
-        db.query(Message)
-        .filter(
-            Message.program_id == survey.project_code,
-            Message.language == language,
-            Message.deployment_number == deployment,
-        )
-        .all()
-    )
-    user_feedback = list(filter(lambda x: x.analyst_email == email, analysis))
-
-    data = {
-        "by_current_user": len(user_feedback),
-        "total_analysed": len(analysis),
-        "total_useless": len(list(filter(lambda x: x.is_useless is True, messages))),
-        "total_messages": len(messages),
-    }
-    return ApiResponse(data=[data])
-
-
 @router.get("/{survey_id}/submissions")
 def get_analysed_messages(
     survey_id: int, deployment: str, language: str, db: Session = Depends(get_db)

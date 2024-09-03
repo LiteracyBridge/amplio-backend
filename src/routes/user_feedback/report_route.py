@@ -2,10 +2,10 @@ import itertools
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy import and_
+from sqlalchemy import and_, select, text
 from sqlalchemy.orm import Session, joinedload, subqueryload
 
-from models import Analysis, AnalysisChoice, Question
+from models import Analysis, AnalysisChoice, Question, Survey
 from models import UserFeedbackMessage as Message
 from models import get_db
 from models.uf_message_model import UserFeedbackMessage
@@ -105,3 +105,54 @@ def get_report(
         excel_rows.append(_row)
 
     return ApiResponse(data=[{"headers": excel_headers, "rows": excel_rows}])
+
+
+@router.get("/{survey_id}/statistics")
+def get_statistics(
+    survey_id: int,
+    email: str,
+    language: str,
+    deployment: str,
+    db: Session = Depends(get_db),
+):
+    survey = db.query(Survey).filter(Survey.id == survey_id).first()
+
+    if survey is None:
+        raise HTTPException(status_code=404, detail="Survey not found")
+
+    analysed_query = """
+        WITH analysis AS (
+            SELECT DISTINCT a.message_uuid, a.analyst_email, m.is_useless FROM uf_analysis a
+            INNER JOIN uf_messages m ON m.message_uuid = a.message_uuid AND NOT m.test_deployment
+                AND m.language = :language AND m.deploymentnumber = :deployment
+            INNER JOIN uf_questions q ON q.survey_id = :survey_id AND q.id = a.question_id
+        )
+        SELECT
+            (SELECT COUNT(*) FROM analysis WHERE analyst_email = :email) AS by_current_user,
+            (SELECT count(*) FROM analysis) AS total_analysed,
+            (
+                SELECT COUNT(*) FROM uf_messages m WHERE NOT m.test_deployment
+                AND m.language = :language AND m.deploymentnumber = :deployment AND is_useless
+            ) AS total_useless,
+            (
+                SELECT COUNT(*) FROM uf_messages m WHERE NOT m.test_deployment
+                AND m.language = :language AND m.deploymentnumber = :deployment
+            ) AS total_messages;
+    """
+    results = db.execute(
+        text(analysed_query),
+        {
+            "language": language,
+            "email": email,
+            "survey_id": survey_id,
+            "deployment": deployment if deployment is not None else 1,
+        },
+    ).fetchall()
+
+    data = {
+        "by_current_user": results[0][0],
+        "total_analysed": results[0][1],
+        "total_useless": results[0][2],
+        "total_messages": results[0][3],
+    }
+    return ApiResponse(data=[data])
