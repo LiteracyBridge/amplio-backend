@@ -33,32 +33,54 @@ prod: venv
     @echo "Starts the API server in production mode"
     APP_ENV=production {{ PYTHONPATH }} {{ uvicorn }} src.app:app --reload
 
-new_acm *args='': venv
+new-acm *args='': venv
 	{{ PYTHONPATH }} {{ python }} scripts/new_acm/new_acm.py "$@"
 
-tableau_geo *args='': venv
+tableau-geo *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/tableau/tableau_geo_importer.py "$@"
 
-logs_reader *args='': venv
+logs-reader *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/v2LogReader/main.py "$@"
 
 # START: Statistics related commands
 [doc("Inserts processed stats 'tbsdeployed.csv' and 'tbscollected.csv' files into the database")]
-csv_insert *args='': venv
+csv-insert *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/csv_insert.py "$@"
 
-move_android_collected_data *args='': venv
+move-android-collected-data *args='': venv
     @echo "Moving collected stats data by the Android TB Loader from amplio-program-content to acm-stats bucket"
     {{ PYTHONPATH }} {{ python }} scripts/acm-stats/move_android_collected_data.py
 
 [doc("Updates the usage info of the program(s) in the database")]
-update_usage_info *args='': venv
+update-usage-info *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/acm-stats/usage_info_updater.py "$@"
 
 # END: Statistics related commands
 
+# START: Migration commands
+
+[doc("Executes alembic")]
+[group("migration")]
+alembic *args='': venv
+    cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic "$@"
+
+migration-run *args='': venv
+    cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic upgrade heads
+
+[doc("Reverts migration given the revision number")]
+[group("migration")]
+migration-revert *args='': venv
+    cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic downgrade "$1"
+
+[doc("Creates a new migration file")]
+[group("migration")]
+migration-create *args='': venv
+    cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic revision --message "$@"
+
+# END: Migration commands
+
 [doc("Executes a python script. Usage: just run_script <script_name.py> <args>")]
-run_script *args='': venv
+run-script *args='': venv
     {{ PYTHONPATH }} {{ python }} "$@"
 
 # TODO: Add a build step to compile acm & copy jars to AWS-LB/bin dir

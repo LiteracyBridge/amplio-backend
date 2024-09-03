@@ -18,7 +18,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.drop_constraint("uf_analysis_pkey", "uf_analysis", type_="unique")
+    op.execute("ALTER TABLE uf_analysis DROP CONSTRAINT IF EXISTS uf_analysis_pkey")
 
 
 def downgrade() -> None:
