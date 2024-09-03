@@ -165,7 +165,7 @@ DROP TABLE usage_info_temp; -- Clean up the temporary table
 def update_usage_info(program: Optional[str]):
     db = next(get_db())
 
-    if program is not None:
+    if program is not None and program.strip() != "":
         print(f"Updating usage info for program: {program}")
         print(
             "BEFORE: Total usage_info records "

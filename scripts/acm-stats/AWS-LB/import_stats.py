@@ -4,14 +4,15 @@ import subprocess
 import tempfile
 from datetime import datetime, timezone
 
-from config import STATISTICS_BUCKET
+from config import STATISTICS_BUCKET, config
 from database import get_db
 
-STATS_ROOT = os.path.expanduser("~/acm-stats")
+STATS_ROOT = config.statistics_data_dir
 BIN = os.path.join(STATS_ROOT, "AWS-LB/bin")
 CORE_DIR = os.path.join(BIN, "core-with-deps.jar")
 ACM_DIR = os.path.join(BIN, "acm")
 PROCESSED_DATA_DIR = os.path.join(STATS_ROOT, "processed-data")
+REPORT_FILE = ""  # path to file set in main
 
 S3_BUCKET = f"s3://{STATISTICS_BUCKET}"
 S3_IMPORT = f"{S3_BUCKET}/collected-data"
@@ -25,7 +26,113 @@ verbose = True
 execute = True
 
 
+def gather_files(daily_dir: str, timestamp: str, s3_archive: str):
+    global gatheredAny
+
+    print("-------- gatherFiles: Gathering the collected data from s3 --------")
+    print("Gather from s3")
+
+    tmpdir = tempfile.mkdtemp()
+    print(f"temp: {tmpdir}")
+
+    # pull files from s3
+    subprocess.run(["aws", "s3", "sync", S3_IMPORT, tmpdir], stdout=subprocess.PIPE)
+
+    # save a list of the zip file names. They'll be deleted locally, so get the list now. We'll use
+    # the list later, to move the files in s3 to an archival location.
+    statslist = findZips(tmpdir)
+
+    try:
+        # process into collected-data
+        print("Process into collected-data")
+        results = subprocess.run(
+            [
+                "time",
+                "java",
+                "-cp",
+                f"{ACM_DIR}/acm.jar:{ACM_DIR}/lib/*",
+                "org.literacybridge.acm.utils.MoveStats",
+                "-b",
+                "blacklist.txt",
+                tmpdir,
+                daily_dir,
+                timestamp,
+            ]
+        )
+
+        if results.returncode == 0:
+            gatheredAny = True
+            if os.path.exists("acm.log") and os.path.getsize("acm.log") > 0:
+                os.rename("acm.log", f"{daily_dir}/moves3.log")
+    except subprocess.CalledProcessError:
+        gatheredAny = False
+        print("MoveStats failed")
+
+    # move s3 files from import to archive "folder".
+    print("Archive s3 objects")
+    for statfile in statslist:
+        with open("reports3.raw", "a") as f:
+            subprocess.run(
+                [
+                    "aws",
+                    "s3",
+                    "mv",
+                    f"{S3_IMPORT}/{statfile}",
+                    f"{s3_archive}/{statfile}",
+                ],
+                stdout=f,
+            )
+
+    # clean up the s3 output, and produce a formatted HTML report.
+    reports3_filtered = "reports3.filtered"
+    with open(reports3_filtered, "w") as f:
+        subprocess.run(
+            [
+                "cat",
+                "reports3.raw",
+                "|",
+                "tr",
+                "'\\r'",
+                "'\\n'",
+                "|",
+                "sed",
+                "/^Completed.*remaining/d",
+            ],
+            stdout=f,
+            shell=True,
+        )
+
+    if os.path.exists(reports3_filtered) and os.path.getsize(reports3_filtered) > 0:
+        shutil.copy(reports3_filtered, f"{daily_dir}/s3.log")
+
+        # Create an HTML section for S3 imports
+        report = "rpt.html"
+        with open(report, "a") as f:
+            f.write("<div class='s3import'><h2>S3 Imports</h2></div>\n")
+
+        # Iterate over lines in reports3.filtered and write them to HTML
+        with open(report, "a") as f2:
+            with open(reports3_filtered, "r") as f:
+                for line in f:
+                    f2.write(f"<p>{line}</p>\n")
+            f2.write("</div>\n")
+
+        with open(REPORT_FILE, "a") as f:
+            subprocess.run(["cat", report], stdout=f)
+
+    # Remove the temporary directory
+    os.rmdir(tmpdir)
+
+    subprocess.run(["cat", "reports3.raw"], stdout=subprocess.PIPE)
+    if os.path.getsize("reports3.filtered") > 0:
+        subprocess.run(["cat", "rpt.html"], stdout=subprocess.PIPE)
+
+    shutil.rmtree(tmpdir)
+
+
 def main():
+    global REPORT_FILE
+
     timestamp = datetime.now(timezone.utc).utcnow().strftime("%Yy%mm%dd%Hh%Mm%Ss")
     curYear = datetime.now(timezone.utc).strftime("%Y")
     curMonth = datetime.now(timezone.utc).strftime("%m")
@@ -44,13 +151,11 @@ def main():
     recipientsfile = os.path.join(dailyDir, "recipients.csv")
     recipientsmapfile = os.path.join(dailyDir, "recipients_map.csv")
 
-    report = os.path.join(dailyDir, "importStats.html")
-    if os.path.exists(report):
-        os.remove(report)
+    REPORT_FILE = os.path.join(dailyDir, "importStats.html")
+    if os.path.exists(REPORT_FILE):
+        os.remove(REPORT_FILE)
 
     gatheredAny = False
-    verbose = True
-    execute = True
 
     print(f"Stats root is {STATS_ROOT}")
     print(f"bin in {BIN}")
@@ -62,7 +167,7 @@ def main():
     print(f"s3archive in {s3archive}")
     print(f"s3uf in {s3uf}")
 
-    gatherFiles(daily_dir=dailyDir, timestamp=timestamp, s3_archive=s3archive)
+    gather_files(daily_dir=dailyDir, timestamp=timestamp, s3_archive=s3archive)
     importUserFeedback(dailyDir)
 
     print(f"Gathered? {gatheredAny}")
@@ -73,49 +178,14 @@ def main():
         # importDeployments ${dailyDir}
         sendMail()
 
+    # Adds and updates files, but won't remove anything.
     print(f"aws s3 sync {dailyDir} {s3DailyDir}")
     subprocess.run(["aws", "s3", "sync", dailyDir, s3DailyDir])
+
+    # If the timestampedDir is empty, we don't want it. Same for the dailyDir. If can't remove, ignore error.
     if not os.path.exists(os.path.join(timestampedDir, "tmp")):
         os.remove(os.path.join(timestampedDir, "tmp"))
     os.rmdir(timestampedDir)
-
-
-def gatherFiles(daily_dir: str, timestamp: str, s3_archive: str):
-    print("-------- gatherFiles: Gathering the collected data from s3 --------")
-    print("Gather from s3")
-
-    tmpdir = tempfile.mkdtemp()
-    print(f"temp:{tmpdir}")
-
-    subprocess.run(["aws", "s3", "sync", S3_IMPORT, tmpdir], stdout=subprocess.PIPE)
-    statslist = findZips(tmpdir)
-    print("Process into collected-data")
-
-    subprocess.run(
-        [
-            "java",
-            "-cp",
-            f"{ACM_DIR}/acm.jar:{ACM_DIR}/lib/*",
-            "org.literacybridge.acm.utils.MoveStats",
-            "-b",
-            "blacklist.txt",
-            tmpdir,
-            daily_dir,
-            timestamp,
-        ]
-    )
-
-    for statfile in statslist:
-        subprocess.run(
-            ["aws", "s3", "mv", f"{S3_IMPORT}/{statfile}", f"{s3_archive}/{statfile}"],
-            stdout=subprocess.PIPE,
-        )
-
-    subprocess.run(["cat", "reports3.raw"], stdout=subprocess.PIPE)
-    if os.path.getsize("reports3.filtered") > 0:
-        subprocess.run(["cat", "rpt.html"], stdout=subprocess.PIPE)
-
-    shutil.rmtree(tmpdir)
 
 
 def findZips(directory):
