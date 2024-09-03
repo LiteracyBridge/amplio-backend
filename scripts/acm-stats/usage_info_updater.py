@@ -169,16 +169,18 @@ def update_usage_info(program: Optional[str]):
         print(f"Updating usage info for program: {program}")
         print(
             "BEFORE: Total usage_info records "
-            + db.execute(
-                text("SELECT COUNT(*) FROM usage_info WHERE project = :project"),
-                {"project": program},
-            ).fetchall()[0][0]
+            + str(
+                db.execute(
+                    text("SELECT COUNT(*) FROM usage_info WHERE project = :project"),
+                    {"project": program},
+                ).fetchall()[0][0]
+            )
         )
     else:
         print("Updating usage info for all programs")
         print(
             "BEFORE: Total usage_info records "
-            + db.execute(text("SELECT COUNT(*) FROM usage_info")).fetchall()[0][0]
+            + str(db.execute(text("SELECT COUNT(*) FROM usage_info")).fetchall()[0][0])
         )
 
     # Render the template with the actual project_id
@@ -192,15 +194,17 @@ def update_usage_info(program: Optional[str]):
     if program is not None:
         print(
             "AFTER: Total usage_info records "
-            + db.execute(
-                text("SELECT COUNT(*) FROM usage_info WHERE project = :project"),
-                {"project": program},
-            ).fetchall()[0][0]
+            + str(
+                db.execute(
+                    text("SELECT COUNT(*) FROM usage_info WHERE project = :project"),
+                    {"project": program},
+                ).fetchall()[0][0]
+            )
         )
     else:
         print(
             "AFTER: Total usage_info records "
-            + db.execute(text("SELECT COUNT(*) FROM usage_info")).fetchall()[0][0]
+            + str(db.execute(text("SELECT COUNT(*) FROM usage_info")).fetchall()[0][0])
         )
 
 
