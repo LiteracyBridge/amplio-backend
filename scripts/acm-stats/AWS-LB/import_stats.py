@@ -10,6 +10,7 @@ from sqlalchemy import select
 from config import STATISTICS_BUCKET, config
 from database import get_db
 from models.recipient_model import Recipient
+from utilities.aws_ses import send_mail
 
 STATS_ROOT = config.statistics_data_dir
 BIN = os.path.join(STATS_ROOT, "AWS-LB/bin")
@@ -29,10 +30,6 @@ gatheredAny = False
 needcss = True
 verbose = True
 execute = True
-
-
-def get_css():
-    pass
 
 
 def find_zips(directory):
@@ -284,7 +281,12 @@ def import_alt_statistics(daily_dir: str):
     temp_report = f"{REPORT_FILE}.tmp"
 
     # Get CSS (assuming getCss function is defined elsewhere)
-    get_css()
+    if verbose:
+        print("Adding css to report.")
+
+    if execute:
+        with open(REPORT_FILE, "a") as f:
+            f.write(open("importStats.css", "r").readall())
 
     print(
         "-------- importAltStatistics: Importing playstatistics to database. --------"
@@ -373,6 +375,102 @@ def import_alt_statistics(daily_dir: str):
         f.write("</div>\n")
 
 
+#  extractTbLoaderArtifacts "${dailyDir}/${statdir}">>"${report}.tmp"
+def extract_tbloader_artifacts(directory):
+    print("-------- extractTbLoaderArtifacts: in directory", directory, "--------")
+
+    os.chdir(directory)
+    for filename in [
+        "tbsdeployed.csv",
+        "tbscollected.csv",
+        "stats_collected.properties",
+    ]:
+        if not os.path.exists(filename):
+            print("no existing", filename)
+
+            try:
+                with open("tmp", "w") as f:
+                    subprocess.run(
+                        ["unzip", "-p", "tbcd*.zip", "*{}".format(filename)],
+                        stdout=f,
+                        check=True,
+                    )
+                    print("extracted", filename, "from zip")
+
+                os.rename("tmp", filename)
+            except subprocess.CalledProcessError:
+                print("could not extract", filename, "from zip: $?")
+        else:
+            print("found existing", filename)
+
+
+def import_deployments(daily_dir):
+    print(
+        "-------- importDeployments: Importing Deployment installations to database. --------"
+    )
+    print(
+        "<h2>Importing Deployment installations to database.</h2>",
+        file=open(REPORT_FILE, "a"),
+    )
+
+    # Remove temporary file
+    temp_report = f"{REPORT_FILE}.tmp"
+    os.remove(temp_report)
+
+    print("get tb-loader artifacts")
+
+    # Iterate timestamp directories
+    for statdir in os.listdir(dailyDir):
+        statdir_path = os.path.join(dailyDir, statdir)
+        if os.path.isdir(statdir_path):
+            if verbose:
+                print("extractTbLoaderArtifacts", statdir_path)
+
+            if execute:
+                extract_tb_loader_artifacts(statdir_path)
+
+    # Import into db and update tbsdeployed
+    csv_insert_command = [
+        "just",
+        "csv-insert.py",
+        "--table",
+        "tbscollected",
+        "--files",
+        "*Z/tbscollected.csv",
+        "--verbose",
+        "--c2ll",
+    ]
+    subprocess.run(
+        csv_insert_command,
+        stdout=open(temp_report, "a"),
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+
+    csv_insert_command = [
+        "just",
+        "csv-insert.py",
+        "--table",
+        "tbsdeployed",
+        "--files",
+        "*Z/tbsdeployed.csv",
+        "--verbose",
+        "--c2ll",
+    ]
+    subprocess.run(
+        csv_insert_command,
+        stdout=open(temp_report, "a"),
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+
+    # Write HTML section to the report
+    with open(REPORT_FILE, "a") as f:
+        f.write('<div class="reportline">\n')
+        f.write(open(temp_report, "r").read())
+        f.write("</div>\n")
+
+
 def main():
     global REPORT_FILE
 
@@ -415,9 +513,15 @@ def main():
 
     if gatheredAny:
         get_recipient_map(dailyDir)
-        # importStatistics ${dailyDir}
-        # importDeployments ${dailyDir}
-        sendMail()
+        import_statistics(dailyDir)
+        import_deployments(dailyDir)
+
+        send_email(
+            subject="Statistics & User Feedback imported",
+            body=open(REPORT_FILE, "r").readall(),
+            recipients=["ictnotifications@amplio.org"],
+            html=True,
+        )
 
     # Adds and updates files, but won't remove anything.
     print(f"aws s3 sync {dailyDir} {s3DailyDir}")
@@ -426,11 +530,8 @@ def main():
     # If the timestampedDir is empty, we don't want it. Same for the dailyDir. If can't remove, ignore error.
     if not os.path.exists(os.path.join(timestampedDir, "tmp")):
         os.remove(os.path.join(timestampedDir, "tmp"))
+
     os.rmdir(timestampedDir)
-
-
-def sendMail():
-    pass
 
 
 if __name__ == "__main__":
