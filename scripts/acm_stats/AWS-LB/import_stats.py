@@ -470,7 +470,7 @@ def import_deployments(daily_dir):
         f.write("</div>\n")
 
 
-def main():
+def import_stats():
     global REPORT_FILE
 
     timestamp = datetime.now(timezone.utc).utcnow().strftime("%Yy%mm%dd%Hh%Mm%Ss")
@@ -534,4 +534,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import_stats()
