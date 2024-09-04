@@ -7,7 +7,8 @@
       "scripts/acm-stats/usage_info_updater.py",
       "scripts/acm-stats/AWS-LB/import_stats.py",
       "scripts/migrate_staffs_from_dynamo.py",
-      "scripts/csv_insert.py"
+      "scripts/csv_insert.py",
+      "scripts/kv2csv.py"
     ],
 
     "exclude": [

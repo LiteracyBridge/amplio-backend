@@ -56,7 +56,11 @@ update-usage-info *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/acm-stats/usage_info_updater.py "$@"
 
 kv2csv *args='': venv
-    {{ PYTHONPATH }} {{ python }} scripts/acm-stats/AWS-LB/kv2csv.py "$@"
+    {{ PYTHONPATH }} {{ python }} scripts/acm-stats/kv2csv.py "$@"
+
+[doc("Converts user feedback audio files from a18 to wav/mp3")]
+uf-utility *args='': venv
+    {{ PYTHONPATH }} {{ python }} scripts/userfeedback_utility/ufUtility.py "$@"
 
 # END: Statistics related commands
 

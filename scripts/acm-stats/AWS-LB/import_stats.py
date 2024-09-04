@@ -24,7 +24,6 @@ S3_IMPORT = f"{S3_BUCKET}/collected-data"
 S3_USER_FEEDBACK = "s3://amplio-uf/collected"
 
 email = os.path.join(BIN, "sendses.py")
-ufexporter = os.path.join(BIN, "ufUtility/ufUtility.py")
 
 gatheredAny = False
 needcss = True
@@ -175,8 +174,8 @@ def import_user_feedback(dailyDir):
         # Run the Python script
         subprocess.run(
             [
-                "python3.8",
-                ufexporter,
+                "just",
+                "uf-utility",
                 "-vv",
                 "extract_uf",
                 recordings_dir,
