@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, subqueryload
 
 # from routes.program_spec.ps_updater.XlsExporter import Exporter
 import routes.program_spec.ps_updater.XlsExporter as XlsExporter
-from models import get_db
+from models import User, get_db
 from models.deployment_model import Deployment
 from models.playlist_model import Playlist
 from models.program_model import Project
@@ -175,60 +175,59 @@ def publish(
 
 # @handler
 #! TODO: Add decorate to retrieve email from token [or possible patching amplio package to support fastapi?].
-# @router.get("/download")
-# def download(
-#     programid: str,
-#     artifact: str,
-#     aslink: bool,
-#     email: str = Depends(current_user),
-#     # email: str,
-# ):
-#     """
-#     Returns a program spec artifact as the bytes of a file or a link to a file in S3.
-#     :param programid: The program for which the artifact is desired.
-#     :param artifact: Which artifact, one of 'unpublished', 'published', 'general', 'deployments', 'content',
-#                 or 'recipients'. 'unpublished' is the unpublished program spec (what one sees in the Amplio
-#                 Suite) as a .xlsx file, 'published' is the published .xlsx spreadsheet, the others are the
-#                 corresponding .csv files.
-#     :param aslink: Boolean. If true, returns a link to the file.
-#     :param email: The user's email
-#     :return: {'status': status, 'data': bytes-or-link, 'object': metadata-about-object}
-#     """
-#     artifact = artifact.lower()
-#     key = _make_s3_key(programid, artifact)
-#     # If this is a request for the un-published program specification, we need to extract it from the database first.
-#     if artifact == UNPUBLISHED_ARTIFACT_NAME:
-#         metadata = {
-#             "submitter-email": email,
-#             "submitter-comment": "Unpublished created for download.",
-#             "submission-date": datetime.datetime.now().isoformat(),
-#         }
-#         # Get the current program spec from the db
-#         db_spec = read_from_db(programid)
-#         ok, errors = write_to_s3(db_spec, UNPUBLISHED_ARTIFACT_NAME, metadata=metadata)
-#     if key:
-#         params, obj_info = _get_s3_params_and_obj_info(key)
-#         obj_info["artifact"] = artifact
-#         if aslink:
-#             # set the save-as name.
-#             params[
-#                 "ResponseContentDisposition"
-#             ] = f'filename="{programid}-{artifact_map[artifact]}"'
-#             obj_info["filename"] = f"{programid}-{artifact_map[artifact]}"
-#             signed_url = s3.generate_presigned_url(
-#                 "get_object", Params=params, ExpiresIn=600
-#             )
-#             result = {"status": STATUS_OK, "url": signed_url, "object": obj_info}
-#         else:
-#             obj = s3.get_object(**params)
-#             if artifact in BINARY_ARTIFACTS:
-#                 bin_data = obj.get("Body").read()
-#                 data = binascii.b2a_base64(bin_data).decode("ascii")
-#             else:
-#                 data = obj.get("Body").read().decode("utf-8")
+@router.get("/download")
+def download(
+    programid: str,
+    artifact: str,
+    aslink: bool,
+    user: User = Depends(current_user),
+):
+    """
+    Returns a program spec artifact as the bytes of a file or a link to a file in S3.
+    :param programid: The program for which the artifact is desired.
+    :param artifact: Which artifact, one of 'unpublished', 'published', 'general', 'deployments', 'content',
+                or 'recipients'. 'unpublished' is the unpublished program spec (what one sees in the Amplio
+                Suite) as a .xlsx file, 'published' is the published .xlsx spreadsheet, the others are the
+                corresponding .csv files.
+    :param aslink: Boolean. If true, returns a link to the file.
+    :param email: The user's email
+    :return: {'status': status, 'data': bytes-or-link, 'object': metadata-about-object}
+    """
+    artifact = artifact.lower()
+    key = _make_s3_key(programid, artifact)
+    # If this is a request for the un-published program specification, we need to extract it from the database first.
+    if artifact == UNPUBLISHED_ARTIFACT_NAME:
+        metadata = {
+            "submitter-email": user.email,
+            "submitter-comment": "Unpublished created for download.",
+            "submission-date": datetime.datetime.now().isoformat(),
+        }
+        # Get the current program spec from the db
+        db_spec = read_from_db(programid)
+        ok, errors = write_to_s3(db_spec, UNPUBLISHED_ARTIFACT_NAME, metadata=metadata)
+    if key:
+        params, obj_info = _get_s3_params_and_obj_info(key)
+        obj_info["artifact"] = artifact
+        if aslink:
+            # set the save-as name.
+            params["ResponseContentDisposition"] = (
+                f'filename="{programid}-{artifact_map[artifact]}"'
+            )
+            obj_info["filename"] = f"{programid}-{artifact_map[artifact]}"
+            signed_url = s3.generate_presigned_url(
+                "get_object", Params=params, ExpiresIn=600
+            )
+            result = {"status": STATUS_OK, "url": signed_url, "object": obj_info}
+        else:
+            obj = s3.get_object(**params)
+            if artifact in BINARY_ARTIFACTS:
+                bin_data = obj.get("Body").read()
+                data = binascii.b2a_base64(bin_data).decode("ascii")
+            else:
+                data = obj.get("Body").read().decode("utf-8")
 
-#             result = {"status": STATUS_OK, "data": str(data), "object": obj_info}
-#         return result
+            result = {"status": STATUS_OK, "data": str(data), "object": obj_info}
+        return result
 
 
 # # @handler
