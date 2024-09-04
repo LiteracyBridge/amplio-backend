@@ -45,18 +45,18 @@ logs-reader *args='': venv
 # START: Statistics related commands
 [doc("Inserts processed stats 'tbsdeployed.csv' and 'tbscollected.csv' files into the database")]
 csv-insert *args='': venv
-    {{ PYTHONPATH }} {{ python }} scripts/acm-stats/csv_insert.py "$@"
+    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/csv_insert.py "$@"
 
 move-android-collected-data *args='': venv
-    @echo "Moving collected stats data by the Android TB Loader from amplio-program-content to acm-stats bucket"
-    {{ PYTHONPATH }} {{ python }} scripts/acm-stats/move_android_collected_data.py
+    @echo "Moving collected stats data by the Android TB Loader from amplio-program-content to acm_stats bucket"
+    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/move_android_collected_data.py
 
 [doc("Updates the usage info of the program(s) in the database")]
 update-usage-info *args='': venv
-    {{ PYTHONPATH }} {{ python }} scripts/acm-stats/usage_info_updater.py "$@"
+    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/usage_info_updater.py "$@"
 
 kv2csv *args='': venv
-    {{ PYTHONPATH }} {{ python }} scripts/acm-stats/kv2csv.py "$@"
+    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/kv2csv.py "$@"
 
 [doc("Converts user feedback audio files from a18 to wav/mp3")]
 uf-utility *args='': venv
