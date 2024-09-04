@@ -193,6 +193,7 @@ def download(
     :param email: The user's email
     :return: {'status': status, 'data': bytes-or-link, 'object': metadata-about-object}
     """
+
     artifact = artifact.lower()
     key = _make_s3_key(programid, artifact)
     # If this is a request for the un-published program specification, we need to extract it from the database first.
