@@ -55,6 +55,9 @@ move-android-collected-data *args='': venv
 update-usage-info *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/acm-stats/usage_info_updater.py "$@"
 
+kv2csv *args='': venv
+    {{ PYTHONPATH }} {{ python }} scripts/acm-stats/AWS-LB/kv2csv.py "$@"
+
 # END: Statistics related commands
 
 # START: Migration commands

@@ -31,6 +31,10 @@ verbose = True
 execute = True
 
 
+def get_css():
+    pass
+
+
 def find_zips(directory):
     zips = []
     for root, dirs, files in os.walk(directory):
@@ -204,8 +208,9 @@ def get_recipient_map(daily_dir):
     temp_report = f"{REPORT_FILE}.tmp"
 
     db = next(get_db())
-    query = select(Recipient.project, Recipient.directory, Recipient.recipientid)
-    results = db.execute(query)
+    results = db.execute(
+        select(Recipient.project, Recipient.directory, Recipient.recipientid)
+    )
 
     with open(temp_report, "w", newline="") as csvfile:
         csv_writer = csv.writer(csvfile)
@@ -275,7 +280,97 @@ def import_statistics(daily_dir):
 
 
 def import_alt_statistics(daily_dir: str):
-    pass
+    recipients_map_file = os.path.join(daily_dir, "recipients_map.csv")
+    temp_report = f"{REPORT_FILE}.tmp"
+
+    # Get CSS (assuming getCss function is defined elsewhere)
+    get_css()
+
+    print(
+        "-------- importAltStatistics: Importing playstatistics to database. --------"
+    )
+    print(
+        "<h2>Importing Play Statistics to database.</h2>", file=open(REPORT_FILE, "a")
+    )
+
+    # Remove temporary file
+    os.remove(temp_report)
+
+    playstatistics_csv = os.path.join(daily_dir, "playstatistics.csv")
+
+    # Gather the playstatistics.kvp files from the daily directory
+    playstatistics_files = (
+        subprocess.run(
+            ["find", daily_dir, "-iname", "playstatistics.kvp"],
+            capture_output=True,
+            text=True,
+        )
+        .stdout.strip()
+        .splitlines()
+    )
+
+    # Create extract command
+    extract_command = [
+        "just",
+        "kv2csv",
+        "--2pass",
+        "--columns",
+        "@columns.txt",
+        "--map",
+        recipients_map_file,
+        "--output",
+        playstatistics_csv,
+    ] + playstatistics_files
+
+    # Log and execute command
+    if verbose:
+        print(extract_command, file=open(temp_report, "a"))
+
+    if execute:
+        subprocess.run(extract_command, stdout=open(temp_report, "a"), text=True)
+
+    # Import into db and update playstatistics
+    with open(playstatistics_csv, "r") as file:
+        csv_data = file.read()
+        rows = csv_data.split("\n")
+
+        # Remove the header row
+        header = rows[0]
+        rows = rows[1:]
+
+        # Prepare the SQL query
+        query = "INSERT INTO mstemp ({}) VALUES ".format(header)
+
+        # Iterate over the rows and append them to the query
+        for row in rows:
+            if row:
+                query += "({}, {}), ".format(row, datetime.now())
+
+        # Remove the trailing comma and space
+        query = query[:-2]
+
+        query = f"""
+            CREATE TEMPORARY TABLE mstemp AS SELECT * FROM playstatistics WHERE false;
+
+            {query};
+
+            DELETE FROM playstatistics d USING mstemp t WHERE d.timestamp=t.timestamp
+            AND d.tbcdid=t.tbcdid AND d.project=t.project AND d.deployment=t.deployment AND d.talkingbookid=t.talkingbookid AND d.contentid=t.contentid;
+
+            INSERT INTO playstatistics SELECT * FROM mstemp ON CONFLICT DO NOTHING;
+        """
+        results = db.execute(text(query)).fetchall()
+
+        with open(temp_report, "a", newline="") as csvfile:
+            csv_writer = csv.writer(csvfile)
+            csv_writer.writerow([col for col in results.keys()])
+            csv_writer.writerows(results)
+
+    # Write HTML section to the report
+    with open(report, "a") as f:
+        f.write('<div class="reportline">\n')
+        f.write(open(temp_report, "r").read())
+        f.write("</div>\n")
 
 
 def main():
