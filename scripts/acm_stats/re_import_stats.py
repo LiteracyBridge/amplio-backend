@@ -1,7 +1,9 @@
+import argparse
 import csv
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from datetime import datetime, timezone
 
@@ -10,18 +12,17 @@ from sqlalchemy import select
 from config import STATISTICS_BUCKET, config
 from database import get_db
 from models.recipient_model import Recipient
+from scripts.acm_stats.import_stats import (
+    ACM_DIR,
+    BIN,
+    CORE_DIR,
+    PROCESSED_DATA_DIR,
+    S3_BUCKET,
+    S3_IMPORT,
+    S3_USER_FEEDBACK,
+    STATS_ROOT,
+)
 from utilities.aws_ses import send_mail
-
-STATS_ROOT = config.statistics_data_dir
-BIN = os.path.join(STATS_ROOT, "AWS-LB/bin")
-CORE_DIR = os.path.join(BIN, "core-with-deps.jar")
-ACM_DIR = os.path.join(BIN, "acm")
-PROCESSED_DATA_DIR = os.path.join(STATS_ROOT, "processed-data")
-REPORT_FILE = ""  # path to file set in main
-
-S3_BUCKET = f"s3://{STATISTICS_BUCKET}"
-S3_IMPORT = f"{S3_BUCKET}/collected-data"
-S3_USER_FEEDBACK = "s3://amplio-uf/collected"
 
 email = os.path.join(BIN, "sendses.py")
 
@@ -477,6 +478,9 @@ def re_import_stats():
     curYear = datetime.now(timezone.utc).strftime("%Y")
     curMonth = datetime.now(timezone.utc).strftime("%m")
     curDay = datetime.now(timezone.utc).strftime("%d")
+    curHour = datetime.now(timezone.utc).strftime("%H")
+    curMinute = datetime.now(timezone.utc).strftime("%M")
+    curSecond = datetime.now(timezone.utc).strftime("%S")
 
     s3DailyDir = f"{S3_BUCKET}/processed-data/{curYear}/{curMonth}/{curDay}"
     dailyDir = f"{PROCESSED_DATA_DIR}/{curYear}/{curMonth}/{curDay}"
@@ -492,6 +496,9 @@ def re_import_stats():
     REPORT_FILE = os.path.join(dailyDir, "importStats.html")
     if os.path.exists(REPORT_FILE):
         os.remove(REPORT_FILE)
+
+    with open(REPORT_FILE, "a") as f:
+        f.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
     gatheredAny = False
 
@@ -533,5 +540,147 @@ def re_import_stats():
     os.rmdir(timestampedDir)
 
 
+def process_day(year, month, day):
+    pass
+
+
+def process_month(year, month):
+    pass
+
+
+def process_year(year):
+    pass
+
+
 if __name__ == "__main__":
+    arg_parser = argparse.ArgumentParser(
+        description="Re-import statistics from S3 into the database."
+    )
+    arg_parser.add_argument(
+        "-y",
+        "--year",
+        action="year",
+        default=datetime.now().year,
+        help="yyyy\tImport Year, default current year",
+    )
+    arg_parser.add_argument(
+        "-m",
+        "--month",
+        action="month",
+        default="",
+        help="mm\tImport Month, default all months",
+    )
+    arg_parser.add_argument(
+        "-d",
+        "--day",
+        action="day",
+        default="",
+        help="dd\tImport Day, default all days, requires --month",
+    )
+    arg_parser.add_argument(
+        "-a",
+        "--archived",
+        action="from_archive",
+        type=bool,
+        help="Re-import from archived-data, not processed-data. OVERWRITES processed-data. Be sure.",
+    )
+    arg_parser.add_argument(
+        "-c",
+        "--no-update",
+        action="upload_to_s3",
+        help="Do NOT update s3://acm-stats/processed-data/yyyy/mm/dd/...",
+    )
+    arg_parser.add_argument(
+        "-u",
+        "--re-import-uf",
+        action="re_import_uf",
+        help="Re-import User feedback",
+    )
+    arg_parser.add_argument(
+        "-p",
+        "--pr",
+        "--project",
+        action="project",
+        help="When importing UF, limit to project pr.",
+    )
+    arg_parser.add_argument(
+        "-s",
+        "--re-import-stats",
+        action="re_import_stats",
+        help="Re-import Statistics. If both user feedback and statistics, user feedback is first.",
+    )
+    arg_parser.add_argument(
+        "-z",
+        "--update-db",
+        action="update_db",
+        help="When importing Statistics, do not perform database writes.",
+    )
+    arg_parser.add_argument(
+        "-i",
+        "--re-import-deployment",
+        action="re_import_deployment",
+        help="Reimport Deployment Deployments. Runs after UF or Stats.",
+    )
+    arg_parser.add_argument(
+        "-e",
+        "--no-email",
+        action="no_email",
+        help="Do not send email notification",
+    )
+
+    arg_parser.add_argument(
+        "--dry-run",
+        "--dryrun",
+        "-n",
+        action="dry_run",
+        help="Dry run, do not update (abort transaction at end).",
+    )
+    arg_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="verbose",
+        help="Verbose output",
+    )
+    arg_parser.add_argument(
+        "-l",
+        "--limit",
+        type=int,
+        default=99999,
+        action="limit",
+        help="Limit to n directories imported",
+    )
+    arg_parser.add_argument(
+        "-k",
+        "--skip",
+        type=int,
+        action="skip",
+        help="Skip first m directories. Note that -l and -k apply to BOTH statistics and user feedback combined.",
+    )
+
+    arglist = None
+    args = arg_parser.parse_args(arglist)
+
+    if not args.verbose:
+        verbose = False
+    if args.dry_run:
+        execute = False
+        print("Dry run -- nothing will be imported")
+
+    print(f"Limiting UF ufProject to {args.project}")
+
+    if not args.re_import_stats and args.re_import_deployment and args.re_import_uf:
+        print("No function specified, exiting...")
+        sys.exit(1)
+
+    if args.day != "" and args.month == "":
+        print("Specifying day requires month as well.")
+        sys.exit(1)
+
+    if args.day != "":
+        process_day(year=args.year, month=args.month, day=args.day)
+    elif args.month != "":
+        process_month(year=args.year, month=args.month)
+    else:
+        process_year(year=args.year)
+
     re_import_stats()
