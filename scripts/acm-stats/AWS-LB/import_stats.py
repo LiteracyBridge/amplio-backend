@@ -1,11 +1,15 @@
+import csv
 import os
 import shutil
 import subprocess
 import tempfile
 from datetime import datetime, timezone
 
+from sqlalchemy import select
+
 from config import STATISTICS_BUCKET, config
 from database import get_db
+from models.recipient_model import Recipient
 
 STATS_ROOT = config.statistics_data_dir
 BIN = os.path.join(STATS_ROOT, "AWS-LB/bin")
@@ -25,6 +29,15 @@ gatheredAny = False
 needcss = True
 verbose = True
 execute = True
+
+
+def find_zips(directory):
+    zips = []
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith(".zip"):
+                zips.append(os.path.join(root, file))
+    return zips
 
 
 def gather_files(daily_dir: str, timestamp: str, s3_archive: str):
@@ -184,6 +197,87 @@ def import_user_feedback(dailyDir):
         print("No directory", recordings_dir)
 
 
+def get_recipient_map(daily_dir):
+    recipients_map_file = os.path.join(daily_dir, "recipients_map.csv")
+
+    # Extract data from recipients_map table. Used to associate 'community' directory names to recipientid.
+    temp_report = f"{REPORT_FILE}.tmp"
+
+    db = next(get_db())
+    query = select(Recipient.project, Recipient.directory, Recipient.recipientid)
+    results = db.execute(query)
+
+    with open(temp_report, "w", newline="") as csvfile:
+        csv_writer = csv.writer(csvfile)
+        csv_writer.writerow([col for col in results.keys()])
+        csv_writer.writerows(results)
+
+    # Write HTML section to the report
+    with open(REPORT_FILE, "a") as f:
+        f.write('<div class="reportline">\n')
+        with open(recipients_map_file, "r") as f2:
+            for line in f2:
+                f.write(f"<p>{line}</p>\n")
+        f.write("</div>\n")
+
+
+def import_statistics(daily_dir):
+    print("Import user statistics to database.")
+
+    # Append CSS file to report
+    with open(REPORT_FILE, "a") as f:
+        f.write(open("importStats.css", "r").read())
+
+    print("-------- importStatistics: Importing 'playstatistics' to database. --------")
+    print("<h2>Importing TB Statistics to database.</h2>", file=open(REPORT_FILE, "a"))
+
+    # These -D settings are needed to turn down the otherwise overwhelming hibernate logging.
+    quiet1 = "-Dorg.jboss.logging.provider=slf4j"
+    quiet2 = "-Djava.util.logging.config.file=simplelogger.properties"
+
+    # Iterate timestamp directories
+    for statdir in os.listdir(daily_dir):
+        statdir_path = os.path.join(daily_dir, statdir)
+        if os.path.isdir(statdir_path):
+            # Run import command
+            # -f: force;  -z: process-zips-from-this-directory; -d put-logs-here; -r: append-report-here
+            import_command = [
+                "time",
+                "java",
+                quiet1,
+                quiet2,
+                "-jar",
+                CORE_DIR,
+                "-f",
+                "-z",
+                statdir_path,
+                "-d",
+                statdir_path,
+                "-r",
+                REPORT_FILE,
+            ]
+
+            if verbose:
+                print(import_command)
+
+            if execute:
+                subprocess.run(import_command)
+
+            # Move log file if exists
+            if os.path.exists("dashboard_core.log"):
+                os.rename(
+                    "dashboard_core.log",
+                    os.path.join(statdir_path, "dashboard_core.log"),
+                )
+
+    # Call another function
+    import_alt_statistics(daily_dir)
+
+
+def import_alt_statistics(daily_dir: str):
+    pass
+
+
 def main():
     global REPORT_FILE
 
@@ -202,7 +296,6 @@ def main():
     s3archive = f"{S3_BUCKET}/archived-data/{curYear}/{curMonth}/{curDay}"
 
     recipientsfile = os.path.join(dailyDir, "recipients.csv")
-    recipientsmapfile = os.path.join(dailyDir, "recipients_map.csv")
 
     REPORT_FILE = os.path.join(dailyDir, "importStats.html")
     if os.path.exists(REPORT_FILE):
@@ -226,7 +319,7 @@ def main():
     print(f"Gathered? {gatheredAny}")
 
     if gatheredAny:
-        # getRecipientMap ${dailyDir}
+        get_recipient_map(dailyDir)
         # importStatistics ${dailyDir}
         # importDeployments ${dailyDir}
         sendMail()
@@ -239,15 +332,6 @@ def main():
     if not os.path.exists(os.path.join(timestampedDir, "tmp")):
         os.remove(os.path.join(timestampedDir, "tmp"))
     os.rmdir(timestampedDir)
-
-
-def find_zips(directory):
-    zips = []
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file.endswith(".zip"):
-                zips.append(os.path.join(root, file))
-    return zips
 
 
 def sendMail():
