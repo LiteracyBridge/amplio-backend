@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import tempfile
 from datetime import datetime, timezone
+from typing import Optional
 
 from sqlalchemy import select
 
@@ -19,8 +20,8 @@ ACM_DIR = os.path.join(BIN, "acm")
 PROCESSED_DATA_DIR = os.path.join(STATS_ROOT, "processed-data")
 REPORT_FILE = ""  # path to file set in main
 
-S3_BUCKET = f"s3://{STATISTICS_BUCKET}"
-S3_IMPORT = f"{S3_BUCKET}/collected-data"
+S3_STATS_BUCKET = f"s3://{STATISTICS_BUCKET}"
+S3_IMPORT = f"s3://{S3_STATS_BUCKET}/collected-data"
 S3_USER_FEEDBACK = "s3://amplio-uf/collected"
 
 email = os.path.join(BIN, "sendses.py")
@@ -40,7 +41,13 @@ def find_zips(directory):
     return zips
 
 
-def gather_files(daily_dir: str, timestamp: str, s3_archive: str):
+def gather_files(
+    daily_dir: str,
+    timestamp: str,
+    s3_archive: Optional[str],
+    s3_import: str = S3_IMPORT,
+    re_import: bool = False,
+):
     global gatheredAny
 
     print("-------- gatherFiles: Gathering the collected data from s3 --------")
@@ -50,7 +57,7 @@ def gather_files(daily_dir: str, timestamp: str, s3_archive: str):
     print(f"temp: {tmpdir}")
 
     # pull files from s3
-    subprocess.run(["aws", "s3", "sync", S3_IMPORT, tmpdir], stdout=subprocess.PIPE)
+    subprocess.run(["aws", "s3", "sync", s3_import, tmpdir], stdout=subprocess.PIPE)
 
     # save a list of the zip file names. They'll be deleted locally, so get the list now. We'll use
     # the list later, to move the files in s3 to an archival location.
@@ -83,19 +90,21 @@ def gather_files(daily_dir: str, timestamp: str, s3_archive: str):
         print("MoveStats failed")
 
     # move s3 files from import to archive "folder".
-    print("Archive s3 objects")
-    for statfile in statslist:
-        with open("reports3.raw", "a") as f:
-            subprocess.run(
-                [
-                    "aws",
-                    "s3",
-                    "mv",
-                    f"{S3_IMPORT}/{statfile}",
-                    f"{s3_archive}/{statfile}",
-                ],
-                stdout=f,
-            )
+    if not re_import:
+        print("Archive s3 objects")
+
+        for statfile in statslist:
+            with open("reports3.raw", "a") as f:
+                subprocess.run(
+                    [
+                        "aws",
+                        "s3",
+                        "mv",
+                        f"{s3_import}/{statfile}",
+                        f"{s3_archive}/{statfile}",
+                    ],
+                    stdout=f,
+                )
 
     # clean up the s3 output, and produce a formatted HTML report.
     reports3_filtered = "reports3.filtered"
@@ -438,6 +447,7 @@ def import_deployments(daily_dir):
         "*Z/tbscollected.csv",
         "--verbose",
         "--c2ll",
+        "--upsert",
     ]
     subprocess.run(
         csv_insert_command,
@@ -455,6 +465,7 @@ def import_deployments(daily_dir):
         "*Z/tbsdeployed.csv",
         "--verbose",
         "--c2ll",
+        "--upsert",
     ]
     subprocess.run(
         csv_insert_command,
@@ -478,14 +489,14 @@ def import_stats():
     curMonth = datetime.now(timezone.utc).strftime("%m")
     curDay = datetime.now(timezone.utc).strftime("%d")
 
-    s3DailyDir = f"{S3_BUCKET}/processed-data/{curYear}/{curMonth}/{curDay}"
+    s3DailyDir = f"{S3_STATS_BUCKET}/processed-data/{curYear}/{curMonth}/{curDay}"
     dailyDir = f"{PROCESSED_DATA_DIR}/{curYear}/{curMonth}/{curDay}"
 
     os.makedirs(dailyDir, exist_ok=True)
     timestampedDir = os.path.join(dailyDir, timestamp)
     os.makedirs(timestampedDir, exist_ok=True)
 
-    s3archive = f"{S3_BUCKET}/archived-data/{curYear}/{curMonth}/{curDay}"
+    s3archive = f"{S3_STATS_BUCKET}/archived-data/{curYear}/{curMonth}/{curDay}"
 
     recipientsfile = os.path.join(dailyDir, "recipients.csv")
 
