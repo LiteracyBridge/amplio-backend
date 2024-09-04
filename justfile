@@ -45,7 +45,7 @@ logs-reader *args='': venv
 # START: Statistics related commands
 [doc("Inserts processed stats 'tbsdeployed.csv' and 'tbscollected.csv' files into the database")]
 csv-insert *args='': venv
-    {{ PYTHONPATH }} {{ python }} scripts/csv_insert.py "$@"
+    {{ PYTHONPATH }} {{ python }} scripts/acm-stats/csv_insert.py "$@"
 
 move-android-collected-data *args='': venv
     @echo "Moving collected stats data by the Android TB Loader from amplio-program-content to acm-stats bucket"
