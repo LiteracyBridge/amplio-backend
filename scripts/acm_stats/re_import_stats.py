@@ -27,7 +27,6 @@ from scripts.acm_stats.import_stats import (
     import_alt_statistics,
     import_deployments,
 )
-from utilities.aws_ses import send_mail
 
 gatheredAny = False
 needcss = True
@@ -39,64 +38,12 @@ execute = True
 UPLOAD_TO_S3: bool = False
 FROM_ARCHIVE: bool = False
 SKIP: int = 0
+LIMIT: int = 99999
 SKIPPED: int = 0
 PROCESSED: int = 0
 RE_IMPORT_USER_FEEDBACK: bool = False
 RE_IMPORT_DEPLOYMENT: bool = False
 RE_IMPORT_STATS: bool = False
-
-
-def import_user_feedback(dailyDir):
-    """Import user feedback to ACM-{project}-FB-{update}"""
-
-    recordings_dir = os.path.join(dailyDir, "userrecordings")
-
-    print(
-        "-------- importUserFeedback: Importing user feedback audio to s3, metadata to database. --------"
-    )
-    print("Checking for user feedback recordings")
-
-    # Check if recordings_dir is a directory
-    if os.path.isdir(recordings_dir):
-        print(
-            "Export user feedback from",
-            recordings_dir,
-            "and upload to",
-            S3_USER_FEEDBACK,
-        )
-
-        # Create a temporary directory
-        tmpname = subprocess.run(
-            ["mktemp", "-d"], capture_output=True, text=True
-        ).stdout.strip()
-        tmpdir = f"~/importUserFeedback{tmpname}"
-        os.makedirs(os.path.expanduser(tmpdir))
-        print("uf temp:", tmpdir)
-
-        # Run the Python script
-        subprocess.run(
-            [
-                "just",
-                "uf-utility",
-                "-vv",
-                "extract_uf",
-                recordings_dir,
-                "--out",
-                tmpdir,
-            ]
-        )
-
-        # Upload files to S3
-        subprocess.run(["aws", "s3", "mv", "--recursive", tmpdir, S3_USER_FEEDBACK])
-
-        # List files in the tmpdir directory
-        subprocess.run(["find", tmpdir])
-
-        # Remove files and directory
-        subprocess.run(["rm", "-rf", tmpdir, "*"])
-        subprocess.run(["rmdir", "-p", "--ignore-fail-on-non-empty", tmpdir])
-    else:
-        print("No directory", recordings_dir)
 
 
 # Import statistics to PostgreSQL database.
@@ -165,7 +112,7 @@ def process_day(year, month, day):
     get_recipient_map(daily_dir)
 
     if RE_IMPORT_USER_FEEDBACK:
-        import_user_feedback(daily_dir)
+        print("importUserFeedback Not Yet Implemented")
     if RE_IMPORT_STATS:
         import_statistics(daily_dir)
     if RE_IMPORT_DEPLOYMENT:
@@ -188,7 +135,7 @@ def process_month(year, month):
     for day in os.listdir(month_dir):
         if os.path.isdir(f"{month_dir}/{day}"):
             process_day(year=year, month=month, day=day)
-            if PROCESSED >= limit:
+            if PROCESSED >= LIMIT:
                 sys.exit(1)
 
 
@@ -203,7 +150,7 @@ def process_year(year):
     for month in os.listdir(year_dir):
         if os.path.isdir(f"{year_dir}/{month}"):
             process_month(year=year, month=month)
-            if PROCESSED >= limit:
+            if PROCESSED >= LIMIT:
                 sys.exit(1)
 
 
@@ -227,87 +174,87 @@ if __name__ == "__main__":
         description="Re-import statistics from S3 into the database."
     )
     arg_parser.add_argument(
-        "-y",
         "--year",
-        action="year",
+        "-y",
+        action="store",
         default=datetime.now().year,
+        type=int,
         help="yyyy\tImport Year, default current year",
     )
     arg_parser.add_argument(
-        "-m",
         "--month",
-        action="month",
+        "-m",
+        action="store",
         default="",
         help="mm\tImport Month, default all months",
     )
     arg_parser.add_argument(
-        "-d",
         "--day",
-        action="day",
+        "-d",
+        action="store",
         default="",
         help="dd\tImport Day, default all days, requires --month",
     )
     arg_parser.add_argument(
         "-a",
         "--archived",
-        action="from_archive",
+        action="store_true",
         help="Re-import from archived-data, not processed-data. OVERWRITES processed-data. Be sure.",
     )
     arg_parser.add_argument(
-        "-c",
         "--no-update",
-        action="upload_to_s3",
+        "-c",
+        action="store_true",
         help="Do NOT update s3://acm-stats/processed-data/yyyy/mm/dd/...",
     )
     arg_parser.add_argument(
-        "-u",
         "--re-import-uf",
-        action="re_import_uf",
+        "-u",
+        action="store_true",
         help="Re-import User feedback",
     )
     arg_parser.add_argument(
+        "--project",
         "-p",
         "--pr",
-        "--project",
-        action="project",
+        action="store",
         help="When importing UF, limit to project pr.",
     )
     arg_parser.add_argument(
-        "-s",
         "--re-import-stats",
-        action="re_import_stats",
+        "-s",
+        action="store_true",
         help="Re-import Statistics. If both user feedback and statistics, user feedback is first.",
     )
     arg_parser.add_argument(
-        "-z",
         "--update-db",
-        action="update_db",
+        "-z",
+        action="store_true",
         help="When importing Statistics, do not perform database writes.",
     )
     arg_parser.add_argument(
-        "-i",
         "--re-import-deployment",
-        action="re_import_deployment",
+        "-i",
+        action="store_true",
         help="Reimport Deployment Deployments. Runs after UF or Stats.",
     )
     arg_parser.add_argument(
         "-e",
         "--no-email",
-        action="no_email",
+        action="store_true",
         help="Do not send email notification",
     )
-
     arg_parser.add_argument(
         "--dry-run",
         "--dryrun",
         "-n",
-        action="dry_run",
+        action="store_true",
         help="Dry run, do not update (abort transaction at end).",
     )
     arg_parser.add_argument(
-        "-v",
         "--verbose",
-        action="verbose",
+        "-v",
+        action="store_true",
         help="Verbose output",
     )
     arg_parser.add_argument(
@@ -315,15 +262,15 @@ if __name__ == "__main__":
         "--limit",
         type=int,
         default=99999,
-        action="limit",
+        action="store",
         help="Limit to n directories imported",
     )
     arg_parser.add_argument(
-        "-k",
         "--skip",
+        "-k",
         type=int,
         default=0,
-        action="skip",
+        action="store",
         help="Skip first m directories. Note that -l and -k apply to BOTH statistics and user feedback combined.",
     )
 
@@ -346,10 +293,11 @@ if __name__ == "__main__":
         print("Specifying day requires month as well.")
         sys.exit(1)
 
-    FROM_ARCHIVE = args.from_archive
+    FROM_ARCHIVE = args.archived
     RE_IMPORT_DEPLOYMENT = args.re_import_deployment
     RE_IMPORT_USER_FEEDBACK = args.re_import_uf
-    UPLOAD_TO_S3 = args.upload_to_s3
+    UPLOAD_TO_S3 = args.no_update
+    LIMIT = args.limit
 
     if args.day != "":
         process_day(year=args.year, month=args.month, day=args.day)

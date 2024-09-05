@@ -71,8 +71,8 @@ uf-utility *args='': venv
 [group("statistics")]
 import-stats *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/acm_stats/import_stats.py "$@"
-    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/initial_sql.py "$@"
-    just update-usage-info
+    # {{ PYTHONPATH }} {{ python }} scripts/acm_stats/initial_sql.py "$@"
+    # just update-usage-info
 
 [doc("Re-imports Talking Books statistics into db")]
 [group("statistics")]

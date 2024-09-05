@@ -6,7 +6,7 @@ import tempfile
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from config import STATISTICS_BUCKET, config
 from database import get_db
@@ -159,8 +159,7 @@ def import_user_feedback(dailyDir):
         tmpname = subprocess.run(
             ["mktemp", "-d"], capture_output=True, text=True
         ).stdout.strip()
-        tmpdir = f"~/importUserFeedback{tmpname}"
-        os.makedirs(os.path.expanduser(tmpdir))
+        tmpdir = tempfile.mkdtemp(f"importUserFeedback{tmpname}")
         print("uf temp:", tmpdir)
 
         # Run the Python script
@@ -189,24 +188,27 @@ def import_user_feedback(dailyDir):
         print("No directory", recordings_dir)
 
 
-def get_recipient_map(daily_dir):
+def get_recipient_map(daily_dir, _report_file: Optional[str] = None):
     recipients_map_file = os.path.join(daily_dir, "recipients_map.csv")
+    if _report_file is None and REPORT_FILE != "":
+        _report_file = REPORT_FILE
+    else:
+        _report_file = os.path.join(daily_dir, "importStats.html")
 
     # Extract data from recipients_map table. Used to associate 'community' directory names to recipientid.
-    temp_report = f"{REPORT_FILE}.tmp"
-
     db = next(get_db())
     results = db.execute(
-        select(Recipient.project, Recipient.directory, Recipient.recipientid)
-    )
+        text("SELECT project, directory, recipientid FROM recipients_map")
+    ).fetchall()
 
-    with open(temp_report, "w", newline="") as csvfile:
+    with open(recipients_map_file, "w", newline="") as csvfile:
         csv_writer = csv.writer(csvfile)
-        csv_writer.writerow([col for col in results.keys()])
+        csv_writer.writerow(["project", "directory", "recipientid"])
         csv_writer.writerows(results)
 
     # Write HTML section to the report
-    with open(REPORT_FILE, "a") as f:
+
+    with open(_report_file, "a") as f:
         f.write('<div class="reportline">\n')
         with open(recipients_map_file, "r") as f2:
             for line in f2:
