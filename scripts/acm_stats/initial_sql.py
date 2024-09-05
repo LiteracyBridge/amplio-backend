@@ -3,7 +3,7 @@ from sqlalchemy import text
 from database import get_db
 
 
-def run_query():
+def run_queries():
     db = next(get_db())
     query = """
     --This takes 30-45 minutes
@@ -34,14 +34,14 @@ def run_query():
     inimage=UPPER(inimage);
 
 
-    DELETE FROM tbcollections;
+    -- DELETE FROM tbcollections;
     --insert into tbcollections
     --(select distinct contentpackage,village,talkingbook from syncaggregation
     --union
     --select distinct packageid as contentpackage,village,talkingbookid as talkingbook from playedevents);
 
 
-    DELETE FROM allsources_s;
+    -- DELETE FROM allsources_s;
     --insert into allsources_s select * from allsources;
     """
 
@@ -49,4 +49,4 @@ def run_query():
 
 
 if __name__ == "__main__":
-    main()
+    run_queries()

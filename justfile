@@ -48,8 +48,8 @@ logs-reader *args='': venv
 csv-insert *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/acm_stats/csv_insert.py "$@"
 
-move-android-collected-data *args='': venv
 [group("statistics")]
+move-android-collected-data *args='': venv
     @echo "Moving collected stats data by the Android TB Loader from amplio-program-content to acm_stats bucket"
     {{ PYTHONPATH }} {{ python }} scripts/acm_stats/move_android_collected_data.py
 
@@ -71,6 +71,8 @@ uf-utility *args='': venv
 [group("statistics")]
 import-stats *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/acm_stats/import_stats.py "$@"
+    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/initial_sql.py "$@"
+    just update-usage-info
 
 [doc("Re-imports Talking Books statistics into db")]
 [group("statistics")]
