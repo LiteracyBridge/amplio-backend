@@ -3,3 +3,7 @@ lib
 acm_stats/AWS-LB/reports/deprecatedQueries
 bin
 !acm_stats/AWS-LB/bin/kv2csv.py
+
+# Exclude log files
+reports3.raw
+acm.log
