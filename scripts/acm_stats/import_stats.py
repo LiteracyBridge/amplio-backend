@@ -236,27 +236,12 @@ def import_statistics(daily_dir):
         if os.path.isdir(statdir_path):
             # Run import command
             # -f: force;  -z: process-zips-from-this-directory; -d put-logs-here; -r: append-report-here
-            import_command = [
-                "time",
-                "java",
-                quiet1,
-                quiet2,
-                "-jar",
-                CORE_DIR,
-                "-f",
-                "-z",
-                statdir_path,
-                "-d",
-                statdir_path,
-                "-r",
-                REPORT_FILE,
-            ]
-
+            import_command = f"java {quiet1} {quiet2} -jar {CORE_DIR} -f -z {statdir_path} -d {statdir_path} -r {REPORT_FILE}"
             if verbose:
                 print(import_command)
 
             if execute:
-                subprocess.run(import_command)
+                subprocess.run(import_command, shell=True)
 
             # Move log file if exists
             if os.path.exists("dashboard_core.log"):
