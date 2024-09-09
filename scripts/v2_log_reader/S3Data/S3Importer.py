@@ -9,12 +9,20 @@ from typing import List, Optional
 from zipfile import ZipFile
 
 from S3Data.S3UfImporter import S3UfImporter
-from S3Data.S3Utils import (ARCHIVE_BUCKET, ARCHIVE_PREFIX, PROCESSED_BUCKET,
-                            PROCESSED_PREFIX, UF_BUCKET, UF_PREFIX, s3)
+from S3Data.S3Utils import (
+    ARCHIVE_BUCKET,
+    ARCHIVE_PREFIX,
+    PROCESSED_BUCKET,
+    PROCESSED_PREFIX,
+    UF_BUCKET,
+    UF_PREFIX,
+    s3,
+)
 from sqlalchemy import text
 from tbstats import TbCollectedData
 
 from database import get_db_connection, get_table_metadata
+from models.deployment_model import Deployment as DeploymentModel
 from utilities import csv_as_str, parse_as_csv
 
 UF_MESSAGES_TABLE = "uf_messages"
@@ -425,7 +433,25 @@ class S3Importer:
         if self._uf_importer.have_uf and (self._save_s3 or self._save_uf):
             # copy userrecordings
             collection_props = self._tb_collected_data.stats_collected_properties
-            uf_prefix = f'{UF_PREFIX}/{collection_props["deployment_PROJECT"]}/{collection_props["deployment_DEPLOYMENT_NUMBER"]}'
+            deployment_number = collection_props.get(
+                "deployment_DEPLOYMENT_NUMBER", None
+            )
+
+            if deployment_number is None:
+                deployment_number = (
+                    get_db_connection()
+                    .query(DeploymentModel.deploymentnumber)
+                    .filter(
+                        DeploymentModel.program_id
+                        == collection_props["deployment_PROJECT"],
+                        DeploymentModel.deploymentname
+                        == collection_props["deployment_DEPLOYMENT"],
+                    )
+                    .first()[0]  # type: ignore
+                )
+
+            uf_prefix = f'{UF_PREFIX}/{collection_props["deployment_PROJECT"]}/{deployment_number}'
+            print(uf_prefix)
             for fn, properties in self._uf_importer.userrecordings_properties.items():
                 if (uuid := properties.get("metadata.MESSAGE_UUID")) and (
                     (
