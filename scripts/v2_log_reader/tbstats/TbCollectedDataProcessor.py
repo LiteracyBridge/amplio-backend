@@ -16,7 +16,8 @@ from tbstats.logfilereader import LogFileReader
 from tbstats.packagesdata import Deployment
 from tbstats.statistics import Statistics
 
-from database import get_db_engine
+from database import get_db_connection, get_db_engine
+from models.recipient_model import Recipient as RecipientModel
 from utilities import escape_csv
 
 TBSDEPLOYED_CSV_COLUMNS: list[str] = [
@@ -204,18 +205,23 @@ def _query_recipient_language(recipientid: str) -> str:
     :param recipientid: The recipientid for which to query the language.
     :return: The language for that recipient.
     """
-    global _db_connection, _db_recipientinfo
+    global _db_recipientinfo
     if language := _db_recipientinfo.get(recipientid):
         return language
-    if _db_connection == None:
-        _db_connection = get_db_engine().connect()
 
-    command = text("SELECT language FROM recipients WHERE recipientid=:recipientid;")
-    values = {"recipientid": recipientid}
-    result = _db_connection.execute(command, values)
+    result = (
+        get_db_connection()
+        .query(RecipientModel.language)
+        .filter(
+            RecipientModel.id == recipientid,
+        )
+        .all()
+    )
+
     for row in result:
-        language = row["language"]
+        language = row.language
     _db_recipientinfo[recipientid] = language
+
     return language
 
 
