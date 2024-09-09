@@ -230,62 +230,6 @@ def download(
         return result
 
 
-# # @handler
-# @router.post("/upload")
-# async def upload(
-#     data: Annotated[UploadFile, File()],
-#     programid: str,
-#     email: str,
-#     return_diff: bool = False,
-#     comment: str = "No comment provided",
-# ):
-#     """
-#     Uploads the binary contents of a .xlsx file to the pending program spec, s3://amplio-progspecs/{programid}/pending.
-#     """
-#     pending_spec, errors = read_from_xlsx(
-#         programid=programid, data_or_path=await data.read()
-#     )
-#     if pending_spec:
-#         print(f"Loaded new pending spec for {programid} from data")
-#         # Looks good, save to S3.
-#         metadata = {
-#             "submitter-email": email,
-#             "submitter-comment": comment or "No comment provided",
-#             "submission-date": datetime.datetime.now().isoformat(),
-#         }
-
-#         key = _make_program_key(programid, PENDING_PROGSPEC_KEY)
-#         put_result = s3.put_object(
-#             Body=await data.read(), Bucket=PROGSPEC_BUCKET, Metadata=metadata, Key=key
-#         )
-#         _delete_versions(key, versions_to_keep=put_result.get("VersionId"))
-
-#         result = {"status": STATUS_OK, "versionid": put_result.get("VersionId")}
-#         if return_diff:
-#             print(f"Loaded published spec for {programid} to find diffs")
-#             # Load published spec for diff
-#             published_spec, errors = read_from_s3(programid)
-#             if published_spec:
-#                 diff_result = compare_program_specs(published_spec, pending_spec)
-#                 print(
-#                     f"Diff from published spec for {programid}: {nl.join(diff_result)}"
-#                 )
-#                 result["diff"] = diff_result
-#             else:
-#                 # oops, couldn't load published spec
-#                 print(
-#                     f"Could not load published spec for {programid}: {nl.join(errors)}"
-#                 )
-#                 result = {
-#                     "status": STATUS_FAILURE,
-#                     "errors": errors,
-#                 }, FAILURE_RESPONSE_400
-#         return result
-#     else:
-#         print(f"Could not load new pending spec for {programid}: {nl.join(errors)}")
-#         return {"status": STATUS_FAILURE, "errors": errors}, FAILURE_RESPONSE_400
-
-
 @router.get("/content")
 def get_content(programid: str, db: Session = Depends(get_db)):
     """
@@ -355,3 +299,54 @@ def update_content(
         result = ({"status": STATUS_FAILURE, "errors": errors}, FAILURE_RESPONSE_400)
 
     return get_content(programid=programid, db=db)
+
+
+@router.post("/upload")
+async def upload(
+    file: Annotated[bytes, File()],
+    programid: str,
+    user: User = Depends(current_user),
+    return_diff: bool = False,
+    comment: str = "No comment provided",
+):
+    """
+    Uploads the binary contents of a .xlsx file to the pending program spec, s3://amplio-progspecs/{programid}/pending.
+    """
+    pending_spec, errors = read_from_xlsx(programid=programid, data_or_path=file)
+    if not pending_spec:
+        print(f"Could not load new pending spec for {programid}: {nl.join(errors)}")
+        return {"status": STATUS_FAILURE, "errors": errors}, FAILURE_RESPONSE_400
+
+    print(f"Loaded new pending spec for {programid} from data")
+    # Looks good, save to S3.
+    metadata = {
+        "submitter-email": user,
+        "submitter-comment": comment or "No comment provided",
+        "submission-date": datetime.datetime.now().isoformat(),
+    }
+
+    key = _make_program_key(programid, PENDING_PROGSPEC_KEY)
+    put_result = s3.put_object(
+        Body=file, Bucket=PROGSPEC_BUCKET, Metadata=metadata, Key=key
+    )
+    _delete_versions(key, versions_to_keep=put_result.get("VersionId"))
+
+    result = {
+        "status": STATUS_OK,
+        "versionid": put_result.get("VersionId"),
+        "data": get_content(programid=programid, db=next(get_db())).data[0],
+    }
+    # if return_diff:
+    #     print(f"Loaded published spec for {programid} to find diffs")
+    #     # Load published spec for diff
+    #     published_spec, errors = read_from_s3(programid)
+    #     if published_spec:
+    #         diff_result = compare_program_specs(published_spec, pending_spec)
+    #         print(f"Diff from published spec for {programid}: {nl.join(diff_result)}")
+    #         result["diff"] = diff_result
+    #     else:
+    #         # oops, couldn't load published spec
+    #         print(f"Could not load published spec for {programid}: {nl.join(errors)}")
+    #         raise HTTPException(status_code=FAILURE_RESPONSE_400, detail=errors)
+
+    return result
