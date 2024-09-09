@@ -65,21 +65,23 @@ kv2csv *args='': venv
 uf-utility *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/userfeedback_utility/ufUtility.py "$@"
 
-[doc("Import Talking Books statistics into db")]
+[doc("Import Talking Books v1 statistics into db")]
 [group("statistics")]
 import-v1-stats *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/acm_stats/import_stats.py "$@"
     # {{ PYTHONPATH }} {{ python }} scripts/acm_stats/initial_sql.py "$@"
     # just update-usage-info
 
-[doc("Re-imports Talking Books statistics into db")]
+[doc("Re-imports Talking Books v1 statistics into db")]
 [group("statistics")]
 re-import-v1-stats *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/acm_stats/re_import_stats.py "$@"
 
+[doc("Import Talking Book v2 statistics into db")]
 [group("statistics")]
 import-v2-stats *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/v2_log_reader/main.py "$@"
+
 # END: Statistics related commands
 
 # START: Migration commands

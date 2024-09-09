@@ -133,6 +133,7 @@ def search_dirs_and_process_zips() -> (int, int, int, int, int):
     init_global_tb_operations_csvs()
     excluded_names = set([x.name for x in args.excluded])
     queue: list[Path] = [x for x in args.logs]
+
     while len(queue) > 0:
         path = queue.pop(0)
         if path.is_file():
@@ -268,37 +269,6 @@ def main():
         action=StorePathAction,
         glob=True,
         help="Zip files and/or directories containing zip files to import.",
-    )
-
-    arg_parser.add_argument(
-        "--db-host",
-        default=None,
-        metavar="HOST",
-        help="Optional host name, default from secrets store.",
-    )
-    arg_parser.add_argument(
-        "--db-port",
-        default=None,
-        metavar="PORT",
-        help="Optional host port, default from secrets store.",
-    )
-    arg_parser.add_argument(
-        "--db-user",
-        default=None,
-        metavar="USER",
-        help="Optional user name, default from secrets store.",
-    )
-    arg_parser.add_argument(
-        "--db-password",
-        default=None,
-        metavar="PWD",
-        help="Optional password, default from secrets store.",
-    )
-    arg_parser.add_argument(
-        "--db-name",
-        default="dashboard",
-        metavar="DB",
-        help='Optional database name, default "dashboard".',
     )
 
     arglist = None
