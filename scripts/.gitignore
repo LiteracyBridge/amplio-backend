@@ -7,3 +7,4 @@ bin
 # Exclude log files
 reports3.raw
 acm.log
+acm_stats/logs

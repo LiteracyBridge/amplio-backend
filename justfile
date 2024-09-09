@@ -39,8 +39,6 @@ new-acm *args='': venv
 tableau-geo *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/tableau/tableau_geo_importer.py "$@"
 
-logs-reader *args='': venv
-    {{ PYTHONPATH }} {{ python }} scripts/v2LogReader/main.py "$@"
 
 # START: Statistics related commands
 [doc("Inserts processed stats 'tbsdeployed.csv' and 'tbscollected.csv' files into the database")]
@@ -69,16 +67,19 @@ uf-utility *args='': venv
 
 [doc("Import Talking Books statistics into db")]
 [group("statistics")]
-import-stats *args='': venv
+import-v1-stats *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/acm_stats/import_stats.py "$@"
     # {{ PYTHONPATH }} {{ python }} scripts/acm_stats/initial_sql.py "$@"
     # just update-usage-info
 
 [doc("Re-imports Talking Books statistics into db")]
 [group("statistics")]
-re-import-stats *args='': venv
+re-import-v1-stats *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/acm_stats/re_import_stats.py "$@"
 
+[group("statistics")]
+import-v2-stats *args='': venv
+    {{ PYTHONPATH }} {{ python }} scripts/v2_log_reader/main.py "$@"
 # END: Statistics related commands
 
 # START: Migration commands

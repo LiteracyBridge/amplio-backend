@@ -55,7 +55,7 @@ def gather_files(
     print("Gather from s3")
 
     tmpdir = tempfile.mkdtemp()
-    print(f"temp: {tmpdir}")
+    print(f"temp: {tmpdir}, {timestamp}")
 
     # pull files from s3
     subprocess.run(
@@ -67,10 +67,14 @@ def gather_files(
     # process into collected-data
     print("Process into collected-data")
     results = subprocess.run(
-        f"java -cp \"{ACM_DIR}/acm.jar:{ACM_DIR}/lib/*\" org.literacybridge.acm.utils.MoveStats -b {os.path.join(STATS_ROOT, 'blacklist.txt')} {tmpdir} {daily_dir} {timestamp}",
+        f"java -cp \"{os.path.abspath(ACM_DIR)}/acm.jar:{os.path.abspath(ACM_DIR)}/lib/*\" org.literacybridge.acm.utils.MoveStats -b {os.path.abspath(os.path.join(STATS_ROOT, 'blacklist.txt'))} {tmpdir} {os.path.abspath(daily_dir)} {timestamp}",
         # check=True,
+        stdout=open(LOGS_DIR + "/err.log", "a"),
+        stderr=open(LOGS_DIR + "/err.log", "a"),
         shell=True,
     )
+
+    print(results)
 
     if results.returncode == 0:
         gatheredAny = True
@@ -133,7 +137,7 @@ def gather_files(
         subprocess.run(["cat", html_report], stdout=subprocess.PIPE)
 
     # Remove the temporary directory
-    os.rmdir(tmpdir)
+    # os.rmdir(tmpdir)
 
 
 def import_user_feedback(dailyDir):
