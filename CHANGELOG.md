@@ -1,3 +1,12 @@
+## [0.2.1](https://github.com/LiteracyBridge/amplio-backend/compare/v0.2.0...v0.2.1) (2024-09-09)
+
+
+### Bug Fixes
+
+* **spec:** return program spec data after upload ([0ef6d07](https://github.com/LiteracyBridge/amplio-backend/commit/0ef6d07ed4de4060675e77ae5eafaccec91526ba))
+
+
+
 # [0.2.0](https://github.com/LiteracyBridge/amplio-backend/compare/v0.1.5...v0.2.0) (2024-09-04)
 
 
@@ -115,10 +124,6 @@
 
 
 ## [0.1.3](https://github.com/LiteracyBridge/amplio-backend/compare/v0.1.2...v0.1.3) (2024-08-29)
-
-
-
-## [0.1.2](https://github.com/LiteracyBridge/amplio-backend/compare/v0.1.1...v0.1.2) (2024-08-29)
 
 
 
