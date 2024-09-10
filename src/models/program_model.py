@@ -78,6 +78,7 @@ class Program(BaseModel):
     listening_models = Column(JSON, nullable=False)
     deployments_count = Column(Integer, nullable=False)
     deployments_length = Column(String(50), nullable=False)
+    tableau_id = Column(String(100), nullable=True)
     deployments_first = Column(Date, nullable=False)
     feedback_frequency = Column(String(50), nullable=False)
     languages = Column(JSON, nullable=False)
