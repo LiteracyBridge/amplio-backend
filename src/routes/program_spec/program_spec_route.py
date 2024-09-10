@@ -12,6 +12,7 @@ from models import User, get_db
 from models.deployment_model import Deployment
 from models.playlist_model import Playlist
 from models.program_model import Project
+from models.user_model import current_user
 
 # from amplio.utils import (
 #     LambdaRouter,
@@ -34,7 +35,6 @@ from routes.program_spec import (
 )
 from routes.program_spec.db import _ensure_content_view
 from schema import ApiResponse
-from utilities.rolemanager.role_checker import current_user
 
 router = APIRouter()
 
