@@ -20,6 +20,7 @@ def get_jwt(program_id: str, db: Session = Depends(get_db)):
     if resp is None:
         return ApiResponse(data=[])
 
+    print(resp)
     claims = {
         "iss": config.tableau_client_id,
         "exp": datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=5),
@@ -30,6 +31,7 @@ def get_jwt(program_id: str, db: Session = Depends(get_db)):
     }
 
     headers = {"kid": config.tableau_secret_id, "iss": config.tableau_client_id}
+
     # Tableau is unclear on this; the example mentions "key", which is undoc'd
     algorithm = "HS256"
     token = jwt.encode(
