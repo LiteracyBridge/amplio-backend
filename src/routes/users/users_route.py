@@ -4,7 +4,7 @@ import boto3
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sentry_sdk import capture_exception
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, subqueryload
 
 from config import AWS_REGION, config
@@ -14,6 +14,7 @@ from models.organisation_model import Organisation
 from models.program_model import Program, Project
 from models.user_model import ProgramUser, User, UserRole, current_user
 from schema import ApiResponse
+from utilities import generate_uuid
 
 router = APIRouter()
 
@@ -171,6 +172,9 @@ def invite_user(
             pass
 
     invitation = Invitation()
+    invitation.id = generate_uuid()
+    invitation.created_at = func.now()
+    invitation.updated_at = func.now()
     invitation.first_name = dto.first_name
     invitation.last_name = dto.last_name
     invitation.email = dto.email
