@@ -1,9 +1,10 @@
 from typing import List, Optional
 
 from fastapi import Depends, HTTPException, Request
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship, subqueryload
+from sqlalchemy.types import UUID
 
 from database import BaseModel, get_db
 from jwt_verifier import USER_CACHE, VERIFIED_JWT_CLAIMS_CACHE
@@ -81,7 +82,7 @@ class ProgramUser(TimestampMixin, BaseModel):
 class Invitation(TimestampMixin, SoftDeleteMixin, BaseModel):
     __tablename__ = "invitations"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[str] = mapped_column(UUID, primary_key=True, index=True)
     first_name: Mapped[str] = mapped_column(String, nullable=True)
     last_name: Mapped[str] = mapped_column(String, nullable=True)
     email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
