@@ -87,11 +87,11 @@ class Program(BaseModel):
     # partner = Column(String, nullable=False)
     # affiliate = Column(String, nullable=False)
     project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"))
-    program_id = mapped_column(
-        ForeignKey("projects.projectcode"), index=True, nullable=False
-    )
+    program_id = mapped_column(String)
 
-    project: Mapped[Project] = relationship("Project", back_populates="program")
+    project: Mapped[Project] = relationship(
+        "Project", back_populates="program", foreign_keys=[project_id]
+    )
     organisations: Mapped[List["OrganisationProgram"]] = relationship(
         "OrganisationProgram", back_populates="program"
     )

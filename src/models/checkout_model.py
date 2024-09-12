@@ -36,4 +36,4 @@ class ACMCheckout(BaseModel):
         ForeignKey("projects.id"), unique=True
     )
 
-    project: Mapped[Optional[Project]] = relationship("Project")
+    project: Mapped[Optional["Project"]] = relationship("Project")
