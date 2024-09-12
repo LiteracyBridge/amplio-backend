@@ -6,6 +6,7 @@
       "scripts/acm-stats/move_android_collected_data.py",
       "scripts/acm-stats/usage_info_updater.py",
       "scripts/migrate_staffs_from_dynamo.py",
+      "scripts/acm_checkouts_to_pql.py",
       "scripts/csv_insert.py"
     ],
 

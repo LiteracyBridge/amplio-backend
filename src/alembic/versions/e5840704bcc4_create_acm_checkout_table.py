@@ -31,7 +31,7 @@ def upgrade() -> None:
                 acm_state VARCHAR NOT NULL,
                 last_in_file_name VARCHAR NOT NULL,
                 last_in_date TIMESTAMP WITH TIME ZONE NOT NULL,
-                project_id UUID,
+                project_id UUID UNIQUE,
                 FOREIGN KEY (project_id) REFERENCES projects (id)
             );
         """

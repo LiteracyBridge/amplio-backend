@@ -5,6 +5,7 @@ from typing import List
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import (
     JSON,
+    UUID,
     Boolean,
     Column,
     Date,
@@ -49,7 +50,8 @@ class DeploymentInterval(Enum):
 class Project(BaseModel):
     __tablename__ = "projects"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    _id: Mapped[int] = mapped_column("_id", nullable=True)
+    id: Mapped[str] = mapped_column(UUID, primary_key=True, index=True)
     name = mapped_column("project", String, nullable=False)
     active = mapped_column(Boolean, nullable=False, default=True)
     code = mapped_column(String, name="projectcode", nullable=False)
