@@ -69,9 +69,7 @@ class Program(BaseModel):
     __table_args__ = (UniqueConstraint("program_id", name="programs_uniqueness_key"),)
 
     id = Column(Integer, primary_key=True, index=True)
-    program_id = mapped_column(
-        ForeignKey("projects.projectcode"), index=True, nullable=False
-    )
+
     country = Column(String(50), nullable=False)
     region = Column(JSON, nullable=False)
     partner: Mapped[str] = mapped_column(String, nullable=True)
@@ -88,6 +86,10 @@ class Program(BaseModel):
     direct_beneficiaries_additional_map = Column(JSON, default={})
     # partner = Column(String, nullable=False)
     # affiliate = Column(String, nullable=False)
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"))
+    program_id = mapped_column(
+        ForeignKey("projects.projectcode"), index=True, nullable=False
+    )
 
     project: Mapped[Project] = relationship("Project", back_populates="program")
     organisations: Mapped[List["OrganisationProgram"]] = relationship(
