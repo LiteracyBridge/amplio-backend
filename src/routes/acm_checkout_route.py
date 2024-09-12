@@ -45,9 +45,12 @@ from typing import Any, Dict
 import boto3
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.datastructures import QueryParams
+from sqlalchemy.orm import Session, subqueryload
 
 from config import ACM_PREFIX, AWS_REGION
-from models.user_model import User
+from database import get_db
+from models.checkout_model import ACMCheckout
+from models.user_model import User, current_user
 from schema import ApiResponse
 from utilities import cannonical_program_name, now
 
@@ -75,8 +78,26 @@ dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table(TABLE_NAME)
 
 
+@router.get("/list")
+async def list_checkouts(
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    admin_targets = [k.program.project_id for k in user.programs]
+
+    return ApiResponse(
+        data=db.query(ACMCheckout)
+        .filter(ACMCheckout.project_id.in_(admin_targets))
+        .options(subqueryload(ACMCheckout.project))
+        .all()
+    )
+
+
 @router.get("")
-async def handle_request(request: Request):
+async def handle_request(
+    request: Request,
+    db: Session = Depends(get_db),
+):
     """
     :param event: dict -- POST request passed in through API Gateway
     :param context: object -- can be used to get runtime data (unused but required by AWS lambda)
@@ -185,9 +206,9 @@ class V1Handler:
 
     def handle_event(self):
         action = self._action.lower()  # type: ignore
-        if action == "list":
-            return self.list_checkouts()
-        elif action == "report":
+        # if action == "list":
+        #     return self.list_checkouts()
+        if action == "report":
             return self.report()
 
         # Every action after this has a db associated with it. Get the db record from dynamo.
@@ -304,25 +325,26 @@ class V1Handler:
         status = self.db_state
         return self.make_return(STATUS_OK if status == "available" else status)
 
-    def list_checkouts(self):
-        admin_targets = [k.program.program_id for k in self.user.programs]
+    # def list_checkouts(self):
+    #     return ApiResponse
+    #     admin_targets = [k.program.project_id for k in self.user.programs]
 
-        def has_access(program: str):
-            if program in admin_targets:
-                return True
-            for uf in uf_targets:
-                if program.startswith(uf):
-                    return True
-            return False
+    #     def has_access(program: str):
+    #         if program in admin_targets:
+    #             return True
+    #         for uf in uf_targets:
+    #             if program.startswith(uf):
+    #                 return True
+    #         return False
 
-        uf_targets = [x + "-FB-" for x in admin_targets]
-        acms = []
-        checkouts = table.scan()["Items"]
-        for checkout in checkouts:
-            if has_access(cannonical_program_name(checkout.get("acm_name"))):
-                acms.append(checkout)
+    #     uf_targets = [x + "-FB-" for x in admin_targets]
+    #     acms = []
+    #     checkouts = table.scan()["Items"]
+    #     for checkout in checkouts:
+    #         if has_access(cannonical_program_name(checkout.get("acm_name"))):
+    #             acms.append(checkout)
 
-        return acms
+    #     return acms
 
     def checkout(self):
         """
