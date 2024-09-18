@@ -20,8 +20,8 @@ class ACMCheckout(BaseModel):
     last_in_contact: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     now_out_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     now_out_contact: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    now_out_date: Mapped[datetime | DateTime] = mapped_column(
-        DateTime(timezone=True), nullable=False
+    now_out_date: Mapped[Optional[datetime | DateTime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
     now_out_version: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     now_out_comment: Mapped[Optional[str]] = mapped_column(String, nullable=True)

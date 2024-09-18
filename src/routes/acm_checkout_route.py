@@ -93,6 +93,33 @@ async def list_checkouts(
     )
 
 
+@router.get("/revoke")
+async def revoke(
+    program_id: str,
+    db: Session = Depends(get_db),
+):
+    program = (
+        db.query(ACMCheckout)
+        .filter(
+            ACMCheckout.project_id == program_id, ACMCheckout.acm_state == CHECKED_OUT
+        )
+        .first()
+    )
+    if program is None:
+        return ApiResponse(data=[])
+
+    program.acm_state = CHECKED_OUT
+    program.now_out_comment = None
+    program.now_out_contact = None
+    program.now_out_date = None
+    program.now_out_key = None
+    program.now_out_version = None
+
+    db.commit()
+
+    return ApiResponse(data=[program])
+
+
 @router.get("")
 async def handle_request(
     request: Request,
@@ -223,8 +250,8 @@ class V1Handler:
             return self.checkin()
         elif action == "discard":
             return self.discard()
-        elif action == "revokecheckout":
-            return self.revoke()
+        # elif action == "revokecheckout":
+        #     return self.revoke()
         elif action == "create":
             return self.create()
         elif action == "reset":
@@ -469,27 +496,27 @@ class V1Handler:
             update_expr, condition_expr, expr_values, condition_handler
         )
 
-    def revoke(self):
-        # noinspection PyUnusedLocal
-        def condition_handler(err):
-            """Handler for conditonal update failure. It's fine if the failure is because the acm is no longer
-            checked out.
-            :param err: ignored.
-            :return: a result structure if the exception is really OK, None otherwise, for default error handling.
-            """
-            if self._checkout_record.get("acm_state") == CHECKED_IN:
-                # Someone else released the record from under us. Count it as success.
-                return self.make_return(STATUS_OK)
+    # def revoke(self):
+    #     # noinspection PyUnusedLocal
+    #     def condition_handler(err):
+    #         """Handler for conditonal update failure. It's fine if the failure is because the acm is no longer
+    #         checked out.
+    #         :param err: ignored.
+    #         :return: a result structure if the exception is really OK, None otherwise, for default error handling.
+    #         """
+    #         if self._checkout_record.get("acm_state") == CHECKED_IN:
+    #             # Someone else released the record from under us. Count it as success.
+    #             return self.make_return(STATUS_OK)
 
-        update_expr = "SET acm_state = :s " + build_remove_now_out(
-            self._checkout_record
-        )
-        condition_expr = "acm_state = :o"  # revoke check-out should always execute
-        expr_values = {":s": CHECKED_IN, ":o": CHECKED_OUT}
+    #     update_expr = "SET acm_state = :s " + build_remove_now_out(
+    #         self._checkout_record
+    #     )
+    #     condition_expr = "acm_state = :o"  # revoke check-out should always execute
+    #     expr_values = {":s": CHECKED_IN, ":o": CHECKED_OUT}
 
-        return self.update_db(
-            update_expr, condition_expr, expr_values, condition_handler
-        )
+    #     return self.update_db(
+    #         update_expr, condition_expr, expr_values, condition_handler
+    #     )
 
     def create(self):
         if self.db_state != "nodb":
