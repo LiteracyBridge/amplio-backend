@@ -8,7 +8,7 @@ export default () =>
     aws: {
       secretId: process.env.AWS_SECRET_ID,
       poolId: process.env.AWS_USER_POOL_ID,
-      poolClientId: process.env.AWS_USER_POOL_CLIENT_ID,
+      poolClientId: (process.env.AWS_USER_POOL_CLIENT_ID || '').split(','),
     },
     sentry: {
       dsn: process.env.SENTRY_DSN,

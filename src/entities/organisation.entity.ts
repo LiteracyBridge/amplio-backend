@@ -5,10 +5,11 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  BaseEntity
 } from 'typeorm';
 
 @Entity('organisations')
-export class Organisation {
+export class Organisation extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
