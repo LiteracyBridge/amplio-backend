@@ -3,11 +3,15 @@
       "src",
       "scripts/tableau",
       "scripts/new_acm",
-      "scripts/acm-stats/move_android_collected_data.py",
-      "scripts/acm-stats/usage_info_updater.py",
+      "scripts/acm_stats/move_android_collected_data.py",
+      "scripts/acm_stats/usage_info_updater.py",
+      "scripts/acm_stats/import_stats.py",
+      "scripts/acm_stats/re_import_stats.py",
+      "scripts/acm_stats/AWS-LB/initial_sql.py",
       "scripts/migrate_staffs_from_dynamo.py",
+      "scripts/csv_insert.py",
       "scripts/acm_checkouts_to_pql.py",
-      "scripts/csv_insert.py"
+      "scripts/kv2csv.py"
     ],
 
     "exclude": [

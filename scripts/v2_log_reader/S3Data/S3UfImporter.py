@@ -12,8 +12,11 @@ from cryptography.hazmat.primitives import serialization as crypto_serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from sqlalchemy import select
 from tbstats import TbCollectedData, decode_properties
 
+from database import get_db_connection
+from models.deployment_model import Deployment as DeploymentModel
 from utilities import escape_csv
 
 # Recognize a userrecording filename, and extract the parts.
@@ -306,7 +309,9 @@ class S3UfImporter:
         """
         if not self.have_uf:
             return
+
         collection_props = self._tb_collected_data.stats_collected_properties
+        db = get_db_connection()
 
         for fn, properties in self._userrecordings_properties.items():
             if (uuid := properties.get("metadata.MESSAGE_UUID")) and (
@@ -314,10 +319,21 @@ class S3UfImporter:
                 .with_stem(uuid)
                 .with_suffix(".mp3")
             ).exists():
+
+                # Db lookup for missing values
+                if collection_props.get("deployment_DEPLOYMENT_NUMBER", None) is None:
+                    properties["DEPLOYMENT_NUMBER"] = (
+                        db.query(DeploymentModel.deploymentnumber)
+                        .filter(
+                            DeploymentModel.program_id
+                            == collection_props["deployment_PROJECT"],
+                            DeploymentModel.deploymentname
+                            == collection_props["deployment_DEPLOYMENT"],
+                        )
+                        .first()[0]  # type: ignore
+                    )
+
                 properties["PROJECT"] = collection_props["deployment_PROJECT"]
-                properties["DEPLOYMENT_NUMBER"] = collection_props[
-                    "deployment_DEPLOYMENT_NUMBER"
-                ]
                 properties["RECIPIENTID"] = collection_props["deployment_RECIPIENTID"]
                 properties["TALKINGBOOKID"] = collection_props[
                     "deployment_TALKINGBOOKID"

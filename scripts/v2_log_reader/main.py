@@ -23,47 +23,6 @@ _num_deployed = 0
 _num_playstatistics = 0
 _num_uf = 0
 
-# class StorePathAction(argparse.Action):
-#     """
-#     An argparse.Action to store a Path object. A leading ~ is expanded to the user's home directory.
-#     """
-#
-#     @staticmethod
-#     def _expand(v: str) -> Optional[str]:
-#         """
-#         Does the work of expanding.
-#         :param v: A string, possibly with a leading ~ to be expanded ot user's home directory.
-#         :return: A Path object that encapsulates the given path. Note that there is no guarantee of
-#             any actual file system object at that path.
-#         """
-#         return v and Path(expanduser(v))  # 'None' if v is None, otherwise Path(expanduser(v))
-#
-#     def __init__(self, option_strings, dest, default=None, **kwargs):
-#         if 'glob' in kwargs:
-#             self._glob = kwargs.get('glob', False)
-#             del kwargs['glob']
-#         else:
-#             self._glob = False
-#         super(StorePathAction, self).__init__(option_strings, dest, default=self._expand(default), **kwargs)
-#
-#     def __call__(self, parser, namespace, values, option_string=None):
-#         if self._glob and not isinstance(values, list): raise TypeError(
-#             "The 'glob' option requires that the value is a list; did you use 'nargs'?")
-#         if not isinstance(values, list):
-#             values = self._expand(values)
-#         else:
-#             result = []
-#             for value in values:
-#                 path = self._expand(value)
-#                 path_str = str(path)
-#                 if self._glob and ('*' in path_str or '?' in path_str):
-#                     import glob
-#                     result.extend([Path(x) for x in glob.glob(path_str)])
-#                 else:
-#                     result.append(path)
-#             values = result
-#         setattr(namespace, self.dest, values)
-
 
 def process_tb_collected_data(path: Path, num=0) -> None:
     """
@@ -72,7 +31,9 @@ def process_tb_collected_data(path: Path, num=0) -> None:
     :param path: The path of the .zip file, or the directory of an expanded zip file.
     :return: None
     """
+
     global _num_files, _tbs_processed, _programs_processed, _num_collected, _num_deployed, _num_playstatistics, _num_uf
+
     if verbose > 1:
         print(f'Processing file{""if not num else " #"+str(num)}: {path.name}')
     tbd = TbCollectedData(path)
@@ -172,6 +133,7 @@ def search_dirs_and_process_zips() -> (int, int, int, int, int):
     init_global_tb_operations_csvs()
     excluded_names = set([x.name for x in args.excluded])
     queue: list[Path] = [x for x in args.logs]
+
     while len(queue) > 0:
         path = queue.pop(0)
         if path.is_file():
@@ -186,6 +148,7 @@ def search_dirs_and_process_zips() -> (int, int, int, int, int):
 
 def process_s3_imports():
     global args
+
     # prefix to concatenate with the global prefix (default is 'collected-data.v2')
     for prefix in args.s3:
         s3_driver = S3Driver(prefix=prefix, args=args)
@@ -308,37 +271,6 @@ def main():
         help="Zip files and/or directories containing zip files to import.",
     )
 
-    arg_parser.add_argument(
-        "--db-host",
-        default=None,
-        metavar="HOST",
-        help="Optional host name, default from secrets store.",
-    )
-    arg_parser.add_argument(
-        "--db-port",
-        default=None,
-        metavar="PORT",
-        help="Optional host port, default from secrets store.",
-    )
-    arg_parser.add_argument(
-        "--db-user",
-        default=None,
-        metavar="USER",
-        help="Optional user name, default from secrets store.",
-    )
-    arg_parser.add_argument(
-        "--db-password",
-        default=None,
-        metavar="PWD",
-        help="Optional password, default from secrets store.",
-    )
-    arg_parser.add_argument(
-        "--db-name",
-        default="dashboard",
-        metavar="DB",
-        help='Optional database name, default "dashboard".',
-    )
-
     arglist = None
     ######################################################
     #
@@ -370,7 +302,7 @@ def main():
         return 1
 
     if args.s3:
-        get_db_engine(args)
+        get_db_engine()
         process_s3_imports()
 
     # If there are individual .zip files given for processing (test & development usage)

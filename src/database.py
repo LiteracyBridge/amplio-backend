@@ -54,8 +54,7 @@ def get_table_metadata(table: str) -> TableClause:
     return table_def
 
 
-@contextmanager  # type: ignore
-def get_db_connection():
+def get_db_connection() -> Session:
     """
     [WAS] A helper to get a db connection and re-establish the 'content' view after a commit or abort.
 
