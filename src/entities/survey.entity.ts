@@ -8,6 +8,7 @@ import {
   BaseEntity
 } from 'typeorm';
 import { Deployment } from './deployment.entity';
+import { Question } from './uf_question.entity';
 
 @Entity('uf_survey_sections')
 export class SurveySection extends BaseEntity {

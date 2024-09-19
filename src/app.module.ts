@@ -10,6 +10,25 @@ import { Invitation } from './entities/invitations.entity';
 import { UsersModule } from './users/users.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './guards/jwt-auth.guard';
+import { Analysis } from './entities/analysis.entity';
+import { SupportedCategory } from './entities/category.entity';
+import { ContentMetadata } from './entities/content_metadata.entity';
+import { Deployment } from './entities/deployment.entity';
+import { Language, ProjectLanguage } from './entities/language.entity';
+import { Message, MessageLanguages } from './entities/message.entity';
+import { OrganisationProgram } from './entities/org_program.entity';
+import { Playlist, PlaylistSubscriber } from './entities/playlist.entity';
+import { ProgramUser } from './entities/program_user.entity';
+import { Program } from './entities/program.entity';
+import { Project } from './entities/project.entity';
+import { Recipient } from './entities/recipient.entity';
+import { Survey, SurveySection } from './entities/survey.entity';
+import { TalkingBookDeployed } from './entities/tb_deployed.entity';
+import { Choice } from './entities/uf_choice.entity';
+import { Question } from './entities/uf_question.entity';
+import { ACMCheckout } from './entities/checkout.entity';
+import { AnalysisChoice } from './entities/analysis_choice.entity';
+import { UserFeedbackMessage } from './entities/uf_message.entity';
 
 config()
 
@@ -30,8 +49,31 @@ config()
         User,
         UserRole,
         Invitation,
-        Organisation
-      ]
+        Organisation,
+        Analysis,
+        SupportedCategory,
+        ContentMetadata,
+        ACMCheckout,
+        AnalysisChoice,
+        Deployment,
+        Language,
+        Message,
+        MessageLanguages,
+        OrganisationProgram,
+        ProjectLanguage,
+        Playlist,
+        ProgramUser,
+        Program,
+        Project,
+        Recipient,
+        Survey,
+        SurveySection,
+        TalkingBookDeployed,
+        Choice,
+        Question,
+        UserFeedbackMessage
+      ],
+      subscribers: [PlaylistSubscriber],
     }),
     UsersModule,
   ],

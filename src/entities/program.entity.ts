@@ -9,8 +9,9 @@ import {
   OneToOne,
   BaseEntity
 } from 'typeorm';
-import { OrganisationProgram, Project } from './project.entity';
+import { Project } from './project.entity';
 import { ProgramUser } from './program_user.entity';
+import { OrganisationProgram } from './org_program.entity';
 
 enum DirectBeneficiaries {
   "male" = "Number of Male",
@@ -70,7 +71,7 @@ export class Program extends BaseEntity {
   @JoinColumn({ name: 'project_id' })
   project: Project;
 
-  @OneToMany(() => OrganisationProgram, (organisationProgram) => organisationProgram.program)
+  @OneToMany(() => OrganisationProgram, (row) => row.program)
   organisations: OrganisationProgram[];
 
   @OneToMany(() => ProgramUser, (programUser) => programUser.program)

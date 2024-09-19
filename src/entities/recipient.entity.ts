@@ -9,6 +9,8 @@ import {
   OneToMany,
   BaseEntity
 } from 'typeorm';
+import { TalkingBookDeployed } from './tb_deployed.entity';
+import { Project } from './project.entity';
 // import { TalkingBookDeployed } from './tb_deployed_model';
 // import { Point } from 'geojson';
 
@@ -56,7 +58,7 @@ export class Recipient extends BaseEntity {
   language: string;
 
   @Column({ type: 'geometry', spatialFeatureType: 'Point', srid: 4326 })
-  coordinates: Point;
+  coordinates: Record<string, any>;
 
   @Column({ type: 'varchar' })
   agent: string;
@@ -90,4 +92,7 @@ export class Recipient extends BaseEntity {
 
   @OneToMany(() => TalkingBookDeployed, (talkingBookDeployed) => talkingBookDeployed.recipient)
   talkingbooksDeployed: TalkingBookDeployed[];
+
+  @ManyToOne(() => Project)
+  project: Project;
 }

@@ -10,6 +10,8 @@ import {
   BaseEntity
 } from 'typeorm';
 import { Program } from './program.entity';
+import { Recipient } from './recipient.entity';
+import { Deployment } from './deployment.entity';
 
 export enum DeploymentInterval {
   one_month = 1,

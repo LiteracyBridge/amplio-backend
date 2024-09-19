@@ -8,6 +8,7 @@ import {
   JoinColumn,
   BaseEntity
 } from 'typeorm';
+import { Question } from './uf_question.entity';
 
 @Entity('uf_choices')
 export class Choice extends BaseEntity {

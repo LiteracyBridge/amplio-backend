@@ -2,18 +2,18 @@ import { Entity, PrimaryColumn, Column, BaseEntity } from 'typeorm';
 
 @Entity('contentmetadata2')
 export class ContentMetadata extends BaseEntity {
-  @PrimaryColumn({ type: 'varchar', length: 255 })
+  @PrimaryColumn({ type: 'varchar' })
   project: string;
 
-  @PrimaryColumn({ name: 'contentid', type: 'varchar', length: 255 })
+  @Column({ name: 'contentid', type: 'varchar' })
   contentId: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar' })
   title: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar' })
   source: string;
 
-  @Column({ name: 'languagecode', type: 'varchar', length: 255 })
+  @Column({ name: 'languagecode', type: 'varchar' })
   languageCode: string;
 }

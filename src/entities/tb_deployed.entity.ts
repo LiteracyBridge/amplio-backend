@@ -25,13 +25,17 @@ export class TalkingBookDeployed extends BaseEntity {
   @Column({ name: 'deployment', type: 'varchar', nullable: false })
   deploymentName: string;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', name: "deployment_uuid", nullable: true })
   deploymentUuid: string;
 
   @Column({ name: 'contentpackage', type: 'varchar', nullable: true })
   contentPackage: string;
 
-  @ManyToOne(() => Deployment, { eager: true })
+  @ManyToOne(() => Deployment)
   @JoinColumn({ name: 'deployment', referencedColumnName: 'deployment' })
   deployment: Deployment;
+
+  @ManyToOne(() => TalkingBookDeployed, (row) => row.recipient)
+  // @JoinColumn({ name: 'deployment', referencedColumnName: 'deployment' })
+  recipient: TalkingBookDeployed;
 }

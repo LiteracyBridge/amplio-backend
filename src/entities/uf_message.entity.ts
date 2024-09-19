@@ -41,8 +41,7 @@ export class UserFeedbackMessage extends BaseEntity {
   @Column({ name: "recipientid", type: "varchar", nullable: true })
   recipient_id: string;
 
-  @ManyToOne(() => ContentMetadata, { eager: true })
-  @JoinColumn({ name: "relation", referencedColumnName: "content_id" })
+  @ManyToOne(() => ContentMetadata)
   content_metadata: ContentMetadata;
 
   @ManyToOne(() => Recipient, { eager: true })

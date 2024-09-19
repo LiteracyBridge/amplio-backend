@@ -2,21 +2,25 @@ import {
   Entity,
   Column,
   OneToOne,
-  ManyToOne
+  ManyToOne,
+  BaseEntity,
+  OneToMany,
+  JoinColumn
 } from 'typeorm';
 import { User } from './user.entity';
 import { Program } from './program.entity';
 
 @Entity('program_users')
-export class ProgramUser {
+export class ProgramUser extends BaseEntity {
   @Column({ type: 'bigint', nullable: false })
   user_id: number;
 
   @Column({ type: 'bigint', nullable: false })
   program_id: number;
 
-  @ManyToOne(() => User, (user) => user.id)
-  user: User;
+  // @OneToOne(() => User, (user) => user.id)
+  // @JoinColumn({ name: 'user_id' })
+  // user: User;
 
   @OneToOne(() => Program, (program) => program.id)
   program: Program

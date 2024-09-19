@@ -12,6 +12,7 @@ import {
   EntitySubscriberInterface,
 } from 'typeorm';
 import { SupportedCategory } from './category.entity';
+import { Playlist } from './playlist.entity';
 
 
 @Entity('messages')
@@ -51,9 +52,13 @@ export class Message extends BaseEntity {
   @Column({ nullable: true })
   keyPoints: string;
 
-  @ManyToOne(() => SupportedCategory, (category) => category.messages)
-  @JoinColumn({ name: 'defaultCategoryCode', referencedColumnName: 'categorycode' })
-  category: SupportedCategory;
+  // @ManyToOne(() => SupportedCategory, (category) => category.messages)
+  // @JoinColumn({ name: 'defaultCategoryCode', referencedColumnName: 'categorycode' })
+  // category: SupportedCategory;
+
+  @ManyToOne(() => Playlist)
+  @JoinColumn({ name: 'playlist_id' })
+  playlist: Playlist;
 
   // @ManyToOne(() => SustainableDevelopmentGoals, (goal) => goal.messages)
   // @JoinColumn({ name: 'sdgGoalId', referencedColumnName: 'sdg_goal_id' })
