@@ -1,3 +1,13 @@
+Rewrite:
+    ☐ users route
+    ☐ surveys route
+    ☐ programs spec route
+    ☐ tabluea route
+    ☐ tb route
+    ☐ categories route
+    ☐ program route
+    ☐ acm checkout route
+
 Bugs:
     ☐ refetch user info on page refresh
 

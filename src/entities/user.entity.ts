@@ -10,6 +10,7 @@ import {
 } from "typeorm";
 import { Organisation } from "./organisation.entity";
 import { UserRole } from "./user_role.entity";
+import { ProgramUser } from "./program_user.entity";
 
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn("increment")
@@ -44,6 +45,9 @@ export class User extends BaseEntity {
 
   @OneToMany(() => UserRole, (ref) => ref.user_id)
   roles: UserRole[];
+
+  @OneToMany(() => ProgramUser, (ref) => ref.user_id)
+  programs: ProgramUser[]
 
   toJSON() {
     const data = instanceToPlain(this);
