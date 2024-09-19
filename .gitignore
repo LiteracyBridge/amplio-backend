@@ -1,37 +1,70 @@
-.DS_Store
-node_modules
-/frontend/dist
-/lambda/package
-frontend/tsconfig.tsbuildinfo
-venv
-**/__pycache__/**
-*dump.sql
-__pycache__
+# compiled output
+/dist
+/node_modules
 
-# local env files
-.env
-.env.local
-.env.*.local
-.env.*
-.venv
-
-# Log files
+# Logs
+logs
+*.log
 npm-debug.log*
+pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
+lerna-debug.log*
+api_test_server.log
+api_test_server.pid
+# OS
+.DS_Store
 
-# Editor directories and files
-.idea
-.vscode
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-*.orig
+# Tests
+/coverage*
+/.nyc_output
 
-# Test files
-*.xlsx
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
 
-docker/*
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Others
+.env
+firebaseAccountKey.json
+.firebase/hosting.**
+
+# public/docs
+public/docs/swagger-*.json
+public/docs/swagger.json
+public/docs/combined.html
+
+views/api-docs/index.md
+views/api-docs/slate/css/print.css
+views/api-docs/slate/css/screen.css
+
+src/storage
+documentation
+
+backups
+central-api-server.code-workspace
+insurerity-docs
+dump
+expirements
+dump.*
+dumps/
+backup.sql
+migrate-db.sh
+missing-transactions*.csv
+tools/company-onboarding-appscript/node_modules
+tools/company-onboarding-appscript/build
+tools/company-onboarding-appscript/tsconfig.tsbuildinfo
+queries.sh
+
+.cache
