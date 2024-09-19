@@ -78,6 +78,19 @@ dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table(TABLE_NAME)
 
 
+def find_checkout(
+    program_id: str,
+    db: Session = Depends(get_db),
+):
+    return (
+        db.query(ACMCheckout)
+        .filter(
+            ACMCheckout.project_id == program_id, ACMCheckout.acm_state == CHECKED_OUT
+        )
+        .first()
+    )
+
+
 @router.get("/list")
 async def list_checkouts(
     db: Session = Depends(get_db),
@@ -85,12 +98,14 @@ async def list_checkouts(
 ):
     admin_targets = [k.program.project_id for k in user.programs]
 
-    return ApiResponse(
-        data=db.query(ACMCheckout)
+    return {
+        "data": db.query(ACMCheckout)
         .filter(ACMCheckout.project_id.in_(admin_targets))
         .options(subqueryload(ACMCheckout.project))
-        .all()
-    )
+        .all(),
+        STATUS: STATUS_OK,
+        "response": "Success",
+    }
 
 
 @router.get("/revoke")
@@ -98,33 +113,90 @@ async def revoke(
     program_id: str,
     db: Session = Depends(get_db),
 ):
-    program = (
-        db.query(ACMCheckout)
-        .filter(
-            ACMCheckout.project_id == program_id, ACMCheckout.acm_state == CHECKED_OUT
-        )
-        .first()
-    )
-    if program is None:
+    checkout = find_checkout(db=db, program_id=program_id)
+    if checkout is None:
         return ApiResponse(data=[])
 
-    program.acm_state = CHECKED_OUT
-    program.now_out_comment = None
-    program.now_out_contact = None
-    program.now_out_date = None
-    program.now_out_key = None
-    program.now_out_version = None
+    checkout.acm_state = CHECKED_OUT
+    checkout.now_out_comment = None
+    checkout.now_out_contact = None
+    checkout.now_out_date = None
+    checkout.now_out_key = None
+    checkout.now_out_version = None
 
     db.commit()
 
-    return ApiResponse(data=[program])
+    return {
+        "state": checkout,
+        STATUS: STATUS_OK,
+    }
+
+
+def statuscheck(program_id: str, db: Session = Depends(get_db)):
+    record = find_checkout(db=db, program_id=program_id)
+
+    if record is None:
+        return {STATUS: "nodb", "state": {"acm_name": program_id}}
+
+    return {STATUS: STATUS_OK, "state": record}
+
+
+def checkout(program_id: str, db: Session = Depends(get_db)):
+    record = find_checkout(db=db, program_id=program_id)
+    if record is None:
+        return {STATUS: STATUS_DENIED, "state": {"acm_name": program_id}}
+
+    status = "checkedout" if record.acm_state == CHECKED_OUT else "available"
+
+    return {STATUS: STATUS_OK, "state": checkout}
 
 
 @router.get("")
 async def handle_request(
-    request: Request,
-    db: Session = Depends(get_db),
+    request: Request, db: Session = Depends(get_db), user: User = Depends(current_user)
 ):
+    body = await request.json()
+    query = request.query_params
+
+    if query:
+        action = query.get("action").lower()
+        program = query.get("program")
+        print(f"path parameters: {action}, {program}")
+    else:
+        action = (query.get("action") or body.get("action", "")).lower()
+        program = body.get("db") or body.get("program")
+
+    name = query.get("name") or user.email or body.get("name")
+    contact = query.get("phone_number") or body.get("contact")
+    version = query.get("version") or body.get("version")
+    computername = query.get("computername") or body.get("computername")
+    key = query.get("key") or body.get("key")
+    filename = query.get("filename")
+    comment = query.get("comment") or body.get("comment")
+
+    print(
+        f"Arguments: action:{action}, program:{program}, name:{name}, contact:{contact}"
+    )
+
+    if action == "list":
+        return list_checkouts(user=user, db=db)
+
+    results = list(filter(lambda x: x.program.program_id == program, user.programs))
+
+    if len(results) != 1:
+        return {
+            "data": [],
+            STATUS: STATUS_DENIED,
+            "response": "Program not found",
+        }
+
+    program = results[0].program.project_id
+
+    if action == "revokecheckout":
+        return revoke(program_id=program, db=db)
+    elif action == "statuscheck":
+        return statuscheck(program_id=program)
+
     """
     :param event: dict -- POST request passed in through API Gateway
     :param context: object -- can be used to get runtime data (unused but required by AWS lambda)
@@ -133,7 +205,6 @@ async def handle_request(
 
     body: Dict[str, Any] = {}
     user: User = request.state.current_user
-    query = request.query_params
 
     try:
         body = await request.json()
