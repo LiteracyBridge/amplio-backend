@@ -68,3 +68,19 @@ tools/company-onboarding-appscript/tsconfig.tsbuildinfo
 queries.sh
 
 .cache
+
+docker/*
+
+# Test files
+*.xlsx
+
+**/__pycache__/**
+*dump.sql
+__pycache__
+
+# local env files
+.env
+.env.local
+.env.*.local
+.env.*
+.venv
