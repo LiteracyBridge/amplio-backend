@@ -2,13 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { User } from 'src/entities/user.entity';
 import { InvitationDto } from './invitation.dto';
 import { Invitation } from 'src/entities/invitation.entity';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
+import appConfig from 'src/app.config';
+import { AdminCreateUserCommand, AdminDeleteUserCommand, CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider';
 
 @Injectable()
 export class UsersService {
   async me(email: string): Promise<User | null> {
     return await User.findOne({
-      where: { email: "lawrence@amplio.org" },
+      where: { email: email },
       relations: {
         organisation: true,
         roles: { role: true },
@@ -34,16 +36,44 @@ export class UsersService {
 
     await invitation.save()
 
-    // response = client.admin_create_user(
-    //   UserPoolId = config.user_pool_id,
-    //   Username = dto.email,
-    //     # TemporaryPassword = dto.password,
-    //   DesiredDeliveryMediums = ["EMAIL"],
-    //   UserAttributes = [
-    //     { "Name": "email", "Value": dto.email },
-    //     { "Name": "name", "Value": f"{dto.first_name} {dto.last_name}"},
-    //   ],
-    //     # MessageAction = "RESEND",
-    // )
+    // Create user on cognito
+    const client = new CognitoIdentityProviderClient();
+    const command = new AdminCreateUserCommand({
+      UserPoolId: appConfig().aws.poolId, // required
+      Username: dto.email, // required
+      UserAttributes: [ // AttributeListType
+        { Name: 'email', Value: dto.email },
+        { Name: 'name', Value: `${dto.first_name} ${dto.last_name}` }
+      ],
+      ValidationData: [],
+      ForceAliasCreation: false,
+      // MessageAction: "RESEND",
+      DesiredDeliveryMediums: ["EMAIL",],
+    });
+    const response = await client.send(command);
+    console.log(response);
+
+    return invitation
+  }
+
+  async deleteInvitation(email: string) {
+    const record = await Invitation.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email } });
+
+    if (user != null) { // A/c already exists, delete the invitation
+      await Invitation.remove(record);
+      return record;
+    }
+
+    const command = new AdminDeleteUserCommand({
+      UserPoolId: appConfig().aws.poolId, // required
+      Username: email, // required
+    });
+
+    const response = await new CognitoIdentityProviderClient().send(command);
+    console.log(response);
+
+    await Invitation.remove(record);
+    return record;
   }
 }

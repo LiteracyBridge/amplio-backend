@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { CurrentUser } from 'src/decorators/user.decorator';
 import { Invitation } from 'src/entities/invitation.entity';
 import { Organisation } from 'src/entities/organisation.entity';
@@ -62,7 +62,6 @@ export class UsersController {
     })
   }
 
-
   @Post("/invitations")
   async createInvite(
     @Body() body: InvitationDto,
@@ -70,6 +69,16 @@ export class UsersController {
   ) {
     return ApiResponse.Success({
       data: await this.userService.createInvitation(body, user)
+    })
+  }
+
+  @Delete("/invitations/:email")
+  async deleteInvitation(
+    @Param("email") email: string,
+    @CurrentUser() user: User
+  ) {
+    return ApiResponse.Success({
+      data: await this.userService.deleteInvitation(email)
     })
   }
 
