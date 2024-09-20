@@ -12,9 +12,6 @@ export class UserRole {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', unique: true })
-  name: string;
-
   @Column({ type: 'bigint', nullable: false })
   user_id: number;
 

@@ -6,7 +6,7 @@ import { config } from "dotenv"
 import { User } from './entities/user.entity';
 import { Organisation } from './entities/organisation.entity';
 import { UserRole } from './entities/user_role.entity';
-import { Invitation } from './entities/invitations.entity';
+import { Invitation } from './entities/invitation.entity';
 import { UsersModule } from './users/users.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './guards/jwt-auth.guard';
