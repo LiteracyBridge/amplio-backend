@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { config } from "dotenv"
-import { User } from './entities/user.entity';
+import { User, UserSubscriber } from './entities/user.entity';
 import { Organisation } from './entities/organisation.entity';
 import { UserRole } from './entities/user_role.entity';
 import { Invitation } from './entities/invitation.entity';
@@ -75,7 +75,7 @@ config()
         Question,
         UserFeedbackMessage
       ],
-      subscribers: [PlaylistSubscriber],
+      subscribers: [PlaylistSubscriber, UserSubscriber],
     }),
     TypeOrmModule.forFeature([User]),
 

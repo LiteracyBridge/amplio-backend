@@ -36,10 +36,7 @@ export class AuthGuard implements CanActivate {
     }
 
     // Verifier that expects valid access tokens:
-
-    console.log(appConfig().aws.poolId, appConfig().aws.poolClientId)
     try {
-      console.log(token)
       const jwksResponse = await axios.get(`https://cognito-idp.${appConfig().aws.region}.amazonaws.com/${appConfig().aws.poolId}/.well-known/jwks.json/`, {timeout: 1000000000});
       // const response = await fetch(url); // Increase timeout to 10 seconds
 
@@ -52,7 +49,6 @@ export class AuthGuard implements CanActivate {
       await verifier.cacheJwks(jwksResponse.data);
 
       const payload = await verifier.verify(token);
-      console.log(payload)
       let user = await this.userServer.me(payload.email as string)
 
       if (user == null) {
@@ -67,7 +63,6 @@ export class AuthGuard implements CanActivate {
       request.user = user
       JWT_CACHE[hash] = request.user;
 
-      console.log(request.user)
       return true
     } catch (err) {
       console.log(err);

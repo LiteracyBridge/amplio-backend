@@ -1,14 +1,18 @@
-import { Exclude, instanceToPlain } from "class-transformer";
+import { Exclude, Expose, instanceToPlain } from "class-transformer";
 import {
+  EventSubscriber,
   JoinColumn,
   BaseEntity,
   Column,
   Entity,
+  EntitySubscriberInterface,
+  InsertEvent,
   CreateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   OneToMany,
+  LoadEvent,
 } from "typeorm";
 import { Organisation } from "./organisation.entity";
 import { UserRole } from "./user_role.entity";
@@ -54,9 +58,41 @@ export class User extends BaseEntity {
   @JoinColumn({ referencedColumnName: "program_id" })
   programs: ProgramUser[]
 
+  @Expose()
+  permissions: Record<string, boolean> = {}
+
   toJSON() {
     const data = instanceToPlain(this);
 
     return data;
+  }
+}
+
+
+@EventSubscriber()
+export class UserSubscriber
+  implements EntitySubscriberInterface<User> {
+  /**
+   * Indicates that this subscriber only listen to Subscription events.
+   */
+  listenTo() {
+    return User;
+  }
+
+  /**
+   * Called before post insertion.
+   */
+  async beforeInsert(_event: InsertEvent<User>) {
+  }
+
+  async afterLoad(entity: User, event?: LoadEvent<User>): Promise<undefined | User> {
+    // Load the permissions from the roles
+    for (const role of entity.roles) {
+      const items = Object.values(role.role.permissions).flat();
+      for (const action of items) {
+        entity.permissions[action] = true;
+      }
+    }
+    return entity;
   }
 }
