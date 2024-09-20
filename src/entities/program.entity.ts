@@ -23,7 +23,7 @@ enum DirectBeneficiaries {
 @Entity('programs')
 @Unique(['program_id'])
 export class Program extends BaseEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn("increment")
   id: number;
 
   @Column({ length: 50, nullable: false })
@@ -69,10 +69,11 @@ export class Program extends BaseEntity {
   program_id: string;
 
   @ManyToOne(() => Project, (project) => project.program)
-  @JoinColumn({ name: 'project_id' })
+  @JoinColumn({ name: 'project_id', referencedColumnName: 'id' })
   project: Project;
 
   @OneToMany(() => OrganisationProgram, (row) => row.program)
+  @JoinColumn({ referencedColumnName: 'id', name: 'organisation_id' })
   organisations: OrganisationProgram[];
 
   @OneToMany(() => ProgramUser, (programUser) => programUser.program)

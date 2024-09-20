@@ -8,8 +8,7 @@ export class UsersService {
       where: { email: "lawrence@amplio.org" },
       relations: {
         roles: { role: true },
-        programs: true,
-        // programs: { program: { project: { deployments: true } } },
+        programs: { program: { project: { deployments: true } } },
       }
     });
   }

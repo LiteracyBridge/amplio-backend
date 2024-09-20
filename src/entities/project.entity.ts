@@ -12,6 +12,7 @@ import {
 import { Program } from './program.entity';
 import { Recipient } from './recipient.entity';
 import { Deployment } from './deployment.entity';
+import { Expose } from 'class-transformer';
 
 export enum DeploymentInterval {
   one_month = 1,
@@ -46,6 +47,8 @@ export class Project extends BaseEntity {
   @OneToOne(() => Program, (program) => program.project)
   program: Program;
 
-  @ManyToOne(() => Program)
-  general: Program; // This is for spec frontend
+  @Expose()
+  get general(): Program {
+    return this.program
+  }
 }

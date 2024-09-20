@@ -5,15 +5,16 @@ import {
   Unique,
   ManyToOne,
   JoinColumn,
-  OneToMany
+  OneToMany,
+  BaseEntity
 } from 'typeorm';
 import { Playlist } from './playlist.entity';
 import { Project } from './project.entity';
 
 @Entity('deployments')
 @Unique('deployments_uniqueness_key', ['project', 'deployment'])
-export class Deployment {
-  @PrimaryGeneratedColumn()
+export class Deployment extends BaseEntity {
+  @PrimaryGeneratedColumn("increment")
   id: number;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
@@ -25,10 +26,13 @@ export class Deployment {
   @Column({ type: 'varchar', length: 255, nullable: false })
   deployment: string;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'varchar', name: 'project', nullable: false })
+  project_id: string;
+
+  @Column({ type: 'date', name: 'startdate', nullable: true })
   start_date: Date;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'date', name: 'enddate', nullable: true })
   end_date: Date;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
@@ -44,6 +48,6 @@ export class Deployment {
   playlists: Playlist[];
 
   @ManyToOne(() => Project, project => project.deployments)
-  @JoinColumn({ name: 'project' })
+  @JoinColumn({ name: 'project', referencedColumnName: 'code' })
   project: Project;
 }
