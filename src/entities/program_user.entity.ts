@@ -13,19 +13,17 @@ import { Program } from './program.entity';
 
 @Entity('program_users')
 export class ProgramUser extends BaseEntity {
-  @PrimaryGeneratedColumn("uuid")
-  id: string
-
-  @Column({ type: 'bigint', nullable: false })
+  @Column({ type: 'bigint', nullable: false, primary: true })
   user_id: number;
 
-  @Column({ type: 'bigint', nullable: false })
+  @Column({ type: 'bigint', nullable: false, primary: true })
   program_id: number;
 
-  // @OneToOne(() => User, (user) => user.id)
-  // @JoinColumn({ name: 'user_id' })
-  // user: User;
+  @ManyToOne(() => User)
+  @JoinColumn({ referencedColumnName: 'id', name: 'user_id' })
+  user: User;
 
   @OneToOne(() => Program, (program) => program.id)
+  @JoinColumn({ referencedColumnName: 'id', name: 'program_id' })
   program: Program
 }

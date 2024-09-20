@@ -36,7 +36,6 @@ export class Invitation extends _BaseEntity {
   organisation: Organisation;
 
   static async createUser(email: string): Promise<User | null> {
-
       const invitation = await Invitation.findOne({ where: { email } });
       if (!invitation) {
           return null;

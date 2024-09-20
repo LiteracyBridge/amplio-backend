@@ -110,4 +110,11 @@ migration-create *args='': venv
 run-script *args='': venv
     {{ PYTHONPATH }} {{ python }} "$@"
 
+disable-ipv5:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+
+    sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+    sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
 # TODO: Add a build step to compile acm & copy jars to AWS-LB/bin dir

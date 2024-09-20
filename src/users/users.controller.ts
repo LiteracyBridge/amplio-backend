@@ -17,4 +17,9 @@ export class UsersController {
       })
     })
   }
+
+  @Get("/me")
+  async me(@CurrentUser() user: User) {
+    return ApiResponse.Success({ data: await User.find() })
+  }
 }

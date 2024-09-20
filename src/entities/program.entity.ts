@@ -12,6 +12,7 @@ import {
 import { Project } from './project.entity';
 import { ProgramUser } from './program_user.entity';
 import { OrganisationProgram } from './org_program.entity';
+import { Deployment } from './deployment.entity';
 
 enum DirectBeneficiaries {
   "male" = "Number of Male",

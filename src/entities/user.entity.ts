@@ -1,7 +1,9 @@
 import { Exclude, instanceToPlain } from "class-transformer";
 import {
+  JoinColumn,
   BaseEntity,
   Column,
+  Entity,
   CreateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
@@ -12,6 +14,7 @@ import { Organisation } from "./organisation.entity";
 import { UserRole } from "./user_role.entity";
 import { ProgramUser } from "./program_user.entity";
 
+@Entity({ name: "users" })
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn("increment")
   id: number;
@@ -40,13 +43,15 @@ export class User extends BaseEntity {
   @DeleteDateColumn({ type: "timestamptz" })
   deleted_at?: Date;
 
-  @OneToMany(() => Organisation, (org) => org.id)
+  // @OneToMany(() => Organisation, (org) => org.id)
   organisation: Organisation;
 
-  @OneToMany(() => UserRole, (ref) => ref.user_id)
+  @OneToMany(() => UserRole, (ref) => ref.user)
+  @JoinColumn({ referencedColumnName: "user_id" })
   roles: UserRole[];
 
-  @OneToMany(() => ProgramUser, (ref) => ref.user_id)
+  @OneToMany(() => ProgramUser, (ref) => ref.user)
+  @JoinColumn({ referencedColumnName: "program_id" })
   programs: ProgramUser[]
 
   toJSON() {

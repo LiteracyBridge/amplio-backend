@@ -29,6 +29,7 @@ import { Question } from './entities/uf_question.entity';
 import { ACMCheckout } from './entities/checkout.entity';
 import { AnalysisChoice } from './entities/analysis_choice.entity';
 import { UserFeedbackMessage } from './entities/uf_message.entity';
+import { Role } from './entities/role.entity';
 
 config()
 
@@ -48,6 +49,7 @@ config()
       entities: [
         User,
         UserRole,
+        Role,
         Invitation,
         Organisation,
         Analysis,
@@ -75,6 +77,8 @@ config()
       ],
       subscribers: [PlaylistSubscriber],
     }),
+    TypeOrmModule.forFeature([User]),
+
     UsersModule,
   ],
   controllers: [AppController],
