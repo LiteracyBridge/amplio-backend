@@ -25,4 +25,8 @@ export class Organisation extends BaseEntity {
 
   @OneToMany(() => Organisation, (organisation) => organisation.parent)
   children: Organisation[];
+
+  get isParent() {
+    return this.parent_id === null;
+  }
 }

@@ -12,6 +12,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
   LoadEvent,
 } from "typeorm";
 import { Organisation } from "./organisation.entity";
@@ -47,7 +48,8 @@ export class User extends BaseEntity {
   @DeleteDateColumn({ type: "timestamptz" })
   deleted_at?: Date;
 
-  // @OneToMany(() => Organisation, (org) => org.id)
+  @ManyToOne(() => Organisation)
+  @JoinColumn({ name: "organisation_id", referencedColumnName: 'id' })
   organisation: Organisation;
 
   @OneToMany(() => UserRole, (ref) => ref.user)
@@ -66,6 +68,7 @@ export class User extends BaseEntity {
 
     return data;
   }
+
 }
 
 

@@ -35,21 +35,21 @@ export class Invitation extends _BaseEntity {
   @JoinColumn({ name: 'organisation_id' })
   organisation: Organisation;
 
-  static async createUser(email: string): Promise<User | null> {
-      const invitation = await Invitation.findOne({ where: { email } });
-      if (!invitation) {
-          return null;
-      }
+  static async createUser(email: string | Invitation): Promise<User | null> {
+    const invitation = typeof email !== 'string' ? email : (await Invitation.findOne({ where: { email } }));
+    if (!invitation) {
+      return null;
+    }
 
-      const user = new User();
-      user.first_name = invitation.first_name;
-      user.last_name = invitation.last_name;
-      user.email = invitation.email;
-      user.organisation_id = invitation.organisation_id;
+    const user = new User();
+    user.first_name = invitation.first_name;
+    user.last_name = invitation.last_name;
+    user.email = invitation.email;
+    user.organisation_id = invitation.organisation_id;
 
-      await user.save()
-      await Invitation.remove(invitation);
+    await user.save()
+    await Invitation.remove(invitation);
 
-      return user;
+    return user;
   }
 }

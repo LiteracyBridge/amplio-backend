@@ -110,7 +110,7 @@ migration-create *args='': venv
 run-script *args='': venv
     {{ PYTHONPATH }} {{ python }} "$@"
 
-disable-ipv5:
+disable-ipv6:
     #!/usr/bin/env bash
     set -euxo pipefail
 
