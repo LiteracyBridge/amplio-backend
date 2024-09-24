@@ -27,8 +27,14 @@ export class Choice extends BaseEntity {
   @Column()
   order: number;
 
-  @Column({ default: false })
+  @Column({ type: 'boolean', default: false })
   is_other: boolean;
+
+  @Column({ type: 'bigint', nullable: true })
+  question_id: number;
+
+  @Column({ type: 'bigint', nullable: true })
+  parent_id: number;
 
   @ManyToOne(() => Question, question => question.choices, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'question_id' })

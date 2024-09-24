@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 import { SurveyStatus } from "src/entities/survey.entity";
 
 export class SurveyDto {
@@ -21,4 +21,14 @@ export class SurveyDto {
   @IsOptional()
   @IsString()
   status?: SurveyStatus;
+}
+
+export class QuestionsDto {
+  @IsOptional()
+  @IsArray()
+  sections?: Record<string,any>[];
+
+  @IsOptional()
+  @IsArray()
+  questions?: Record<string,any>[];
 }

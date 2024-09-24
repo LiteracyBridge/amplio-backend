@@ -5,7 +5,10 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
-  BaseEntity
+  BaseEntity,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { Deployment } from './deployment.entity';
 import { Question } from './uf_question.entity';
@@ -23,6 +26,15 @@ export class SurveySection extends BaseEntity {
 
   @Column({ type: 'int', nullable: true })
   survey_id: number;
+
+  @CreateDateColumn({ type: "timestamptz" })
+  created_at: Date;
+
+  @UpdateDateColumn({ type: "timestamptz" })
+  updated_at: Date;
+
+  @DeleteDateColumn({ type: "timestamptz" })
+  deleted_at?: Date;
 }
 
 @Entity('uf_surveys')
