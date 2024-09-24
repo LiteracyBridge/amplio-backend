@@ -31,6 +31,7 @@ import { AnalysisChoice } from './entities/analysis_choice.entity';
 import { UserFeedbackMessage } from './entities/uf_message.entity';
 import { Role } from './entities/role.entity';
 import { SurveyModule } from './survey/survey.module';
+import { TableauController } from './tableau/tableau.controller';
 
 config()
 
@@ -84,7 +85,7 @@ config()
 
     SurveyModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, TableauController],
   providers: [AppService,
     {
       provide: APP_GUARD,
