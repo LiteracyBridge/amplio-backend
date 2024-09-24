@@ -35,6 +35,9 @@ export class Program extends BaseEntity {
   @Column({ nullable: true })
   partner: string;
 
+  @Column({ nullable: true })
+  affiliate: string;
+
   @Column({ type: 'jsonb', nullable: false })
   sustainable_development_goals: string[];
 

@@ -15,20 +15,20 @@ import { Project } from './project.entity';
 // import { Point } from 'geojson';
 
 @Entity('recipients')
-@Unique('recipients_uniqueness_key', ['project', 'communityName', 'groupName', 'agent'])
+@Unique('recipients_uniqueness_key', ['project', 'community_name', 'group_name', 'agent'])
 @Check('lowercase_recipientid_check', 'LOWER(recipientid) = recipientid')
 export class Recipient extends BaseEntity {
   @PrimaryColumn({ name: 'recipientid', type: 'varchar' })
   id: string;
 
   @PrimaryColumn({ name: 'project', type: 'varchar' })
-  programId: string;
+  program_id: string;
 
   @Column({ name: 'communityname', type: 'varchar' })
-  communityName: string;
+  community_name: string;
 
   @Column({ name: 'groupname', type: 'varchar' })
-  groupName: string;
+  group_name: string;
 
   @Column({ type: 'varchar' })
   component: string;
@@ -43,16 +43,16 @@ export class Recipient extends BaseEntity {
   district: string;
 
   @Column({ name: 'numhouseholds', type: 'int' })
-  numHouseholds: number;
+  num_households: number;
 
   @Column({ name: 'numtbs', type: 'int' })
-  numTbs: number;
+  num_tbs: number;
 
   @Column({ name: 'supportentity', type: 'varchar' })
-  supportEntity: string;
+  support_entity: string;
 
   @Column({ type: 'varchar' })
-  listeningModel: string;
+  listening_model: string;
 
   @Column({ type: 'varchar' })
   language: string;
@@ -73,25 +73,25 @@ export class Recipient extends BaseEntity {
   variant: string;
 
   @Column({ type: 'int' })
-  groupSize: number;
+  group_size: number;
 
   @Column({ type: 'json' })
   deployments: any;
 
   @Column({ type: 'varchar', nullable: true })
-  agentGender: string;
+  agent_gender: string;
 
   @Column({ type: 'int', nullable: true })
-  directBeneficiaries: number;
+  direct_beneficiaries: number;
 
   @Column({ type: 'json', nullable: true })
-  directBeneficiariesAdditional: any;
+  direct_beneficiaries_additional: any;
 
   @Column({ type: 'int', nullable: true })
-  indirectBeneficiaries: number;
+  indirect_beneficiaries: number;
 
   @OneToMany(() => TalkingBookDeployed, (talkingBookDeployed) => talkingBookDeployed.recipient)
-  talkingbooksDeployed: TalkingBookDeployed[];
+  talkingbooks_deployed: TalkingBookDeployed[];
 
   @ManyToOne(() => Project)
   project: Project;

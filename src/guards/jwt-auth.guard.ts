@@ -4,6 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
 import { CognitoJwtVerifier } from "aws-jwt-verify";
 import { SimpleJsonFetcher } from "aws-jwt-verify/https";
 import { SimpleJwksCache } from "aws-jwt-verify/jwk";
@@ -15,14 +16,24 @@ import { User } from "src/entities/user.entity";
 import { UsersService } from "src/users/users.service";
 import { hashString } from "src/utilities";
 import { JWT_CACHE } from "src/utilities/constants";
-
+import { SHOULD_SKIP_JWT_AUTH } from "src/decorators/skip-jwt-auth.decorator";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private userServer: UsersService) { }
+  constructor(
+    private userServer: UsersService,
+    private reflector: Reflector
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
+
+    const isPublic = this.reflector.getAllAndOverride<boolean>(
+      SHOULD_SKIP_JWT_AUTH,
+      [context.getHandler(), context.getClass()],
+    );
+    if(isPublic) return true;
+
     const token = this.extractTokenFromHeader(request)?.trim();
 
     if (!token) {
@@ -37,7 +48,7 @@ export class AuthGuard implements CanActivate {
 
     // Verifier that expects valid access tokens:
     try {
-      const jwksResponse = await axios.get(`https://cognito-idp.${appConfig().aws.region}.amazonaws.com/${appConfig().aws.poolId}/.well-known/jwks.json/`, {timeout: 1000000000});
+      const jwksResponse = await axios.get(`https://cognito-idp.${appConfig().aws.region}.amazonaws.com/${appConfig().aws.poolId}/.well-known/jwks.json/`, { timeout: 1000000000 });
       // const response = await fetch(url); // Increase timeout to 10 seconds
 
       const verifier = CognitoJwtVerifier.create({

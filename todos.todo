@@ -6,12 +6,13 @@ Rewrite:
     ✔ tabluea route @done(24-09-24 07:09)
     ✔ tb route @done(24-09-24 14:40)
     ✔ categories route @done(24-09-24 14:40)
-    ☐ program route
+    ✔ program route @done(24-09-24 16:47)
     ☐ acm checkout route
     ☐ new acm script
     ✔ analysis route @done(24-09-24 09:56)
     ✔ uf messages route @done(24-09-24 08:57)
     ✔ dasboard queries @done(24-09-24 08:01)
+    ☐ save latest s3 revision to psql (ACM)
 
 Pending Integration Updates:
     ☐ update ACM login/program fetch to use api
