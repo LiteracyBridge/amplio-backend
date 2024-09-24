@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import appConfig from 'src/app.config';
 import { Program } from 'src/entities/program.entity';
 import { ApiResponse } from 'src/utilities/api_response';

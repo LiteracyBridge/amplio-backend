@@ -32,6 +32,7 @@ import { UserFeedbackMessage } from './entities/uf_message.entity';
 import { Role } from './entities/role.entity';
 import { SurveyModule } from './survey/survey.module';
 import { TableauController } from './tableau/tableau.controller';
+import { DashboardQueriesModule } from './dashboard-queries/dashboard-queries.module';
 
 config()
 
@@ -84,6 +85,8 @@ config()
     UsersModule,
 
     SurveyModule,
+
+    DashboardQueriesModule,
   ],
   controllers: [AppController, TableauController],
   providers: [AppService,
