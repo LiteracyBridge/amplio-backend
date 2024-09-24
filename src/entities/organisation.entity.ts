@@ -5,7 +5,9 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
-  BaseEntity
+  BaseEntity,
+  In,
+  FindOptionsWhere
 } from 'typeorm';
 
 @Entity('organisations')

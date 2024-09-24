@@ -24,8 +24,9 @@ export class OrganisationProgram extends BaseEntity {
   @Column()
   organisation_id: number;
 
-  // @ManyToOne(() => Organisation, (organisation) => organisation.organisationPrograms)
-  // organisation: Organisation;
+  @ManyToOne(() => Organisation)
+  @JoinColumn({ referencedColumnName: 'id', name: 'organisation_id' })
+  organisation: Organisation;
 
   @ManyToOne(() => Program, (program) => program.organisations)
   program: Program;

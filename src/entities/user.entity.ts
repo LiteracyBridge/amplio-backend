@@ -14,10 +14,13 @@ import {
   OneToMany,
   ManyToOne,
   LoadEvent,
+  FindOptionsWhere,
+  In
 } from "typeorm";
 import { Organisation } from "./organisation.entity";
 import { UserRole } from "./user_role.entity";
 import { ProgramUser } from "./program_user.entity";
+import { OrganisationProgram } from "./org_program.entity";
 
 @Entity({ name: "users" })
 export class User extends BaseEntity {
@@ -69,6 +72,12 @@ export class User extends BaseEntity {
     return data;
   }
 
+  get organisationQuery(): FindOptionsWhere<OrganisationProgram> {
+    if (this.organisation.isParent) {
+      return { organisation_id: this.organisation_id }
+    }
+    return { organisation_id: In([this.organisation.id, this.organisation.parent_id]) }
+  }
 }
 
 

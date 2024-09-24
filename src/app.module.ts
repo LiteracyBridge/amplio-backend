@@ -30,11 +30,10 @@ import { ACMCheckout } from './entities/checkout.entity';
 import { AnalysisChoice } from './entities/analysis_choice.entity';
 import { UserFeedbackMessage } from './entities/uf_message.entity';
 import { Role } from './entities/role.entity';
-import { TableauController } from './tableau/tableau.controller';
+import { TableauController } from './tableau.controller';
 import { DashboardQueriesModule } from './dashboard-queries/dashboard-queries.module';
 import { UserfeedbackModule } from './userfeedback/userfeedback.module';
 import { CategoriesController } from './categories.controller';
-import { ProgramsController } from './programs/programs.controller';
 import { ProgramsModule } from './programs/programs.module';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 
@@ -91,7 +90,7 @@ config()
     UserfeedbackModule,
     ProgramsModule,
   ],
-  controllers: [AppController, TableauController, CategoriesController, ProgramsController],
+  controllers: [AppController, TableauController, CategoriesController],
   providers: [AppService,
     {
       provide: APP_GUARD,
