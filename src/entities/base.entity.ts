@@ -17,13 +17,13 @@ export abstract class _BaseEntity extends BaseEntity {
 	_id?: string;
 
 	@CreateDateColumn({ type: "timestamptz" })
-	createdAt: Date;
+	created_at: Date;
 
 	@UpdateDateColumn({ type: "timestamptz" })
-	updatedAt: Date;
+	updated_at: Date;
 
 	@DeleteDateColumn({ type: "timestamptz" })
-	deletedAt?: Date;
+	deleted_at?: Date;
 
 	toJSON() {
 		const data = instanceToPlain(this);

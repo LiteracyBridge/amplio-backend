@@ -55,7 +55,6 @@ export class AnalysisService {
         if (item == null) continue
 
         const analysis = (await Analysis.findOne({ where: { id: item.id } })) ?? new Analysis()
-
         analysis.message_uuid = dto.message_uuid
         analysis.question_id = item.question_id
         analysis.analyst_email = dto.analyst_email

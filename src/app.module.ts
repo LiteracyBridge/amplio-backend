@@ -33,6 +33,7 @@ import { Role } from './entities/role.entity';
 import { TableauController } from './tableau/tableau.controller';
 import { DashboardQueriesModule } from './dashboard-queries/dashboard-queries.module';
 import { UserfeedbackModule } from './userfeedback/userfeedback.module';
+import { CategoriesController } from './categories.controller';
 
 config()
 
@@ -86,7 +87,7 @@ config()
     DashboardQueriesModule,
     UserfeedbackModule,
   ],
-  controllers: [AppController, TableauController],
+  controllers: [AppController, TableauController, CategoriesController],
   providers: [AppService,
     {
       provide: APP_GUARD,

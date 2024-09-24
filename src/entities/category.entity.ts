@@ -15,7 +15,7 @@ export class SupportedCategory extends BaseEntity {
 
   @ManyToOne(() => SupportedCategory, category => category.children)
   @JoinColumn({ name: 'parentcategory' })
-  parentCategory: SupportedCategory;
+  parent_category: SupportedCategory;
 
   @Column({ name: 'isleafnode', type: 'boolean', nullable: false })
   isLeaf: boolean;
@@ -24,8 +24,8 @@ export class SupportedCategory extends BaseEntity {
   name: string;
 
   @Column({ name: 'fullname', type: 'varchar', nullable: false })
-  fullName: string;
+  full_name: string;
 
-  @OneToMany(() => SupportedCategory, category => category.parentCategory)
+  @OneToMany(() => SupportedCategory, category => category.parent_category)
   children: SupportedCategory[];
 }

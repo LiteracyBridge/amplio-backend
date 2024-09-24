@@ -14,7 +14,7 @@ export class ACMCheckout extends BaseEntity{
   id: string;
 
   @Column({ type: "varchar", nullable: true })
-  lastInName?: string;
+  last_in_name?: string;
 
   @Column({ type: "varchar", nullable: true })
   lastInVersion?: string;
