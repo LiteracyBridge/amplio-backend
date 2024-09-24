@@ -35,6 +35,7 @@ export class DashboardQueriesController {
         )
         .leftJoinAndMapMany("recipients.talkingbooksDeployed", TalkingBookDeployed, "talkingbooksDeployed")
         .leftJoinAndMapOne("recipients.talkingbooksDeployed.deployment", Deployment, "deployment")
+        .getMany()
     })
   }
 }
