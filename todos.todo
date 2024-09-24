@@ -8,6 +8,7 @@ Rewrite:
     ☐ categories route
     ☐ program route
     ☐ acm checkout route
+    ✔ dasboard queries @done(24-09-24 08:01)
 
 Bugs:
     ☐ refetch user info on page refresh

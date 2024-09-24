@@ -30,9 +30,9 @@ import { ACMCheckout } from './entities/checkout.entity';
 import { AnalysisChoice } from './entities/analysis_choice.entity';
 import { UserFeedbackMessage } from './entities/uf_message.entity';
 import { Role } from './entities/role.entity';
-import { SurveyModule } from './survey/survey.module';
 import { TableauController } from './tableau/tableau.controller';
 import { DashboardQueriesModule } from './dashboard-queries/dashboard-queries.module';
+import { UserfeedbackModule } from './userfeedback/userfeedback.module';
 
 config()
 
@@ -83,10 +83,8 @@ config()
     TypeOrmModule.forFeature([User]),
 
     UsersModule,
-
-    SurveyModule,
-
     DashboardQueriesModule,
+    UserfeedbackModule,
   ],
   controllers: [AppController, TableauController],
   providers: [AppService,

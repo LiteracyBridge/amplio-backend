@@ -6,6 +6,7 @@
         "organisations",
         "sqlalchemy",
         "talkingbooks",
-        "templating"
+        "templating",
+        "Userfeedback"
     ]
 }
