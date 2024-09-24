@@ -29,8 +29,8 @@ export class Program extends BaseEntity {
   @Column({ length: 50, nullable: false })
   country: string;
 
-  @Column({ type: 'varchar', nullable: false })
-  region: any;
+  @Column({ type: 'json', nullable: false })
+  region: string[];
 
   @Column({ nullable: true })
   partner: string;
@@ -70,6 +70,9 @@ export class Program extends BaseEntity {
 
   @Column({ type: 'varchar', nullable: false, unique: true })
   program_id: string;
+
+  @Column({ type: 'uuid', nullable: false, unique: true })
+  project_id: string;
 
   @ManyToOne(() => Project, (project) => project.program)
   @JoinColumn({ name: 'project_id', referencedColumnName: 'id' })

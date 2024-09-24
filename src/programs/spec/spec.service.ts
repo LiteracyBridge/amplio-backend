@@ -1,5 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import readXlsxFile from 'read-excel-file/node';
+import { Deployment } from 'src/entities/deployment.entity';
+import { Language, ProjectLanguage } from 'src/entities/language.entity';
+import { Message } from 'src/entities/message.entity';
+import { Playlist } from 'src/entities/playlist.entity';
 import { Program } from 'src/entities/program.entity';
 import { Project } from 'src/entities/project.entity';
 import { User } from 'src/entities/user.entity';
@@ -32,42 +36,129 @@ export class ProgramSpecService {
   }
 
   async import(file: Express.Multer.File, code: string) {
-    const { rows: [general] } = await readXlsxFile("/home/ephrim/Downloads/SSA-ETH-pub_progspec (V15) published version.xlsx", { schema: GENERAL_SCHEMA, sheet: 'General' });
+    const { rows: [general], errors: errors1 } = await readXlsxFile("/home/ephrim/Downloads/SSA-ETH-pub_progspec (V15) published version.xlsx", { schema: GENERAL_SCHEMA, sheet: 'General' })
+    if (errors1.length > 0) {
+      throw new BadRequestException(errors1[0].error)
+    }
 
-    const { rows: deployments } = await readXlsxFile("/home/ephrim/Downloads/SSA-ETH-pub_progspec (V15) published version.xlsx", { schema: DEPLOYMENTS_SCHEMA, sheet: 'Deployments' });
+    const { rows: deployments, errors: errors2 } = await readXlsxFile("/home/ephrim/Downloads/SSA-ETH-pub_progspec (V15) published version.xlsx", { schema: DEPLOYMENTS_SCHEMA, sheet: 'Deployments' });
+    if (errors2.length > 0) {
+      throw new BadRequestException(errors2[0].error)
+    }
 
-    const { rows: contents } = await readXlsxFile("/home/ephrim/Downloads/SSA-ETH-pub_progspec (V15) published version.xlsx", { schema: CONTENT_SCHEMA, sheet: 'Content' });
+    const { rows: contents, errors: err3 } = await readXlsxFile("/home/ephrim/Downloads/SSA-ETH-pub_progspec (V15) published version.xlsx", { schema: CONTENT_SCHEMA, sheet: 'Content' });
+    if (err3.length > 0) {
+      console.log(err3)
+      throw new BadRequestException(this.formatParsingError(err3[0]))
+    }
 
     const { rows: recipients } = await readXlsxFile("/home/ephrim/Downloads/SSA-ETH-pub_progspec (V15) published version.xlsx", { schema: RECIPIENT_SCHEMA, sheet: 'Recipients' });
 
     const { rows: languages } = await readXlsxFile("/home/ephrim/Downloads/SSA-ETH-pub_progspec (V15) published version.xlsx", { schema: LANGUAGE_SCHEMA, sheet: 'Languages' });
 
-    console.log(general)
+    console.log(contents)
     // console.log(general, deployments, contents, recipients, languages)
 
     // Save to db
     await this.dataSource.manager.transaction(async (manager) => {
       const program = await manager.findOne(Program, {
-        where: { program_id: general.program_id as string }
+        where: { program_id: general.program_id as string },
+      })
+      const allDeployments = await manager.find(Deployment, {
+        where: { project_id: general.program_id as string }
       })
 
       if (program == null) {
         throw new NotFoundException(`Program '${general.program_id}' cannot not found`)
       }
 
-      // general.
-      // await manager.save(users)
-      // await manager.save(photos)
-      // ...
+      // Save languages
+      await manager.upsert(ProjectLanguage, languages.map(l => {
+        l.projectcode = program.program_id
+        return l
+      }) as unknown as ProjectLanguage[], ['code', 'name', 'projectcode'])
+
+      // Save program info
+      general.languages = languages.flatMap(i => i.code)
+      general.program_id = program.program_id
+      general.project_id = program.project_id
+      await manager.upsert(Program, general, ['program_id'])
+
+      // Save deployments
+      await manager.upsert(Deployment, deployments.map(row => {
+        row.project_id = program.program_id
+        row.deploymentname = row.deployment
+        return row
+      }) as unknown as Deployment[], ['project', 'deployment'])
+
+      // Save content
+      await manager.createQueryBuilder().insert()
+        .into(Playlist)
+        .values(contents.map((row, index) => {
+          const item = new Playlist()
+          item.title = row.playlist_title as string
+          item.program_id = program.program_id
+          item.deployment_id = allDeployments.find(i => i.deploymentnumber === row.deployment_number)?.id
+          item.position = index + 1
+          item.audience = row.audience as string
+          return item
+        })).orIgnore().execute()
+
+      const playlists = await Playlist.find({
+        where: { program_id: program.program_id }, relations: { deployment: true }, select: {
+          deployment: { deploymentnumber: true }
+        }
+      })
+      await manager.createQueryBuilder().insert()
+        .into(Message)
+        .values(contents.map((row, index) => {
+          const item = new Message()
+          item.title = row.message_title as string
+          item.program_id = program.program_id
+          item.playlist_id = playlists.find(i => i.title === row.playlist_title && i.deployment.deploymentnumber === row.deployment_number)?.id
+          item.position = index + 1
+          item.format = row.format as string
+          item.default_category_code = row.default_category as string
+          item.variant = row.variant as string
+          item.key_points = row.key_points as string
+          // item.audience = row.audience as string
+          return item
+        })).orIgnore().execute()
+
+      console.log(playlists)
+// insert message languages
+// recipiuents
+      // as unknown as Playlist[], {
+      //   conflictPaths: ['title', 'deployment_id', 'program_id'],
+      //   skipUpdateIfNoValuesChanged: true
+      // }
+      // )
+
+      // await manager.upsert(Message, contents.map((row, index) => {
+      //   const item = new Playlist()
+      //   item.title = row.playlist_title as string
+      //   item.program_id = program.program_id
+      //   item.deployment_id = allDeployments.find(i => i.deploymentnumber === row.deployment_number)?.id
+      //   item.position = index + 1
+      //   item.audience = row.audience as string
+      //   return item
+      // }) as unknown as Playlist[], ['title', 'deployment_id', 'program_id'])
+
+
     });
+  }
+
+  private formatParsingError(opts: { error: string, row: number, column: string, value?: any }) {
+    return `${opts.error} at row ${opts.row}, column ${opts.column} with value '${opts.value}'`
   }
 }
 
 const errorMessageSuffix = "Please correct all errors and re-upload the sheet";
-const parseJson = (value, error: string) => {
+const parseJson = (value: string, error: string) => {
   try {
-    return JSON.parse(value.trim())
+    return JSON.parse(value.replace(/'/g, '"'))
   } catch (err) {
+    console.log(err)
     throw new BadRequestException(`${error}. ${errorMessageSuffix}`)
   }
 }
@@ -111,10 +202,10 @@ const RECIPIENT_SCHEMA = {
 }
 
 const CONTENT_SCHEMA = {
-  "Deployment #": { prop: 'number', type: Number, required: true },
+  "Deployment #": { prop: 'deployment_number', type: Number, required: true },
   "Playlist Title": { prop: 'playlist_title', type: String, required: true },
   "Message Title": { prop: 'message_title', type: String, required: true },
-  "Key Points": { prop: 'key_points', type: String, required: true },
+  "Key Points": { prop: 'key_points', type: String, required: false },
   "Language Code": {
     required: true,
     prop: 'language_code',
@@ -126,19 +217,19 @@ const CONTENT_SCHEMA = {
       }
     },
   },
-  "Variant": { prop: 'variant', type: String, required: true },
-  "Format": { prop: 'format', type: String, required: true },
-  "Audience": { prop: 'audience', type: String, required: true },
-  "Default Category": { prop: 'default_category', type: String, required: true },
-  "SDG Goals": { prop: 'sdg_goals', type: Number, required: true },
-  "SDG Targets": { prop: 'sdg_targets', type: String, required: true },
+  "Variant": { prop: 'variant', type: String, required: false },
+  "Format": { prop: 'format', type: String, required: false },
+  "Audience": { prop: 'audience', type: String, required: false },
+  "Default Category": { prop: 'default_category', type: String, required: false },
+  "SDG Goals": { prop: 'sdg_goals', type: Number, required: false },
+  "SDG Targets": { prop: 'sdg_targets', type: String, required: false },
 }
 
 const DEPLOYMENTS_SCHEMA = {
-  "Deployment #": { prop: 'number', type: Number, required: true },
+  "Deployment #": { prop: 'deploymentnumber', type: Number, required: true },
   "Start Date": { prop: 'start_date', type: Date, required: true },
   "End Date": { prop: 'end_date', type: Date, required: true },
-  "Deployment Name": { prop: 'name', type: String, required: true },
+  "Deployment Name": { prop: 'deployment', type: String, required: true },
 }
 
 const GENERAL_SCHEMA = {
@@ -147,15 +238,15 @@ const GENERAL_SCHEMA = {
   "Affiliate": { prop: 'affiliate', type: String, required: false },
   "Partner": { prop: 'partner', type: String, required: false },
   "Regions": {
-    prop: 'regions',
-    type: (value) => parseJson(value, "The format of 'Regions' column in 'General' workbook is wrong"),
+    prop: 'region',
+    type: (value: string) => parseJson(value, "The format of 'Regions' column in 'General' workbook is wrong"),
     required: true
   },
-  "Languages": {
-    prop: 'languages',
-    type: (value) => parseJson(value, "The format of 'Languages' column in 'General' workbook is wrong"),
-    required: true
-  },
+  // "Languages": {
+  //   prop: 'languages',
+  //   type: (value) => parseJson(value, "The format of 'Languages' column in 'General' workbook is wrong"),
+  //   required: true
+  // },
   "Deployments Count": { prop: 'deployments_count', type: Number, required: true },
   "Deployments Length": { prop: 'deployments_length', type: String, required: true },
   "Deployments First": { prop: 'deployments_first', type: Date, required: true },

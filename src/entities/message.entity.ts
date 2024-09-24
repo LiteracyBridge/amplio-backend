@@ -16,17 +16,17 @@ import { Playlist } from './playlist.entity';
 
 
 @Entity('messages')
-@Unique(['programId', 'playlistId', 'position'])
-@Unique(['programId', 'playlistId', 'title'])
+@Unique(['program_id', 'playlist_id', 'position'])
+@Unique(['program_id', 'playlist_id', 'title'])
 export class Message extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
-  programId: string;
+  program_id: string;
 
   @Column()
-  playlistId: number;
+  playlist_id: number;
 
   @Column()
   position: number;
@@ -38,19 +38,19 @@ export class Message extends BaseEntity {
   format: string;
 
   @Column({ nullable: true })
-  defaultCategoryCode: string;
+  default_category_code: string;
 
   @Column({ nullable: true })
   variant: string;
 
   @Column({ nullable: true })
-  sdgGoalId: number;
+  sdg_goal_id: number;
 
   @Column({ nullable: true })
-  sdgTargetId: string;
+  sdg_target_id: string;
 
   @Column({ nullable: true })
-  keyPoints: string;
+  key_points: string;
 
   // @ManyToOne(() => SupportedCategory, (category) => category.messages)
   // @JoinColumn({ name: 'defaultCategoryCode', referencedColumnName: 'categorycode' })
@@ -115,8 +115,8 @@ export class MessageSubscriber
   async beforeInsert(event: InsertEvent<Message>) {
     const maxPosition = await Message.createQueryBuilder('message')
       .select('COALESCE(MAX(message.position), 0)', 'max')
-      .where('message.programId = :programId', { programId: event.entity.programId })
-      .andWhere('message.playlistId = :playlistId', { playlistId: event.entity.playlistId })
+      .where('message.program_id = :programId', { programId: event.entity.program_id })
+      .andWhere('message.playlist_id = :playlistId', { playlistId: event.entity.playlist_id })
       .getRawOne();
 
     event.entity.position = (maxPosition.max || 0) + 1;

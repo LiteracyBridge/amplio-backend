@@ -13,7 +13,7 @@ export class ProjectLanguage extends BaseEntity {
   projectcode: string;
 
   @ManyToOne(() => Project)
-  @JoinColumn({ name: 'projectcode' })
+  @JoinColumn({ name: 'projectcode', referencedColumnName: 'code' })
   project: Project;
 }
 

@@ -8,6 +8,7 @@ import {
   BaseEntity,
   EventSubscriber,
   InsertEvent,
+  JoinColumn,
   EntitySubscriberInterface
 } from 'typeorm';
 import { Deployment } from './deployment.entity';
@@ -44,6 +45,7 @@ export class Playlist extends BaseEntity {
   @ManyToOne(() => Deployment, (deployment) => deployment.playlists, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'deployment_id', referencedColumnName: 'id' })
   deployment: Deployment;
 
 
@@ -68,8 +70,8 @@ export class PlaylistSubscriber
       .createQueryBuilder()
       .select('COALESCE(MAX(playlist.position), 0)', 'max')
       .from(Playlist, 'playlist')
-      .where('playlist.programId = :programId', { programId: event.entity.program_id })
-      .andWhere('playlist.deploymentId = :deploymentId', { deploymentId: event.entity.deployment_id })
+      .where('playlist.program_id = :programId', { programId: event.entity.program_id })
+      .andWhere('playlist.deployment_id = :deploymentId', { deploymentId: event.entity.deployment_id })
       .getRawOne();
 
     const position = result ? result.max + 1 : 0;
