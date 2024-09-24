@@ -10,6 +10,9 @@ import {
 import { Deployment } from './deployment.entity';
 import { Question } from './uf_question.entity';
 
+export enum SurveyStatus {
+  draft = 'draft',
+}
 @Entity('uf_survey_sections')
 export class SurveySection extends BaseEntity {
   @PrimaryGeneratedColumn()
@@ -54,5 +57,5 @@ export class Survey extends BaseEntity {
   sections: SurveySection[];
 
   @Column({ type: 'varchar', default: 'draft', nullable: true })
-  status: string;
+  status: SurveyStatus;
 }

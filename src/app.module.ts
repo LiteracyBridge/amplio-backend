@@ -30,6 +30,7 @@ import { ACMCheckout } from './entities/checkout.entity';
 import { AnalysisChoice } from './entities/analysis_choice.entity';
 import { UserFeedbackMessage } from './entities/uf_message.entity';
 import { Role } from './entities/role.entity';
+import { SurveyModule } from './survey/survey.module';
 
 config()
 
@@ -80,6 +81,8 @@ config()
     TypeOrmModule.forFeature([User]),
 
     UsersModule,
+
+    SurveyModule,
   ],
   controllers: [AppController],
   providers: [AppService,
