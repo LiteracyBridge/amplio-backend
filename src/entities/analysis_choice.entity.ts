@@ -3,7 +3,10 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  BaseEntity
+  BaseEntity,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { Choice } from './uf_choice.entity';
 import { Analysis } from './analysis.entity';
@@ -14,14 +17,24 @@ export class AnalysisChoice extends BaseEntity {
   id: number;
 
   @Column({ nullable: true })
-  choiceId: number;
+  choice_id: number;
 
   @ManyToOne(() => Choice, { onDelete: 'CASCADE' })
   choice: Choice;
 
   @Column()
-  analysisId: number;
+  analysis_id: number;
 
   @ManyToOne(() => Analysis, (analysis) => analysis.choices, { onDelete: 'CASCADE' })
   analysis: Analysis;
+
+
+  @CreateDateColumn({ type: 'timestamptz' })
+  created_at: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updated_at: Date;
+
+  @DeleteDateColumn({ type: 'timestamptz', nullable: true })
+  deleted_at: Date;
 }

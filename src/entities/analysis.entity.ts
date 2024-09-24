@@ -19,31 +19,31 @@ export class Analysis extends BaseEntity {
   id: number;
 
   @Column()
-  messageUuid: string;
+  message_uuid: string;
 
   @Column()
-  analystEmail: string;
+  analyst_email: string;
 
   @Column({ type: 'timestamptz', nullable: true })
-  startTime: Date;
+  start_time: Date;
 
   @Column({ type: 'timestamptz', nullable: true })
-  submitTime: Date;
+  submit_time: Date;
 
   @Column({ nullable: true })
   response: string;
 
   @Column()
-  questionId: number;
+  question_id: number;
 
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  created_at: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
-  updatedAt: Date;
+  updated_at: Date;
 
   @DeleteDateColumn({ type: 'timestamptz', nullable: true })
-  deletedAt: Date;
+  deleted_at: Date;
 
   @ManyToOne(() => Question, (question) => question.analysis)
   question: Question;
