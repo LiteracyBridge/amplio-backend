@@ -17,46 +17,46 @@ export class ACMCheckout extends BaseEntity{
   last_in_name?: string;
 
   @Column({ type: "varchar", nullable: true })
-  lastInVersion?: string;
+  last_in_version?: string;
 
   @Column({ type: "varchar", nullable: true })
-  lastInComment?: string;
+  last_in_comment?: string;
 
   @Column({ type: "varchar", nullable: true })
-  lastInContact?: string;
+  last_in_contact?: string;
 
   @Column({ type: "varchar", nullable: true })
-  nowOutName?: string;
+  now_out_name?: string;
 
   @Column({ type: "varchar", nullable: true })
-  nowOutContact?: string;
+  now_out_contact?: string;
 
   @Column({ type: "timestamptz", nullable: true })
-  nowOutDate?: Date;
+  now_out_date?: Date;
 
   @Column({ type: "varchar", nullable: true })
-  nowOutVersion?: string;
+  now_out_version?: string;
 
   @Column({ type: "varchar", nullable: true })
-  nowOutComment?: string;
+  now_out_comment?: string;
 
   @Column({ type: "varchar", nullable: true })
-  nowOutKey?: string;
+  now_out_key?: string;
 
   @Column({ type: "varchar", nullable: true })
-  acmComment?: string;
+  acm_comment?: string;
 
   @Column({ type: "varchar", nullable: false })
-  acmState: string;
+  acm_state: string;
 
   @Column({ type: "varchar", nullable: false })
-  lastInFileName: string;
+  last_in_fileName: string;
 
   @Column({ type: "timestamptz", nullable: false })
-  lastInDate: Date;
+  last_in_date: Date;
 
   @Column({ type: "uuid", unique: true, nullable: true })
-  projectId?: string;
+  project_id?: string;
 
   @ManyToOne(() => Project)
   @JoinColumn({ name: "project_id" })

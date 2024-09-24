@@ -8,7 +8,7 @@ import { Organisation } from './entities/organisation.entity';
 import { UserRole } from './entities/user_role.entity';
 import { Invitation } from './entities/invitation.entity';
 import { UsersModule } from './users/users.module';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './guards/jwt-auth.guard';
 import { Analysis } from './entities/analysis.entity';
 import { SupportedCategory } from './entities/category.entity';
@@ -34,6 +34,9 @@ import { TableauController } from './tableau/tableau.controller';
 import { DashboardQueriesModule } from './dashboard-queries/dashboard-queries.module';
 import { UserfeedbackModule } from './userfeedback/userfeedback.module';
 import { CategoriesController } from './categories.controller';
+import { ProgramsController } from './programs/programs.controller';
+import { ProgramsModule } from './programs/programs.module';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
 
 config()
 
@@ -86,13 +89,19 @@ config()
     UsersModule,
     DashboardQueriesModule,
     UserfeedbackModule,
+    ProgramsModule,
   ],
-  controllers: [AppController, TableauController, CategoriesController],
+  controllers: [AppController, TableauController, CategoriesController, ProgramsController],
   providers: [AppService,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
     },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+
   ],
 })
 export class AppModule { }
