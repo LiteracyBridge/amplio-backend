@@ -67,7 +67,7 @@ export class Recipient extends BaseEntity {
 	@Column({ type: "varchar" })
 	language: string;
 
-	@Column({ type: "geometry", spatialFeatureType: "Point", srid: 4326 })
+	@Column({ type: "point" })
 	coordinates: Record<string, any>;
 
 	@Column({ type: "varchar" })
@@ -95,7 +95,8 @@ export class Recipient extends BaseEntity {
 	direct_beneficiaries: number;
 
 	@Column({ type: "json", nullable: true })
-	direct_beneficiaries_additional: Record<string, any>;
+	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	direct_beneficiaries_additional: Record<string, any> = {}
 
 	@Column({ type: "int", nullable: true })
 	indirect_beneficiaries: number;

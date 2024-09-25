@@ -1,7 +1,9 @@
 import {
+	Body,
 	Controller,
 	Get,
 	Post,
+	Put,
 	Query,
 	UploadedFile,
 	UseInterceptors,
@@ -13,7 +15,7 @@ import { User } from "src/entities/user.entity";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { SkipJwtAuth } from "src/decorators/skip-jwt-auth.decorator";
 
-@Controller("programs/spec")
+@Controller("program-spec")
 export class SpecController {
 	constructor(private service: ProgramSpecService) {}
 	@Get("content")
@@ -26,7 +28,17 @@ export class SpecController {
 		});
 	}
 
-	@SkipJwtAuth()
+	@Put("content")
+	async updateContent(
+		@Query("programid") code: string,
+		@Body() dto: Record<string, any>,
+		@CurrentUser() user: User,
+	) {
+		return ApiResponse.Success({
+			data: await this.service.updateProgram(dto as any, code),
+		});
+	}
+
 	@Post("upload")
 	@UseInterceptors(FileInterceptor("file"))
 	async uploadFile(

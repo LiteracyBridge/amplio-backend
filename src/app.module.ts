@@ -55,7 +55,7 @@ config();
 			maxQueryExecutionTime: 50,
 			autoLoadEntities: true,
 			logNotifications: false,
-			logging: true,
+			logging: false,
 			entities: [
 				User,
 				UserRole,

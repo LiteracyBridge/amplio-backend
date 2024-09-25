@@ -18,7 +18,7 @@ export class SupportedCategory extends BaseEntity {
   parent_category: SupportedCategory;
 
   @Column({ name: 'isleafnode', type: 'boolean', nullable: false })
-  isLeaf: boolean;
+  isleafnode: boolean;
 
   @Column({ name: 'categoryname', type: 'varchar', nullable: false })
   name: string;

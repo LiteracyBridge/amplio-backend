@@ -12,8 +12,7 @@ import {
 import { Program } from './program.entity';
 import { Recipient } from './recipient.entity';
 import { Deployment } from './deployment.entity';
-import { Expose } from 'class-transformer';
-import { ProgramUser } from './program_user.entity';
+import { Language, ProjectLanguage } from './language.entity';
 
 export enum DeploymentInterval {
   one_month = 1,
@@ -24,11 +23,11 @@ export enum DeploymentInterval {
 
 @Entity('projects')
 export class Project extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-  @Column({ nullable: true })
-  _id: number;
+  // @Column({ nullable: true })
+  // _id: number;
 
   @Column({ name: 'project', nullable: false })
   name: string;
@@ -48,8 +47,9 @@ export class Project extends BaseEntity {
   @OneToOne(() => Program, (program) => program.project)
   program: Program;
 
-  @Expose()
-  get general(): Program {
-    return this.program
-  }
+  @OneToOne(() => Program, (program) => program.project)
+  general: Program;
+
+  @OneToMany(() => ProjectLanguage, (row) => row.project)
+  languages: ProjectLanguage[];
 }
