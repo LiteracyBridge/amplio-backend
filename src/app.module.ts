@@ -15,7 +15,7 @@ import { SupportedCategory } from './entities/category.entity';
 import { ContentMetadata } from './entities/content_metadata.entity';
 import { Deployment } from './entities/deployment.entity';
 import { Language, ProjectLanguage } from './entities/language.entity';
-import { Message, MessageLanguages } from './entities/message.entity';
+import { Message, MessageLanguages, MessageSubscriber } from './entities/message.entity';
 import { OrganisationProgram } from './entities/org_program.entity';
 import { Playlist, PlaylistSubscriber } from './entities/playlist.entity';
 import { ProgramUser } from './entities/program_user.entity';
@@ -81,7 +81,7 @@ config()
         Question,
         UserFeedbackMessage
       ],
-      subscribers: [PlaylistSubscriber, UserSubscriber],
+      subscribers: [PlaylistSubscriber, UserSubscriber, MessageSubscriber],
     }),
 
     UsersModule,
