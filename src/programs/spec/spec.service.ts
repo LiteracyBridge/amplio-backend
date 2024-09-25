@@ -371,6 +371,7 @@ export class ProgramSpecService {
             recipients.map((row, index) => {
               row.program_id = program.program_id;
               row.num_households ??= 0;
+              row.direct_beneficiaries_additional ??= {}
 
               if (row.recipient_id == null || row.recipient_id === "") {
                 delete row.recipient_id;
@@ -476,7 +477,7 @@ const RECIPIENT_SCHEMA = {
   "Group Name": { prop: "group_name", type: String, required: false },
   "Group Size": { prop: "group_size", type: Number, required: false },
   "# HH": { prop: "num_households", type: Number, required: false },
-  "# TBs": { prop: "num_tbs", type: Number, required: false },
+  "# TBs": { prop: "numtbs", type: Number, required: false },
   "Direct Beneficiaries": {
     prop: "direct_beneficiaries",
     type: Number,
