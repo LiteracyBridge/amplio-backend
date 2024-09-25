@@ -137,7 +137,7 @@ def _delete_versions(prefix: str, versions_to_keep=None):
 @router.post("/publish")
 def publish(
     programid: str,
-    email: str = Depends(current_user),
+    user: User = Depends(current_user),
     comment: str = "No comment provided",
     db: Session = Depends(get_db),
 ):
@@ -150,10 +150,10 @@ def publish(
     :return: Any detected errors (These would be access errors; the data in the database is, by definition,
             good data).
     """
-    print(f"Publish for program {programid} by {email}")
+    print(f"Publish for program {programid} by {user.email}")
     comment = comment or "No comment provided"
     metadata = {
-        "submitter-email": email,
+        "submitter-email": user.email,
         "submitter-comment": comment,
         "submission-date": datetime.datetime.now().isoformat(),
     }
