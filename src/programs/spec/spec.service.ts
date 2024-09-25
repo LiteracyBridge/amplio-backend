@@ -10,6 +10,7 @@ import { Message, MessageLanguages } from "src/entities/message.entity";
 import { Playlist } from "src/entities/playlist.entity";
 import { Program } from "src/entities/program.entity";
 import { Project } from "src/entities/project.entity";
+import { Recipient } from "src/entities/recipient.entity";
 import { User } from "src/entities/user.entity";
 import { FindOptionsWhere } from "typeorm";
 import { DataSource } from "typeorm";
@@ -68,7 +69,6 @@ export class ProgramSpecService {
 			{ schema: CONTENT_SCHEMA, sheet: "Content" },
 		);
 		if (err3.length > 0) {
-			console.log(err3);
 			throw new BadRequestException(this.formatParsingError(err3[0]));
 		}
 
@@ -81,9 +81,6 @@ export class ProgramSpecService {
 			"/home/ephrim/Downloads/SSA-ETH-pub_progspec (V15) published version.xlsx",
 			{ schema: LANGUAGE_SCHEMA, sheet: "Languages" },
 		);
-
-		console.log(contents);
-		// console.log(general, deployments, contents, recipients, languages)
 
 		// Save to db
 		await this.dataSource.manager.transaction(async (manager) => {
@@ -194,9 +191,9 @@ export class ProgramSpecService {
 
 			const messages = await Message.find({
 				where: { program_id: program.program_id },
-				relations: { playlist: true },
+				relations: { playlist: { deployment: true } },
 				select: {
-					playlist: { title: true },
+					playlist: { title: true, deployment: { deploymentnumber: true } },
 				},
 			});
 			await manager
@@ -229,7 +226,33 @@ export class ProgramSpecService {
 				)
 				.orIgnore()
 				.execute();
-			console.log(playlists);
+
+			// Save recipients
+			await manager
+				.createQueryBuilder()
+				.insert()
+				.into(Recipient)
+				.values(
+					recipients.map((row, index) => {
+						row.program_id = program.program_id;
+
+						if (row.recipient_id == null || row.recipient_id === "") {
+							delete row.recipient_id;
+						}
+
+						if (!set1.has(row.language as string)) {
+							throw new BadRequestException(
+								`Language code '${row.language}' of recipient on row '${index + 1}' not found in the 'Languages' sheet`,
+							);
+						}
+
+						return row as unknown as Recipient;
+					}),
+				)
+				.orIgnore()
+				.execute();
+
+			// console.log(messages);
 			// insert message languages
 			// recipiuents
 			// as unknown as Playlist[], {
@@ -279,9 +302,9 @@ const RECIPIENT_SCHEMA = {
 	Country: { prop: "country", type: String, required: true },
 	Region: { prop: "region", type: String, required: true },
 	District: { prop: "district", type: String, required: true },
-	Community: { prop: "community", type: String, required: false },
+	Community: { prop: "community_name", type: String, required: false },
 	Agent: { prop: "agent", type: String, required: true },
-	"Language Code": { prop: "language_code", type: String, required: true },
+	"Language Code": { prop: "language", type: String, required: true },
 	"Group Name": { prop: "group_name", type: String, required: false },
 	"Group Size": { prop: "group_size", type: Number, required: false },
 	"# HH": { prop: "num_households", type: Number, required: false },
@@ -311,7 +334,7 @@ const RECIPIENT_SCHEMA = {
 	},
 	Affiliate: { prop: "affiliate", type: String, required: false },
 	Partner: { prop: "partner", type: String, required: false },
-	Components: { prop: "components", type: String, required: false },
+	Components: { prop: "component", type: String, required: false },
 	RecipientID: { prop: "recipient_id", type: String, required: false },
 	Deployments: {
 		prop: "deployments",
