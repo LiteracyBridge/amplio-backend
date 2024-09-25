@@ -48,7 +48,7 @@ export class ProgramSpecService {
 		const {
 			rows: [general],
 			errors: errors1,
-		} = await readXlsxFile(file.buffer, {
+		} = await readXlsxFile(file.buffer, { // @ts-ignore
 			schema: GENERAL_SCHEMA,
 			sheet: "General",
 		});
@@ -434,6 +434,7 @@ const GENERAL_SCHEMA = {
 				value,
 				"The format of 'Listening Models' column in 'General' workbook is wrong",
 			),
+      required: false,
 	},
 	"Sustainable Development Goals": {
 		prop: "sustainable_development_goals",
