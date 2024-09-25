@@ -46,17 +46,17 @@ export class Survey extends BaseEntity {
   name: string;
 
   @Column({ type: 'text', nullable: true })
-  description: string | null;
+  description?: string;
 
   @Column({ type: 'varchar' })
   project_code: string;
 
   // TODO: Remove deployment_id and language cols
   @Column({ type: 'varchar', nullable: true })
-  deployment_id: string | null;
+  deployment_id?: string;
 
   @Column({ type: 'varchar', default: 'en', nullable: true })
-  language: string | null;
+  language?: string;
 
   @ManyToOne(() => Deployment)
   @JoinColumn({ name: 'deployment_id' })

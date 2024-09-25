@@ -144,7 +144,7 @@ export class ProgramSpecService {
 						item.program_id = program.program_id;
 						item.deployment_id = allDeployments.find(
 							(i) => i.deploymentnumber === row.deployment_number,
-						)?.id;
+						)!.id;
 						item.position = index + 1;
 						item.audience = row.audience as string;
 						return item;
@@ -174,7 +174,7 @@ export class ProgramSpecService {
 							(i) =>
 								i.title === row.playlist_title &&
 								i.deployment.deploymentnumber === row.deployment_number,
-						)?.id;
+						)!.id;
 						item.position = index + 1;
 						item.format = row.format as string;
 						item.default_category_code = row.default_category as string;
@@ -219,13 +219,13 @@ export class ProgramSpecService {
 						return (row.languages as string[]).map((code) => {
 							if (!set1.has(code)) {
 								throw new BadRequestException(
-									`Language code '${code}' of '${msg.title}' message not found in the 'Languages' sheet`,
+									`Language code '${code}' of '${msg?.title}' message not found in the 'Languages' sheet`,
 								);
 							}
 
 							const item = new MessageLanguages();
 							item.language_code = code;
-							item.message_id = msg.id;
+							item.message_id = msg!.id;
 							return item;
 						});
 					}),

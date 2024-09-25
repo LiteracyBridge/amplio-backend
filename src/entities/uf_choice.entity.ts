@@ -34,7 +34,7 @@ export class Choice extends BaseEntity {
   question_id: number;
 
   @Column({ type: 'bigint', nullable: true })
-  parent_id: number;
+  parent_id?: number;
 
   @ManyToOne(() => Question, question => question.choices, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'question_id' })

@@ -30,7 +30,7 @@ export class UserFeedbackMessage extends BaseEntity {
   length_bytes: number;
 
   @Column({ type: "varchar", nullable: true })
-  transcription: string;
+  transcription?: string;
 
   @Column({ type: "boolean", default: false })
   is_useless: boolean;

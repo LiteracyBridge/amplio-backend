@@ -52,7 +52,7 @@ export class AuthGuard implements CanActivate {
       // const response = await fetch(url); // Increase timeout to 10 seconds
 
       const verifier = CognitoJwtVerifier.create({
-        userPoolId: appConfig().aws.poolId,
+        userPoolId: appConfig().aws.poolId!,
         tokenUse: "id",
         clientId: appConfig().aws.poolClientId,
       });
