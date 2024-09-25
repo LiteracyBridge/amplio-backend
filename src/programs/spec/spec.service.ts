@@ -48,44 +48,50 @@ export class ProgramSpecService {
 		const {
 			rows: [general],
 			errors: errors1,
-		} = await readXlsxFile(
-			"/home/ephrim/Downloads/SSA-ETH-pub_progspec (V15) published version.xlsx",
-			{ schema: GENERAL_SCHEMA, sheet: "General" },
-		);
+		} = await readXlsxFile(file.buffer, {
+			schema: GENERAL_SCHEMA,
+			sheet: "General",
+		});
 		if (errors1.length > 0) {
 			throw new BadRequestException(errors1[0].error);
 		}
 
 		const { rows: deployments, errors: errors2 } = await readXlsxFile(
-			"/home/ephrim/Downloads/SSA-ETH-pub_progspec (V15) published version.xlsx",
+			file.buffer,
 			{ schema: DEPLOYMENTS_SCHEMA, sheet: "Deployments" },
 		);
 		if (errors2.length > 0) {
 			throw new BadRequestException(errors2[0].error);
 		}
 
-		const { rows: contents, errors: err3 } = await readXlsxFile(
-			"/home/ephrim/Downloads/SSA-ETH-pub_progspec (V15) published version.xlsx",
-			{ schema: CONTENT_SCHEMA, sheet: "Content" },
-		);
+		const { rows: contents, errors: err3 } = await readXlsxFile(file.buffer, {
+			schema: CONTENT_SCHEMA,
+			sheet: "Content",
+		});
 		if (err3.length > 0) {
 			throw new BadRequestException(this.formatParsingError(err3[0]));
 		}
 
-		const { rows: recipients } = await readXlsxFile(
-			"/home/ephrim/Downloads/SSA-ETH-pub_progspec (V15) published version.xlsx",
-			{ schema: RECIPIENT_SCHEMA, sheet: "Recipients" },
-		);
+		const { rows: recipients, errors: err4 } = await readXlsxFile(file.buffer, {
+			schema: RECIPIENT_SCHEMA,
+			sheet: "Recipients",
+		});
+		if (err4.length > 0) {
+			throw new BadRequestException(this.formatParsingError(err4[0]));
+		}
 
-		const { rows: languages } = await readXlsxFile(
-			"/home/ephrim/Downloads/SSA-ETH-pub_progspec (V15) published version.xlsx",
-			{ schema: LANGUAGE_SCHEMA, sheet: "Languages" },
-		);
+		const { rows: languages, errors: err5 } = await readXlsxFile(file.buffer, {
+			schema: LANGUAGE_SCHEMA,
+			sheet: "Languages",
+		});
+		if (err5.length > 0) {
+			throw new BadRequestException(this.formatParsingError(err5[0]));
+		}
 
 		// Save to db
 		await this.dataSource.manager.transaction(async (manager) => {
 			const program = await manager.findOne(Program, {
-				where: { program_id: general.program_id as string },
+				where: { program_id: code },
 			});
 			const allDeployments = await manager.find(Deployment, {
 				where: { project_id: general.program_id as string },
