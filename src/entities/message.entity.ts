@@ -13,6 +13,7 @@ import {
 } from "typeorm";
 import { SupportedCategory } from "./category.entity";
 import { Playlist } from "./playlist.entity";
+import { instanceToPlain } from "class-transformer";
 
 @Entity("messages")
 @Unique(["program_id", "playlist_id", "position"])
@@ -85,6 +86,13 @@ export class Message extends BaseEntity {
     },
   )
   languages: MessageLanguages[];
+
+
+  toJSON() {
+    const data = instanceToPlain(this);
+    data.languages = this.languages.map(l => l.language_code).join(',') // for frontend rendering
+    return data;
+  }
 }
 
 @Entity("message_languages")

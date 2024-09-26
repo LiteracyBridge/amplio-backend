@@ -52,6 +52,12 @@ export class Recipient extends BaseEntity {
   @Column({ type: "varchar" })
   district: string;
 
+  @Column({ type: "varchar" })
+  affiliate: string;
+
+  @Column({ type: "varchar" })
+  partner: string;
+
   @Column({ name: "numhouseholds", type: "int" })
   num_households: number;
 

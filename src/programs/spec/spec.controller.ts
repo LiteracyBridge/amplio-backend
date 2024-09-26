@@ -18,6 +18,7 @@ import { SkipJwtAuth } from "src/decorators/skip-jwt-auth.decorator";
 @Controller("program-spec")
 export class SpecController {
 	constructor(private service: ProgramSpecService) {}
+
 	@Get("content")
 	async getContent(
 		@Query("programid") code: string,
@@ -25,6 +26,16 @@ export class SpecController {
 	) {
 		return ApiResponse.Success({
 			data: await this.service.findByCode(code, user),
+		});
+	}
+
+	@Post("publish")
+	async publish(
+		@Query("programid") code: string,
+		@CurrentUser() user: User,
+	) {
+		return ApiResponse.Success({
+			data: await this.service.publish(code, user),
 		});
 	}
 

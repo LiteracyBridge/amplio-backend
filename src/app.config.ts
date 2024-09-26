@@ -11,6 +11,9 @@ export default () =>
       poolId: process.env.AWS_USER_POOL_ID,
       poolClientId: (process.env.AWS_USER_POOL_CLIENT_ID || '').split(','),
     },
+    buckets: {
+      programSpec: "amplio-progspecs",
+    },
     sentry: {
       dsn: process.env.SENTRY_DSN,
       enabled:
