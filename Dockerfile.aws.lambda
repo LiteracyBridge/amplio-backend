@@ -1,7 +1,11 @@
-FROM public.ecr.aws/lambda/python:3.11
+FROM public.ecr.aws/lambda/nodejs:20
 
-COPY ./src ${LAMBDA_TASK_ROOT}
+# Copy final outputs after build to the lambda task root
+COPY ./dist ${LAMBDA_TASK_ROOT}
 
-RUN pip install -r ${LAMBDA_TASK_ROOT}/requirements.txt --target "${LAMBDA_TASK_ROOT}"
+COPY ./package-lock.json ${LAMBDA_TASK_ROOT}
 
-CMD ["app.handler"]
+RUN npm clean-install --no-audit --progress=false --omit dev
+
+
+CMD ["lambda.js"]
