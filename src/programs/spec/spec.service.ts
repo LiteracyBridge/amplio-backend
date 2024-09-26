@@ -243,7 +243,7 @@ export class ProgramSpecService {
       async (manager) => {
         const program = (await this.findByCode(code)).general;
         const allDeployments = await manager.find(Deployment, {
-          where: { project_id: general.program_id as string },
+          where: { project_id: program.program_id },
         });
 
         // Save languages
@@ -265,20 +265,24 @@ export class ProgramSpecService {
         );
 
         // Save deployments
-        await this.saveDeployments(manager, deployments, program);
+        for (const d of deployments) {
+          if (allDeployments.find((i) => i.deploymentname === d.deployment) == null) {
+            await this.saveDeployments(manager, [d], program);
+          }
+        }
 
         //
         // Save content
         //
         // Playlists
-        const data = contents.map((row, index) => {
+        const _contentQuery = contents.map((row, index) => {
           const values = `('${program.program_id}', '${allDeployments.find((i) => i.deploymentnumber === row.deployment_number)?.id}', '${index + 1}', '${row.playlist_title}', '${row.audience}')`;
           return `
         INSERT INTO "playlists"("program_id", "deployment_id", "position", "title", "audience")
         VALUES ${values}
-        ON CONFLICT("program_id", "deployment_id", "title") DO UPDATE SET "position" = EXCLUDED."position", "audience" = EXCLUDED."audience";`;
+        ON CONFLICT DO NOTHING;` ;
         });
-        await manager.query(data.join("\n"));
+        await manager.query(_contentQuery.join("\n"));
 
         // Messages
         const playlists = await manager.getRepository(Playlist).find({
@@ -323,44 +327,34 @@ export class ProgramSpecService {
             playlist: { title: true, deployment: { deploymentnumber: true } },
           },
         });
-        console.log(messages);
-        await manager
-          .createQueryBuilder()
-          .insert()
-          .into(MessageLanguages)
-          .values(
-            contents.flatMap((row, index) => {
-              const msg = messages.find(
-                (m) =>
-                  m.title === row.message_title &&
-                  m.playlist.title === row.playlist_title &&
-                  m.playlist.deployment.deploymentnumber ===
-                  row.deployment_number,
+        const _langQuery = contents.flatMap((row, index) => {
+          const msg = messages.find(
+            (m) =>
+              m.title === row.message_title &&
+              m.playlist.title === row.playlist_title &&
+              m.playlist.deployment.deploymentnumber ===
+              row.deployment_number,
+          );
+
+          if (msg == null) {
+            console.log(msg, row);
+            throw new BadRequestException(
+              `Message '${row.message_title}' differ from what is already in the spec`,
+            );
+          }
+
+          return (row.languages as string[]).map((code) => {
+            if (!set1.has(code)) {
+              throw new BadRequestException(
+                `Language code '${code}' of '${msg?.title}' message not found in the 'Languages' sheet`,
               );
+            }
 
-              if (msg == null) {
-                console.log(msg, row);
-                throw new BadRequestException(
-                  `Message '${row.message_title}' differ from what is already in the spec`,
-                );
-              }
+            return `INSERT INTO "message_languages"("language_code", "message_id") VALUES ('${code}', ${msg.id}) ON CONFLICT DO NOTHING;`;
+          });
+        })
 
-              return (row.languages as string[]).map((code) => {
-                if (!set1.has(code)) {
-                  throw new BadRequestException(
-                    `Language code '${code}' of '${msg?.title}' message not found in the 'Languages' sheet`,
-                  );
-                }
-
-                const item = new MessageLanguages();
-                item.language_code = code;
-                item.message_id = msg!.id;
-                return item;
-              });
-            }),
-          )
-          // .orIgnore()
-          .execute();
+        await manager.query(_langQuery.join("\n"));
 
         // Save recipients
         await manager
@@ -388,25 +382,6 @@ export class ProgramSpecService {
           )
           .orIgnore()
           .execute();
-
-        // console.log(messages);
-        // insert message languages
-        // recipiuents
-        // as unknown as Playlist[], {
-        //   conflictPaths: ['title', 'deployment_id', 'program_id'],
-        //   skipUpdateIfNoValuesChanged: true
-        // }
-        // )
-
-        // await manager.upsert(Message, contents.map((row, index) => {
-        //   const item = new Playlist()
-        //   item.title = row.playlist_title as string
-        //   item.program_id = program.program_id
-        //   item.deployment_id = allDeployments.find(i => i.deploymentnumber === row.deployment_number)?.id
-        //   item.position = index + 1
-        //   item.audience = row.audience as string
-        //   return item
-        // }) as unknown as Playlist[], ['title', 'deployment_id', 'program_id'])
       });
   }
 
