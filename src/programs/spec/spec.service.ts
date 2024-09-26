@@ -207,13 +207,17 @@ export class ProgramSpecService {
         }
 
         // Save recipients
-        await manager
+        const [query, params] = await manager
           .createQueryBuilder()
           .insert()
           .into(Recipient)
           .values(row as unknown as Recipient)
-          .orIgnore()
-          .execute();
+          .orUpdate(
+            ["language"],
+            "recipients_pkey"
+          )
+          .getQueryAndParameters();
+        manager.query(query, params);
       }
     });
 
