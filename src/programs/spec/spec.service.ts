@@ -262,13 +262,12 @@ export class ProgramSpecService {
     }
 
     // Save to db
+    const project = (await this.findByCode(code));
     await this.dataSource.manager.transaction(
       "READ UNCOMMITTED",
       async (manager) => {
-        const program = (await this.findByCode(code)).general;
-        const allDeployments = await manager.find(Deployment, {
-          where: { project_id: program.program_id },
-        });
+        const program = project.general ?? project.program
+        const allDeployments = project.deployments
 
         // Save languages
         await manager.upsert(
@@ -316,7 +315,10 @@ export class ProgramSpecService {
             deployment: { deploymentnumber: true },
           },
         });
-        const messagesQuery = contents.map((row, index) => {
+
+        for (let index = 0; index < contents.length; index++) {
+          const row = contents[index];
+
           const pId = playlists.find(
             (i) =>
               i.title === row.playlist_title &&
@@ -326,16 +328,21 @@ export class ProgramSpecService {
             ",",
           )[0] as unknown as number; // pick the first goal if multiple
 
-          const values = `('${row.message_title}', '${program.program_id}', ${pId}, '${index + 1}', '${row.format}', ${row.default_category ?? "null"}, '${row.variant ?? ''}', '${row.key_points ?? ''}', '${sdgId}', '${row.sdg_targets ?? ''}')`;
-          return `
-        INSERT INTO "messages"(
-         "title", "program_id", "playlist_id", "position", "format", "default_category_code",
-          "variant", "key_points", "sdg_goal_id", "sdg_target_id"
-         )
-        VALUES ${values}
-        ON CONFLICT("program_id", "playlist_id", "title") DO UPDATE SET "position" = EXCLUDED."position", "title" = EXCLUDED."title", "format" = EXCLUDED."format", "default_category_code" = EXCLUDED."default_category_code", "variant" = EXCLUDED."variant", "key_points" = EXCLUDED."key_points", "sdg_goal_id" = EXCLUDED."sdg_goal_id", "sdg_target_id" = EXCLUDED."sdg_target_id";`;
-        });
-        await manager.query(messagesQuery.join("\n"));
+          await manager.createQueryBuilder().insert().into(Message).values({
+            ...row,
+            default_category_code: row.default_category as string,
+            title: row.message_title as string,
+            playlist_id: pId,
+            position: index + 1,
+            sdg_goal_id: sdgId,
+            sdg_target_id: row.sdg_targets as string,
+          })
+            .orUpdate(
+              ["position", "title", "format", "default_category_code", "variant", "key_points", "sdg_goal_id", "sdg_target_id"],
+              ["program_id", "playlist_id", "position"]
+            )
+            .execute()
+        }
 
         // Message languages
 
@@ -380,31 +387,31 @@ export class ProgramSpecService {
         await manager.query(_langQuery.join("\n"));
 
         // Save recipients
-        await manager
-          .createQueryBuilder()
-          .insert()
-          .into(Recipient)
-          .values(
-            recipients.map((row, index) => {
-              row.program_id = program.program_id;
-              row.num_households ??= 0;
-              row.direct_beneficiaries_additional ??= {}
+        for (let index = 0; index < recipients.length; index++) {
+          const row = recipients[index];
+          row.program_id = program.program_id;
+          row.num_households ??= 0;
+          row.direct_beneficiaries_additional ??= {}
 
-              if (row.recipient_id == null || row.recipient_id === "") {
-                delete row.recipient_id;
-              }
+          if (row.recipient_id == null || row.recipient_id === "") {
+            delete row.recipient_id;
+          }
 
-              if (!set1.has(row.language as string)) {
-                throw new BadRequestException(
-                  `Language code '${row.language}' of recipient on row '${index + 1}' not found in the 'Languages' sheet`,
-                );
-              }
+          if (!set1.has(row.language as string)) {
+            throw new BadRequestException(
+              `Language code '${row.language}' of recipient on row '${index + 1}' not found in the 'Languages' sheet`,
+            );
+          }
 
-              return row as unknown as Recipient;
-            }),
-          )
-          .orIgnore()
-          .execute();
+          await manager
+            .createQueryBuilder()
+            .insert()
+            .into(Recipient)
+            .values(row as unknown as Recipient)
+            .orIgnore()
+            .execute();
+        }
+
       });
   }
 
