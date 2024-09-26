@@ -48,7 +48,7 @@ export class ProgramSpecService {
   async updateProgram(
     dto: {
       general: Record<string, any>;
-      languages: Record<string, any>;
+      languages: ProjectLanguage[];
       recipients: Record<string, any>[];
       deployments: Record<string, any>[];
       contents: Record<string, any>[];
@@ -58,28 +58,36 @@ export class ProgramSpecService {
     // TODO: add 'languages' field to request data
     // TODO: make sure request matches the db model
     const project = await this.findByCode(code);
-    const languages = new Set<string>(
-      ...(
-        await Language.find({
-          where: { code: In(dto.general.languages || []) },
-        })
-      ).map((i) => i.code),
-      ...(
-        await ProjectLanguage.find({
-          where: { code: In(dto.general.languages || []), projectcode: code },
-        })
-      ).map((i) => i.code),
-    );
+    const languages = new Set<string>(dto.languages.map((i) => i.code));
 
     await this.dataSource.manager.transaction(async (manager) => {
       // Save general
       // TODO: set languages data from request
       delete dto.general.id;
+      dto.general.languages = dto.languages;
       await this.saveGeneralInfo(
         dto.general,
-        Array.from(languages),
+        dto.languages.map((i) => i.code),
         project.general,
         manager,
+      );
+
+      // TODO: save languages first
+      // Save languages
+      const existingLangs = await manager.getRepository(ProjectLanguage).find({ where: { projectcode: project.code } })
+      for (const l of existingLangs) {
+        if (!languages.has(l.code)) {
+          await manager.remove(ProjectLanguage, l)
+        }
+      }
+
+      await manager.upsert(
+        ProjectLanguage,
+        dto.languages.map((l) => {
+          l.projectcode = project.code;
+          return l;
+        }),
+        ["code", "name", "projectcode"],
       );
 
       // Save deployments
@@ -96,7 +104,7 @@ export class ProgramSpecService {
         return `
       INSERT INTO "playlists"("program_id", "deployment_id", "position", "title", "audience", "_id")
       VALUES ${values}
-      ON CONFLICT DO UPDATE SET "position" = EXCLUDED."position", "audience" = EXCLUDED."audience";` ;
+      ON CONFLICT DO NOTHING;` ;
       }).join("\n")
       );
 
@@ -105,90 +113,110 @@ export class ProgramSpecService {
         _id: Not(In(Array.from(new Set<string>(playlists.map((i) => i._id)))))
       })
 
+      //
       // Save messages
-      const updatedPlaylists = await manager.find(Playlist, {
+      //
+      // -- get updated playlist data
+      // -- save all messages submitted by the user
+      // -- compare uuids (_id) of submitted messages against existing messages in db;
+      //     delete db records not found in submitted request
+
+      const updatedPlaylists = await manager.getRepository(Playlist).find({
         where: { program_id: code },
+        relations: { messages: true }
       }); // fetch updated playlists
-      const _mQuery = playlists.flatMap((pl, index) => {
-        const _found = updatedPlaylists.find((p) => p.id === pl.id || p._id === pl._id);
+      const existingMessageIds = new Set(updatedPlaylists.flatMap(p => p.messages.flatMap(m => m._id)))
+
+      const playlistIds = new Set<string | number>([
+        ...updatedPlaylists.map((i) => i._id),
+        ...updatedPlaylists.map((i) => i.id),
+      ]);
+      const messages: Record<string, any>[] = []
+      for (const m of playlists.flatMap(p => p.messages)) {
+        if (!playlistIds.has(m.playlist_id)) { // playlist has been deleted
+          continue
+        }
+
+        const _found = updatedPlaylists.find((p) => p.id === m.playlist_id || p._id === m.playlist_id);
         if (_found == null) {
           throw new BadRequestException(
-            `Playlist id cannot be found for #${index + 1}`,
+            `Playlist id cannot be found for '${m.title}' message`,
           );
         }
 
-        return pl.messages.map((m) => {
-          const values = `('${m.title}', '${project.code}', ${_found.id}, '${index + 1}', '${m.format}', ${m.default_category_code ?? "null"}, '${m.variant ?? ''}', '${m.key_points ?? ''}', '${m.sdg_goal_id}', '${m.sdg_target_id ?? ''}')`;
-          return `
-        INSERT INTO "messages"(
-         "title", "program_id", "playlist_id", "position", "format", "default_category_code",
-          "variant", "key_points", "sdg_goal_id", "sdg_target_id"
-         )
-        VALUES ${values}
-        ON CONFLICT("program_id", "playlist_id", "title") DO UPDATE SET "position" = EXCLUDED."position", "title" = EXCLUDED."title", "format" = EXCLUDED."format", "default_category_code" = EXCLUDED."default_category_code", "variant" = EXCLUDED."variant", "key_points" = EXCLUDED."key_points", "sdg_goal_id" = EXCLUDED."sdg_goal_id", "sdg_target_id" = EXCLUDED."sdg_target_id";`;
-        });
-      });
-
-      await manager.query(_mQuery.join("\n"));
+        if (existingMessageIds.has(m._id)) {
+          await manager.createQueryBuilder().update(Message).set(m).where("_id = :id", { id: m._id })
+        } else {
+          await manager.createQueryBuilder().insert().into(Message).values(m)
+            .orUpdate(
+              ["position", "title", "format", "default_category_code", "variant", "key_points", "sdg_goal_id", "sdg_target_id"],
+              ["program_id", "playlist_id", "position"]
+            )
+            .execute()
+        }
+        messages.push(m)
+      }
+      // -- delete removed messages
+      await manager.getRepository(Message).delete({ _id: Not(In(messages.map(m => m._id))) })
 
       // Save Message languages
-      console.log(code);
-      const messages = await manager.find(Message, {
+      const updatedMessages = await manager.getRepository(Message).find({
         where: { program_id: code },
         relations: { playlist: { deployment: true } },
         select: {
           playlist: { title: true, deployment: { deploymentnumber: true } },
         },
       });
-      await manager
-        .createQueryBuilder()
-        .insert()
-        .into(MessageLanguages)
-        .values(
-          _reqMessages.flatMap((row) => {
-            const msg = messages.find(
-              (m) =>
-                m.id === row.id ||
-                (m.title === row.title && m.playlist_id === row.playlist_id),
-            );
 
-            if (msg == null) {
-              throw new BadRequestException(
-                `'${row.title}' message cannot be matched to any existing messages`,
-              );
-            }
+      // Save languages
+      for (const row of messages) {
+        const msg = updatedMessages.find((m) => row._id === m._id || m.id === row.id);
 
-            if (row.languages == null) {
-              console.log(row);
-              throw new BadRequestException(
-                `No language(s) is set for '${msg.title}' message`,
-              );
-            }
+        if (msg == null) {
+          throw new BadRequestException(
+            `Message '${row.title}' differ from what is already in the spec`,
+          );
+        }
 
-            return (row.languages.split(",") as string[])
-              .filter((l) => l.trim() !== "")
-              .map((code) => {
-                if (!languages.has(code)) {
-                  throw new BadRequestException(
-                    `Language code '${code}' of '${msg?.title}' message not found in the 'Languages' sheet`,
-                  );
-                }
+        for (const code of (row.languages?.split(',') ?? [])) {
+          await manager.createQueryBuilder().insert().into(MessageLanguages)
+            .values({ language_code: code as string, message_id: msg.id })
+            .orIgnore()
+            .execute()
+        }
+      }
 
-                const item = new MessageLanguages();
-                item.language_code = code;
-                item.message_id = msg!.id;
-                return item;
-              });
-          }),
-        )
-        .orIgnore()
-        .execute();
-      // console.log(dto.deployments[0].playlists[0]);
+      for (const row of dto.recipients) {
+        row.program_id = project.code;
+        row.num_households ??= 0;
+        row.direct_beneficiaries_additional ??= {}
+
+        if (row.recipient_id == null || row.recipient_id === "") {
+          delete row.recipient_id;
+        }
+
+        if (!languages.has(row.language as string)) {
+          const index = dto.recipients.findIndex(r => r.id === row.id);
+          throw new BadRequestException(
+            `Language code '${row.language}' of recipient on row '${index + 1}' not found in the 'Languages' sheet`,
+          );
+        }
+
+        // Save recipients
+        await manager
+          .createQueryBuilder()
+          .insert()
+          .into(Recipient)
+          .values(row as unknown as Recipient)
+          .orIgnore()
+          .execute();
+      }
     });
+
+    return await this.findByCode(project.code);
   }
 
   async import(file: Express.Multer.File, code: string) {
-    console.log("hereere");
     const {
       rows: [general],
       errors: errors1,
@@ -333,7 +361,6 @@ export class ProgramSpecService {
           );
 
           if (msg == null) {
-            console.log(msg, row);
             throw new BadRequestException(
               `Message '${row.message_title}' differ from what is already in the spec`,
             );
@@ -428,7 +455,6 @@ const parseJson = (value: string, error: string) => {
   try {
     return JSON.parse(value.replace(/'/g, '"'));
   } catch (err) {
-    console.log(err);
     throw new BadRequestException(`${error}. ${errorMessageSuffix}`);
   }
 };
