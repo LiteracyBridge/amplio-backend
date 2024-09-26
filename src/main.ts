@@ -3,7 +3,8 @@ import { AppModule } from './app.module';
 import * as bodyParser from "body-parser";
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import express, { type Express } from 'express';
+import { type Express } from 'express';
+import appConfig from './app.config';
 
 export async function bootstrap(startServer: boolean = true, expressApp?: Express) {
   let app: INestApplication;
@@ -39,6 +40,10 @@ export async function bootstrap(startServer: boolean = true, expressApp?: Expres
       skipMissingProperties: false,
     }),
   );
+
+  // Ensure to call this before requiring any other modules!
+  const Sentry = require("@sentry/nestjs");
+  Sentry.init({ dsn: appConfig().sentry });
 
   if (startServer) {
     await app.listen(process.env.PORT || 8000);

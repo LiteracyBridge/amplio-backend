@@ -14,11 +14,5 @@ export default () =>
     buckets: {
       programSpec: "amplio-progspecs",
     },
-    sentry: {
-      dsn: process.env.SENTRY_DSN,
-      enabled:
-        process.env.SENTRY_ENABLED === "true" && process.env.SENTRY_DSN != null,
-      debug: process.env.SENTRY_DEBUG === "true",
-      env: process.env.SENTRY_ENV || process.env.ENV,
-    },
+    sentry: process.env.SENTRY_DSN,
   }) as const;

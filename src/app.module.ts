@@ -16,9 +16,9 @@ import { ContentMetadata } from "./entities/content_metadata.entity";
 import { Deployment } from "./entities/deployment.entity";
 import { Language, ProjectLanguage } from "./entities/language.entity";
 import {
-	Message,
-	MessageLanguages,
-	MessageSubscriber,
+  Message,
+  MessageLanguages,
+  MessageSubscriber,
 } from "./entities/message.entity";
 import { OrganisationProgram } from "./entities/org_program.entity";
 import { Playlist, PlaylistSubscriber } from "./entities/playlist.entity";
@@ -40,75 +40,83 @@ import { UserfeedbackModule } from "./userfeedback/userfeedback.module";
 import { CategoriesController } from "./categories.controller";
 import { ProgramsModule } from "./programs/programs.module";
 import { HttpExceptionFilter } from "./filters/http-exception.filter";
+import { SentryGlobalFilter, SentryModule } from "@sentry/nestjs/setup";
 
 config();
 
 @Module({
-	imports: [
-		TypeOrmModule.forRoot({
-			host: process.env.DB_HOST,
-			port: 5432,
-			username: process.env.DB_USER,
-			password: process.env.DB_PASSWORD,
-			database: process.env.DB_NAME,
-			type: "postgres",
-			maxQueryExecutionTime: 50,
-			autoLoadEntities: true,
-			logNotifications: false,
-			logging: true,
-			entities: [
-				User,
-				UserRole,
-				Role,
-				Invitation,
-				Organisation,
-				Analysis,
-				SupportedCategory,
-				ContentMetadata,
-				ACMCheckout,
-				AnalysisChoice,
-				Deployment,
-				Language,
-				Message,
-				MessageLanguages,
-				OrganisationProgram,
-				ProjectLanguage,
-				Playlist,
-				ProgramUser,
-				Program,
-				Project,
-				Recipient,
-				Survey,
-				SurveySection,
-				TalkingBookDeployed,
-				Choice,
-				Question,
-				UserFeedbackMessage,
-			],
-			subscribers: [
-				PlaylistSubscriber,
-				UserSubscriber,
-				MessageSubscriber,
-				RecipientSubscriber,
-			],
-		}),
+  imports: [
+    SentryModule.forRoot(),
 
-		UsersModule,
-		DashboardQueriesModule,
-		UserfeedbackModule,
-		ProgramsModule,
-	],
-	controllers: [AppController, TableauController, CategoriesController],
-	providers: [
-		AppService,
-		{
-			provide: APP_GUARD,
-			useClass: AuthGuard,
-		},
-		{
-			provide: APP_FILTER,
-			useClass: HttpExceptionFilter,
-		},
-	],
+    TypeOrmModule.forRoot({
+      host: process.env.DB_HOST,
+      port: 5432,
+      username: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      type: "postgres",
+      maxQueryExecutionTime: 50,
+      autoLoadEntities: true,
+      logNotifications: false,
+      logging: true,
+      entities: [
+        User,
+        UserRole,
+        Role,
+        Invitation,
+        Organisation,
+        Analysis,
+        SupportedCategory,
+        ContentMetadata,
+        ACMCheckout,
+        AnalysisChoice,
+        Deployment,
+        Language,
+        Message,
+        MessageLanguages,
+        OrganisationProgram,
+        ProjectLanguage,
+        Playlist,
+        ProgramUser,
+        Program,
+        Project,
+        Recipient,
+        Survey,
+        SurveySection,
+        TalkingBookDeployed,
+        Choice,
+        Question,
+        UserFeedbackMessage,
+      ],
+      subscribers: [
+        PlaylistSubscriber,
+        UserSubscriber,
+        MessageSubscriber,
+        RecipientSubscriber,
+      ],
+    }),
+
+    UsersModule,
+    DashboardQueriesModule,
+    UserfeedbackModule,
+    ProgramsModule,
+  ],
+  controllers: [AppController, TableauController, CategoriesController],
+  providers: [
+    AppService,
+
+    {
+      provide: APP_FILTER,
+      useClass: SentryGlobalFilter,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+  ],
 })
-export class AppModule {}
+export class AppModule { }
