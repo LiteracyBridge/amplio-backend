@@ -71,7 +71,7 @@ export class Program extends BaseEntity {
   @Column({ type: 'varchar', nullable: false, unique: true })
   program_id: string;
 
-  // @Column({ type: 'uuid', nullable: false, unique: true })
+  @Column({ type: 'uuid', nullable: false, unique: true })
   project_id: string;
 
   @ManyToOne(() => Project, (project) => project.program)

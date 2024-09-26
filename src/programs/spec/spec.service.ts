@@ -13,7 +13,7 @@ import { Project } from "src/entities/project.entity";
 import { Recipient } from "src/entities/recipient.entity";
 import { User } from "src/entities/user.entity";
 import { FindOptionsWhere } from "typeorm";
-import { DataSource, In, EntityManager } from "typeorm";
+import { DataSource, In, Not, EntityManager } from "typeorm";
 
 @Injectable()
 export class ProgramSpecService {
@@ -57,8 +57,7 @@ export class ProgramSpecService {
   ) {
     // TODO: add 'languages' field to request data
     // TODO: make sure request matches the db model
-    const program = await this.findByCode(code);
-    console.log(dto.general.languages);
+    const project = await this.findByCode(code);
     const languages = new Set<string>(
       ...(
         await Language.find({
@@ -79,61 +78,58 @@ export class ProgramSpecService {
       await this.saveGeneralInfo(
         dto.general,
         Array.from(languages),
-        program.general,
+        project.general,
         manager,
       );
 
       // Save deployments
-      await this.saveDeployments(manager, dto.deployments, program.general);
+      await this.saveDeployments(manager, dto.deployments, project.general);
 
-      // Playlists
-      await manager
-        .createQueryBuilder()
-        .insert()
-        .into(Playlist)
-        .values(
-          dto.deployments.flatMap((d) =>
-            d.playlists.flatMap((p) => {
-              p.program_id = program.code;
-              return p;
-            }),
-          ),
-        )
-        .orIgnore()
-        .execute();
+      //
+      // Save Playlists
+      //
+      const playlists = dto.deployments.flatMap((d) => d.playlists);
+
+      // 1. save new playlists
+      await manager.query(playlists.map((row, index) => {
+        const values = `('${project.code}', '${project.deployments.find((i) => i._id === row.deployment_id || i.id === row.deployment_id)?.id}', '${index + 1}', '${row.title}', '${row.audience}', '${row._id}')`;
+        return `
+      INSERT INTO "playlists"("program_id", "deployment_id", "position", "title", "audience", "_id")
+      VALUES ${values}
+      ON CONFLICT DO UPDATE SET "position" = EXCLUDED."position", "audience" = EXCLUDED."audience";` ;
+      }).join("\n")
+      );
+
+      // 2. delete removed playlists
+      await manager.getRepository(Playlist).delete({
+        _id: Not(In(Array.from(new Set<string>(playlists.map((i) => i._id)))))
+      })
 
       // Save messages
-      const playlists = await manager.find(Playlist, {
+      const updatedPlaylists = await manager.find(Playlist, {
         where: { program_id: code },
       }); // fetch updated playlists
-      const _reqMessages = dto.deployments.flatMap((row) => {
-        return row.playlists.flatMap((pl, index) => {
-          const _found = playlists.find(
-            (p) =>
-              p.id === pl.id ||
-              (p.title === pl.title && p.deployment_id === pl.deployment_id),
+      const _mQuery = playlists.flatMap((pl, index) => {
+        const _found = updatedPlaylists.find((p) => p.id === pl.id || p._id === pl._id);
+        if (_found == null) {
+          throw new BadRequestException(
+            `Playlist id cannot be found for #${index + 1}`,
           );
-          if (_found == null) {
-            throw new BadRequestException(
-              `Playlist id cannot be found for #${index + 1}`,
-            );
-          }
+        }
 
-          return pl.messages.map((m) => {
-            m.program_id = program.code;
-            m.playlist_id = _found.id;
-            return m;
-          });
+        return pl.messages.map((m) => {
+          const values = `('${m.title}', '${project.code}', ${_found.id}, '${index + 1}', '${m.format}', ${m.default_category_code ?? "null"}, '${m.variant ?? ''}', '${m.key_points ?? ''}', '${m.sdg_goal_id}', '${m.sdg_target_id ?? ''}')`;
+          return `
+        INSERT INTO "messages"(
+         "title", "program_id", "playlist_id", "position", "format", "default_category_code",
+          "variant", "key_points", "sdg_goal_id", "sdg_target_id"
+         )
+        VALUES ${values}
+        ON CONFLICT("program_id", "playlist_id", "title") DO UPDATE SET "position" = EXCLUDED."position", "title" = EXCLUDED."title", "format" = EXCLUDED."format", "default_category_code" = EXCLUDED."default_category_code", "variant" = EXCLUDED."variant", "key_points" = EXCLUDED."key_points", "sdg_goal_id" = EXCLUDED."sdg_goal_id", "sdg_target_id" = EXCLUDED."sdg_target_id";`;
         });
       });
 
-      await manager
-        .createQueryBuilder()
-        .insert()
-        .into(Message)
-        .values(_reqMessages)
-        .orIgnore()
-        .execute();
+      await manager.query(_mQuery.join("\n"));
 
       // Save Message languages
       console.log(code);

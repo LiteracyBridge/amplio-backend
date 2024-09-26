@@ -13,9 +13,16 @@ import { Project } from './project.entity';
 
 @Entity('deployments')
 @Unique('deployments_uniqueness_key', ['project', 'deployment'])
+@Unique('uq_deployment__id', ['_id'])
 export class Deployment extends BaseEntity {
   @PrimaryGeneratedColumn("increment")
   id: number;
+
+  /**
+  * TODO: rename to 'id' after migration
+  */
+  @Column({ type: "uuid", default: () => "uuid_generate_v4()", unique: true })
+  _id: string;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
   deploymentname: string;
