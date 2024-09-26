@@ -6,7 +6,7 @@ COPY ./dist ${LAMBDA_TASK_ROOT}
 COPY ./package.json ${LAMBDA_TASK_ROOT}
 COPY ./package-lock.json ${LAMBDA_TASK_ROOT}
 
-RUN npm clean-install --no-audit --progress=false --omit dev
+RUN npm clean-install --no-audit --no-fund --progress=false --omit dev
 
 
 CMD ["lambda.js"]
