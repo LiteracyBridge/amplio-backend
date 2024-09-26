@@ -1,10 +1,20 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as bodyParser from "body-parser";
-import { ValidationPipe } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ExpressAdapter } from '@nestjs/platform-express';
+import express, { type Express } from 'express';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+export async function bootstrap(startServer: boolean = true, expressApp?: Express) {
+  let app: INestApplication;
+
+  if (expressApp != null) {
+    app = await NestFactory.create(
+      AppModule, new ExpressAdapter(expressApp)
+    );
+  } else {
+    app = await NestFactory.create(AppModule);
+  }
 
   app.enableCors({
     origin: [
@@ -30,6 +40,11 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(8000);
+  if (startServer) {
+    await app.listen(process.env.PORT || 8000);
+  } else {
+    app.init()
+    return app
+  }
 }
 bootstrap();
