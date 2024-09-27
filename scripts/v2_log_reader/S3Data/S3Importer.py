@@ -242,6 +242,7 @@ class S3Importer:
         programid = None
         names = "unknown"
         talkingbookid = None
+
         if self._tb_collected_data:
             programid = self._tb_collected_data.programid
             name_list = []
@@ -251,6 +252,7 @@ class S3Importer:
                 name_list.append(tbcdid)
             names = "/".join(name_list)
             talkingbookid = self._tb_collected_data.talkingbookid
+
         self._summary = Summary(
             key,
             zip_len,
@@ -562,17 +564,17 @@ class S3Importer:
                 survey_data.extend(rows)
             insert_rows(survey_data, SURVEY_RESPONSES_TABLE)
 
-        with get_db_connection() as conn:
-            if self.have_collection and self._save_db:
-                insert_rows(self._tbscollected_rows, TBS_COLLECTED_TABLE)
-            if self.have_deployment and self._save_db:
-                insert_rows(self._tbsdeployed_rows, TBS_DEPLOYED_TABLE)
-            if self.have_statistics and self._save_db:
-                insert_rows(self._playstatistics_rows, PLAY_STATISTICS_TABLE)
-            if self._uf_importer.have_uf and self._save_uf:
-                insert_rows(self._uf_importer.uf_messages_csv_rows, UF_MESSAGES_TABLE)
-            if self._uf_importer.have_surveys and self._save_db:
-                insert_survey_results()
+        conn = get_db_connection()
+        if self.have_collection and self._save_db:
+            insert_rows(self._tbscollected_rows, TBS_COLLECTED_TABLE)
+        if self.have_deployment and self._save_db:
+            insert_rows(self._tbsdeployed_rows, TBS_DEPLOYED_TABLE)
+        if self.have_statistics and self._save_db:
+            insert_rows(self._playstatistics_rows, PLAY_STATISTICS_TABLE)
+        if self._uf_importer.have_uf and self._save_uf:
+            insert_rows(self._uf_importer.uf_messages_csv_rows, UF_MESSAGES_TABLE)
+        if self._uf_importer.have_surveys and self._save_db:
+            insert_survey_results()
 
     def archive_collected_data(self):
         """

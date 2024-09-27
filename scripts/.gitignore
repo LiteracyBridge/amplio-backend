@@ -1,5 +1,10 @@
-acm-stats/processed-data
+acm_stats/processed-data
 lib
-acm-stats/AWS-LB/reports/deprecatedQueries
+acm_stats/AWS-LB/reports/deprecatedQueries
 bin
-!acm-stats/AWS-LB/bin/kv2csv.py
+!acm_stats/AWS-LB/bin/kv2csv.py
+
+# Exclude log files
+reports3.raw
+acm.log
+acm_stats/logs
