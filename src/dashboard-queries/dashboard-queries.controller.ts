@@ -16,7 +16,7 @@ export class DashboardQueriesController {
   ) {
     const val = selector?.replace(/[-_]+/g, "").toLowerCase();
     return ApiResponse.Success({
-      data: val === "bytb" ? await this.service.status_by_tb(programId) : await this.service.status_by_tb(programId)
+      data: val === "bytb" ? await this.service.status_by_tb(programId) : await this.service.status_by_deployment(programId)
     })
   }
 
