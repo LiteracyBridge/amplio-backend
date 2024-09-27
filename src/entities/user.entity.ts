@@ -1,5 +1,6 @@
 import { Exclude, Expose, instanceToPlain } from "class-transformer";
 import {
+  Unique,
   EventSubscriber,
   JoinColumn,
   BaseEntity,
@@ -23,7 +24,11 @@ import { ProgramUser } from "./program_user.entity";
 import { OrganisationProgram } from "./org_program.entity";
 
 @Entity({ name: "users" })
+@Unique("uq_user__id", ["_id"])
 export class User extends BaseEntity {
+  @Column({ name: '_id', type: "uuid", default: () => "uuid_generate_v4()", unique: true })
+  _id: string;
+
   @PrimaryGeneratedColumn("increment")
   id: number;
 

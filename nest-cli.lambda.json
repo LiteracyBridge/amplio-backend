@@ -5,6 +5,12 @@
   "entryFile": "lambda",
   "compilerOptions": {
     "watchAssets": true,
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "assets": [
+      {
+        "include": "programs/spec/template.xlsx",
+        "outDir": "dist/template.xlsx"
+      }
+    ]
   }
 }

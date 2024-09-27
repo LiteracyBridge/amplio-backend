@@ -30,6 +30,7 @@ const { Choice } = require("../dist/entities/uf_choice.entity");
 const { Question } = require("../dist/entities/uf_question.entity");
 const { UserFeedbackMessage } = require("../dist/entities/uf_message.entity");
 const { Role } = require("../dist/entities/role.entity");
+const { Log } = require("../dist/entities/log.entity");
 
 dotenv.config();
 
@@ -42,6 +43,7 @@ const AppDataSource = new DataSource({
 	schema: "public",
 	entities: [
     Role,
+    Log,
 		User,
 		UserRole,
 		Invitation,

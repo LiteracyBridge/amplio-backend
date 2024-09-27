@@ -18,6 +18,7 @@ import { DataSource, In, Not, EntityManager } from "typeorm";
 import { Workbook } from 'exceljs';
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import appConfig from "src/app.config";
+import { join } from "node:path";
 
 @Injectable()
 export class ProgramSpecService {
@@ -423,17 +424,21 @@ export class ProgramSpecService {
       });
   }
 
+  async download(code: string, user: User) {
+    const project = await this.findByCode(code)
+    return await this.createExcel(project);
+  }
+
   async publish(code: string, user: User) {
     const project = await this.findByCode(code)
-    const xlsx = await this.createExcel(project);
-
-    await this.writeToS3({ user, xlsx, format: 'csv', projectCode: project.code })
-    await this.writeToS3({ user, xlsx, format: 'xlsx', projectCode: project.code })
+    await this.writeToS3({ user, xlsx: await this.createExcel(project, false), format: 'csv', projectCode: project.code })
+    await this.writeToS3({ user, xlsx: await this.createExcel(project), format: 'xlsx', projectCode: project.code })
     return project
   }
 
-  private createExcel(project: Project, isExcel: boolean = true) {
+  private async createExcel(project: Project, isExcel: boolean = true) {
     const workbook = new Workbook();
+    await workbook.xlsx.readFile(join(__dirname, 'template.xlsx'));
 
     const headers = {
       general: {

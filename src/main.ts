@@ -5,16 +5,17 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { type Express } from 'express';
 import appConfig from './app.config';
+import { Logger } from './logger';
 
 export async function bootstrap(startServer: boolean = true, expressApp?: Express) {
   let app: INestApplication;
 
   if (expressApp != null) {
     app = await NestFactory.create(
-      AppModule, new ExpressAdapter(expressApp)
+      AppModule, new ExpressAdapter(expressApp), { logger: new Logger() }
     );
   } else {
-    app = await NestFactory.create(AppModule);
+    app = await NestFactory.create(AppModule, { logger: new Logger() });
   }
 
   app.enableCors({

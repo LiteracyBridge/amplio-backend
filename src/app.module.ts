@@ -41,6 +41,7 @@ import { CategoriesController } from "./categories.controller";
 import { ProgramsModule } from "./programs/programs.module";
 import { HttpExceptionFilter } from "./filters/http-exception.filter";
 import { SentryGlobalFilter, SentryModule } from "@sentry/nestjs/setup";
+import { Log } from "./entities/log.entity";
 
 config();
 
@@ -100,6 +101,7 @@ config();
     DashboardQueriesModule,
     UserfeedbackModule,
     ProgramsModule,
+    Log
   ],
   controllers: [AppController, TableauController, CategoriesController],
   providers: [
