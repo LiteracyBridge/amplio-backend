@@ -92,7 +92,7 @@ alembic *args='': venv
     cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic "$@"
 
 migration-run *args='': venv
-    cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic upgrade heads
+    cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic upgrade head
 
 [doc("Reverts migration given the revision number")]
 [group("migration")]

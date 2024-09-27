@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
+from uuid import uuid4
 
 from config import ACM_PREFIX
 
@@ -92,3 +93,7 @@ def enquote(v):
 
 def now():
     return str(datetime.now())
+
+
+def generate_uuid():
+    return str(uuid4())

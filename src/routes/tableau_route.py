@@ -3,8 +3,11 @@ import uuid
 
 from fastapi import APIRouter, Depends
 from jose import jwt
+from sqlalchemy.orm import Session
 
 from config import config
+from database import get_db
+from models.program_model import Program
 from models.user_model import User, current_user
 from schema import ApiResponse
 
@@ -12,13 +15,17 @@ router = APIRouter()
 
 
 @router.get("/jwt")
-def get_jwt():
+def get_jwt(program_id: str, db: Session = Depends(get_db)):
+    resp = db.query(Program.tableau_id).filter(Program.program_id == program_id).first()
+    if resp is None:
+        return ApiResponse(data=[])
+
     claims = {
         "iss": config.tableau_client_id,
         "exp": datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=5),
         "jti": str(uuid.uuid4()),
         "aud": "tableau",
-        "sub": "tableau1@amplio.org",
+        "sub": resp.tableau_id,
         "scp": ["tableau:views:embed", "tableau:metrics:embed"],
     }
 
