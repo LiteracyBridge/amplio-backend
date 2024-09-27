@@ -104,9 +104,11 @@ migration-revert *args='': venv
 migration-create *args='': venv
     cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic revision --message "$@"
 
-[doc("Dumps psql database contents. NB: Don't forget to set $PGHOST, $PGPORT, $PGDATABASE env variables!")]
-backup-db *args='': venv
-    sh scripts/acm_stats/AWS-LB/RDSbackup/backup.sh
+[doc("Dumps psql database contents. Usage backup-db <username> <db-name> <output-name>")]
+backup-db *args='':
+    echo "NB: Don't forget to set \$PGHOST, \$PGPORT env variables!"
+
+    pg_dump --format=custom --verbose --password --username "$1" --dbname "$2" --file "$3"
 
 # END: Migration commands
 
