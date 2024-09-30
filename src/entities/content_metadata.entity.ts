@@ -6,7 +6,7 @@ export class ContentMetadata extends BaseEntity {
   project: string;
 
   @Column({ name: 'contentid', type: 'varchar' })
-  contentId: string;
+  content_id: string;
 
   @Column({ type: 'varchar' })
   title: string;
@@ -15,5 +15,5 @@ export class ContentMetadata extends BaseEntity {
   source: string;
 
   @Column({ name: 'languagecode', type: 'varchar' })
-  languageCode: string;
+  language_code: string;
 }

@@ -4,18 +4,18 @@ import { ApiResponse } from 'src/utilities/api_response';
 import { Survey, SurveyStatus } from 'src/entities/survey.entity';
 import { SurveyDto } from './survey.dto';
 
-@Controller('survey')
+@Controller('surveys')
 export class SurveyController {
   constructor(protected service: SurveyService) { }
 
-  @Get("all/:project")
+  @Get(":project")
   async getAll(
     @Param('project') project: string
   ) {
     return ApiResponse.Success({
       data: await Survey.find({
         where: { project_code: project },
-        relations: { deployment: true, sections: true, questions: { choices: { sub_options: true } } }
+        relations: { deployment: true, sections: true }
       })
     })
   }

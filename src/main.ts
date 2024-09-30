@@ -15,7 +15,7 @@ export async function bootstrap(startServer: boolean = true, expressApp?: Expres
       AppModule, new ExpressAdapter(expressApp), { logger: new Logger() }
     );
   } else {
-    app = await NestFactory.create(AppModule, { logger: new Logger() });
+    app = await NestFactory.create(AppModule, );
   }
 
   app.enableCors({

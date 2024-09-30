@@ -9,7 +9,8 @@ import {
   UpdateDateColumn,
   BaseEntity
 } from 'typeorm';
-import { Survey, SurveySection } from './survey.entity';
+import { Survey } from './survey.entity';
+import { SurveySection } from './survey_section.entity';
 import { Choice } from './uf_choice.entity';
 import { Analysis } from './analysis.entity';
 

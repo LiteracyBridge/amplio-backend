@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import {
 	Survey,
-	SurveySection,
 	SurveyStatus,
 } from "src/entities/survey.entity";
+import { SurveySection } from 'src/entities/survey_section.entity';
 import { QuestionsDto, SurveyDto } from "./survey.dto";
 import { Question } from "src/entities/uf_question.entity";
 import { Choice } from "src/entities/uf_choice.entity";

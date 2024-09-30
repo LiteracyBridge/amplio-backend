@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Query } from '@nestjs/common';
 import { Analysis } from 'src/entities/analysis.entity';
 import { ContentMetadata } from 'src/entities/content_metadata.entity';
 import { Message } from 'src/entities/message.entity';
@@ -10,11 +10,11 @@ import { ApiResponse } from 'src/utilities/api_response';
 const MINIMUM_SECONDS_FILTER = 0  // filters out any UF messages of less than this # of seconds
 const MAXIMUM_MINUTES_CHECKOUT = 5  // re-issues the same UUID after this many minutes if the form hasn't yet been submitted
 
-@Controller('uf-messages')
+@Controller('messages')
 export class UfMessagesController {
-  @Get()
+  @Get(":program_id")
   async getMessage(
-    @Query('program_id') programId: string,
+    @Param('program_id') programId: string,
     @Query('deployment') deployment: string,
     @Query('language') language: string,
     @Query('skipped_messages') skipped_messages: string,
@@ -28,7 +28,7 @@ export class UfMessagesController {
       .where("uf_messages.programid = :program", { program: programId })
       .andWhere("uf_messages.deploymentnumber = :deployment", { deployment })
       .andWhere("uf_messages.language = :language", { language })
-      .andWhere("uf_messages.messageid NOT IN (:...skip)", { skip })
+      .andWhere("uf_messages.message_uuid NOT IN (:...skip)", { skip })
       .andWhere("uf_messages.length_seconds >= :length", { length: MINIMUM_SECONDS_FILTER })
       .andWhere("uf_messages.is_useless IS NULL")
       .andWhereExists(Analysis

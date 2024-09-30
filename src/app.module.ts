@@ -8,7 +8,7 @@ import { Organisation } from "./entities/organisation.entity";
 import { UserRole } from "./entities/user_role.entity";
 import { Invitation } from "./entities/invitation.entity";
 import { UsersModule } from "./users/users.module";
-import { APP_FILTER, APP_GUARD } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD, RouterModule, Routes } from "@nestjs/core";
 import { AuthGuard } from "./guards/jwt-auth.guard";
 import { Analysis } from "./entities/analysis.entity";
 import { SupportedCategory } from "./entities/category.entity";
@@ -26,7 +26,8 @@ import { ProgramUser } from "./entities/program_user.entity";
 import { Program } from "./entities/program.entity";
 import { Project } from "./entities/project.entity";
 import { Recipient, RecipientSubscriber } from "./entities/recipient.entity";
-import { Survey, SurveySection } from "./entities/survey.entity";
+import { Survey } from "./entities/survey.entity";
+import { SurveySection } from './entities/survey_section.entity';
 import { TalkingBookDeployed } from "./entities/tb_deployed.entity";
 import { Choice } from "./entities/uf_choice.entity";
 import { Question } from "./entities/uf_question.entity";
@@ -45,9 +46,15 @@ import { Log } from "./entities/log.entity";
 
 config();
 
+const routes: Routes = [
+  { path: "/user-feedback", module: UserfeedbackModule }
+]
+
 @Module({
   imports: [
     SentryModule.forRoot(),
+
+    RouterModule.register(routes),
 
     TypeOrmModule.forRoot({
       host: process.env.DB_HOST,

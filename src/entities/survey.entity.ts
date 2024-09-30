@@ -6,37 +6,14 @@ import {
   OneToMany,
   JoinColumn,
   BaseEntity,
-  CreateDateColumn,
-  UpdateDateColumn,
-  DeleteDateColumn,
 } from 'typeorm';
 import { Deployment } from './deployment.entity';
 import { Question } from './uf_question.entity';
+import { SurveySection } from './survey_section.entity';
 
 export enum SurveyStatus {
   draft = 'draft',
 }
-@Entity('uf_survey_sections')
-export class SurveySection extends BaseEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: 'varchar', default: 'Untitled Section' })
-  name: string;
-
-  @Column({ type: 'int', nullable: true })
-  survey_id: number;
-
-  @CreateDateColumn({ type: "timestamptz" })
-  created_at: Date;
-
-  @UpdateDateColumn({ type: "timestamptz" })
-  updated_at: Date;
-
-  @DeleteDateColumn({ type: "timestamptz" })
-  deleted_at?: Date;
-}
-
 @Entity('uf_surveys')
 export class Survey extends BaseEntity {
   @PrimaryGeneratedColumn()
@@ -65,7 +42,8 @@ export class Survey extends BaseEntity {
   @OneToMany(() => Question, (question) => question.survey)
   questions: Question[];
 
-  @OneToMany(() => SurveySection, (section) => section.survey_id)
+  @OneToMany(() => SurveySection, (row) => row.survey)
+  @JoinColumn({ referencedColumnName: 'survey_id' })
   sections: SurveySection[];
 
   @Column({ type: 'varchar', default: 'draft', nullable: true })
