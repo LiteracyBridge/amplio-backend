@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
 import { SurveyService } from './survey.service';
 import { ApiResponse } from 'src/utilities/api_response';
 import { Survey, SurveyStatus } from 'src/entities/survey.entity';
-import { SurveyDto } from './survey.dto';
+import { QuestionsDto, SurveyDto } from './survey.dto';
 
 @Controller('surveys')
 export class SurveyController {
@@ -15,7 +15,7 @@ export class SurveyController {
     return ApiResponse.Success({
       data: await Survey.find({
         where: { project_code: project },
-        relations: { deployment: true, sections: true }
+        relations: { deployment: true, sections: true, questions: { choices: { sub_options: true } } }
       })
     })
   }
@@ -34,10 +34,17 @@ export class SurveyController {
     })
   }
 
-  @Post("")
-  async createOrUpdate(@Body() survey: SurveyDto) {
+  @Post()
+  async createOrUpdate(@Body() dto: SurveyDto) {
     return ApiResponse.Success({
-      data: await this.service.createOrUpdate(survey)
+      data: await this.service.createOrUpdate(dto)
+    })
+  }
+
+  @Post(":survey_id/questions")
+  async saveQuestions(@Body() dto: QuestionsDto, @Param("survey_id") id: number) {
+    return ApiResponse.Success({
+      data: await this.service.saveQuestions(dto, id)
     })
   }
 }

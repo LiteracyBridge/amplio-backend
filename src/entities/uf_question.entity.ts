@@ -1,5 +1,6 @@
 import {
   Entity,
+  Unique,
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
@@ -15,9 +16,13 @@ import { Choice } from './uf_choice.entity';
 import { Analysis } from './analysis.entity';
 
 @Entity('uf_questions')
+@Unique("uf_question__id", ["_id"])
 export class Question extends BaseEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn("increment")
   id: number;
+
+  @Column({ type: "uuid", name: '_id', default: () => "uuid_generate_v4()", unique: true })
+  _id: string;
 
   @Column({ type: 'int', nullable: true })
   order: number;
@@ -54,7 +59,7 @@ export class Question extends BaseEntity {
   // section: SurveySection;
 
   @Column({ type: 'int', nullable: true })
-  parent_id: number;
+  parent_id?: number;
 
   // @ManyToOne(() => Question, (question) => question.children, { onDelete: 'CASCADE' })
   // @JoinColumn({ name: 'parent_id' })
@@ -76,9 +81,9 @@ export class Question extends BaseEntity {
   @OneToMany(() => Analysis, (analysis) => analysis.question)
   analysis: Analysis[];
 
-  @CreateDateColumn()
-  created_at: Date;
+  // @CreateDateColumn()
+  // created_at: Date;
 
-  @UpdateDateColumn()
-  updated_at: Date;
+  // @UpdateDateColumn()
+  // updated_at: Date;
 }

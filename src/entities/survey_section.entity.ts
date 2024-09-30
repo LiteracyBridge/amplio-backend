@@ -1,5 +1,6 @@
 import {
   Entity,
+  Unique,
   BaseEntity,
   PrimaryGeneratedColumn,
   Column,
@@ -12,9 +13,13 @@ import {
 import { Survey } from "./survey.entity";
 
 @Entity("uf_survey_sections")
+@Unique("unq__id", ["_id"])
 export class SurveySection extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({ type: "uuid", name: '_id', default: () => "uuid_generate_v4()", unique: true })
+  _id: string;
 
   @Column({ type: "varchar", default: "Untitled Section" })
   name: string;

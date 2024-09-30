@@ -66,10 +66,10 @@ export class UfMessagesController {
         .createQueryBuilder("uf_analysis")
         .where("uf_analysis.message_uuid = uf_messages.message_uuid")
       )
-      .limit(total)
       .orderBy("RANDOM()")
-      .leftJoinAndMapOne("uf_messages.recipient", Recipient, "recipient")
-      .leftJoinAndMapOne("uf_messages.content_metadata", ContentMetadata, "content_metadata")
+      .limit(total)
+      .leftJoinAndMapOne("uf_messages.recipient", Recipient, "recipient", "uf_messages.recipientid = recipient.recipientid")
+      .leftJoinAndMapOne("uf_messages.content_metadata", ContentMetadata, "content_metadata", "uf_messages.relation = content_metadata.contentid")
       .getMany()
 
     return ApiResponse.Success({ data: result })
