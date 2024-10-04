@@ -18,7 +18,9 @@ export class UsersService {
 			relations: {
 				organisation: true,
 				roles: { role: true },
-				programs: { program: { project: { deployments: true } } },
+				programs: {
+					program: { project: { deployments: true, languages: true } },
+				},
 			},
 		});
 	}
