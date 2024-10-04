@@ -66,7 +66,7 @@ const routes: Routes = [
       maxQueryExecutionTime: 50,
       autoLoadEntities: true,
       logNotifications: false,
-      logging: false,
+      logging: true,
       entities: [
         User,
         UserRole,

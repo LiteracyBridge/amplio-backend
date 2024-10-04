@@ -12,7 +12,7 @@ import { Question } from './uf_question.entity';
 
 @Entity('uf_choices')
 export class Choice extends BaseEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('increment', {name: 'choice_id'})
   choice_id: number;
 
   @Column()

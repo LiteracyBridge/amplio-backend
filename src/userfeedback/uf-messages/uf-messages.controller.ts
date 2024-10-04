@@ -47,10 +47,7 @@ export class UfMessagesController {
           skip: skip,
         })
       }
-			// .andWhereExists(Analysis
-			//   .createQueryBuilder("uf_analysis")
-			//   .where("uf_analysis.message_uuid = uf_messages.message_uuid")
-			// )
+
 	result =result		.leftJoinAndMapMany(
 				"uf_messages.analysis",
 				Analysis,

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+	BadRequestException,
+	Injectable,
+	NotFoundException,
+} from "@nestjs/common";
 import { Type } from "class-transformer";
 import {
 	IsArray,
@@ -13,14 +17,83 @@ import {
 } from "class-validator";
 import { Analysis } from "src/entities/analysis.entity";
 import { AnalysisChoice } from "src/entities/analysis_choice.entity";
+import { ContentMetadata } from "src/entities/content_metadata.entity";
+import { Recipient } from "src/entities/recipient.entity";
 import { Survey } from "src/entities/survey.entity";
 import { UserFeedbackMessage } from "src/entities/uf_message.entity";
+import { ApiResponse } from "src/utilities/api_response";
+
+const MINIMUM_SECONDS_FILTER = 0; // filters out any UF messages of less than this # of seconds
+const MAXIMUM_MINUTES_CHECKOUT = 5; // re-issues the same UUID after this many minutes if the form hasn't yet been submitted
 
 @Injectable()
 export class AnalysisService {
 	async getAll(surveyId: number) {
 		return await Analysis.find({
 			where: { question: { survey_id: surveyId } },
+		});
+	}
+
+	async getMessage(opts: {
+		programId: string;
+		deployment: string;
+		language: string;
+		skipped_messages: string;
+	}) {
+		const { programId, deployment, language, skipped_messages } = opts;
+		if (deployment == null && language == null) {
+			throw new BadRequestException("Deployment and language are required");
+		}
+
+		const skip: string[] =
+			(skipped_messages || "")?.split(",").filter((l) => l !== "") ?? [];
+		let result = await UserFeedbackMessage.createQueryBuilder("uf_messages")
+			.where("uf_messages.programid = :program", { program: programId })
+			.andWhere("uf_messages.deploymentnumber = :deployment", { deployment })
+			.andWhere("uf_messages.language = :language", { language })
+			.andWhere("uf_messages.length_seconds >= :length", {
+				length: MINIMUM_SECONDS_FILTER,
+			})
+			.andWhere(
+				"(uf_messages.is_useless IS FALSE OR uf_messages.is_useless IS NULL)",
+			)
+			.andWhere(
+				"NOT EXISTS (SELECT 1 FROM uf_analysis WHERE uf_analysis.message_uuid = uf_messages.message_uuid)",
+			);
+
+		if (skip.length > 0) {
+			result = result.andWhere("uf_messages.message_uuid NOT IN (:...skip)", {
+				skip: skip,
+			});
+		}
+
+		result = result
+			.leftJoinAndMapMany(
+				"uf_messages.analysis",
+				Analysis,
+				"analysis",
+				"uf_messages.message_uuid = analysis.message_uuid",
+			)
+			.leftJoinAndMapOne(
+				"uf_messages.recipient",
+				Recipient,
+				"recipient",
+				"uf_messages.recipientid = recipient.recipientid",
+			)
+			.leftJoinAndMapOne(
+				"uf_messages.content_metadata",
+				ContentMetadata,
+				"content_metadata",
+				"uf_messages.relation = content_metadata.contentid",
+			)
+			.orderBy("uf_messages.message_uuid")
+			.limit(1);
+
+		return (await result.getMany()).map((m) => {
+			return {
+				...m,
+				url: `https://amplio-uf.s3.us-west-2.amazonaws.com/collected/${m.program_id}/${m.deployment_number}/${m.message_uuid}.mp3`,
+			};
 		});
 	}
 
@@ -39,7 +112,10 @@ export class AnalysisService {
 	}
 
 	async createOrUpdate(survey_id: number, dto: AnalysisDto) {
-		const survey = await Survey.findOne({ where: { id: survey_id } });
+		const survey = await Survey.findOne({
+			where: { id: survey_id },
+			relations: { questions: true },
+		});
 
 		if (survey == null) {
 			throw new NotFoundException("Survey not found");
@@ -58,43 +134,45 @@ export class AnalysisService {
 		await message.save();
 
 		if (dto.is_useless) {
-			return this.getAll(survey_id);
+			return true;
 		}
 
-		try {
-			// Save responses
-			for (const item of dto.questions) {
-				if (item == null) continue;
+		// Save responses
+		for (const item of dto.questions) {
+			if (item == null) continue;
 
-				const analysis =
-					(await Analysis.findOne({ where: { id: item.id } })) ??
-					new Analysis();
-				analysis.message_uuid = dto.message_uuid;
-				analysis.question_id = item.question_id;
-				analysis.analyst_email = dto.analyst_email;
-				analysis.start_time = new Date(dto.start_time);
-				analysis.created_at = new Date();
-				analysis.updated_at = new Date();
-				analysis.submit_time = new Date(dto.submit_time);
-				analysis.response = item.response;
-				await analysis.save();
+			const analysis =
+				(await Analysis.findOne({ where: { id: item.id } })) ?? new Analysis();
+			analysis.message_uuid = dto.message_uuid;
+			analysis.question_id = survey.questions.find(
+				(q) => q._id === item.question_id || q.id === item.question_id,
+			)?.id!;
+			analysis.analyst_email = dto.analyst_email;
+			analysis.start_time = new Date(dto.start_time);
+			analysis.created_at = new Date();
+			analysis.updated_at = new Date();
+			analysis.submit_time = new Date(dto.submit_time);
+			analysis.response = item.response;
+			await analysis.save();
 
-				// # Save choices
-				const single_choice = item.single_choice;
-				if (single_choice != null) {
-					await this._save_choices(analysis, [
-						single_choice.value,
-						single_choice.sub_choice,
-					]);
-				}
-
-				await this._save_choices(analysis, item.choices ?? []);
+			// # Save choices
+			const single_choice = item.single_choice;
+			if (single_choice != null) {
+				await this._save_choices(analysis, [
+					single_choice.value,
+					single_choice.sub_choice,
+				]);
 			}
-		} catch (err) {
-			console.log(err);
+
+			await this._save_choices(analysis, item.choices ?? []);
+
+			await UserFeedbackMessage.update(
+				{ message_uuid: dto.message_uuid },
+				{ is_useless: false },
+			);
 		}
 
-		return this.getAll(survey_id);
+		return true;
 	}
 
 	async stats(opts: {
