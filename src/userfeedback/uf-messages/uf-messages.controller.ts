@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { Analysis } from 'src/entities/analysis.entity';
 import { ContentMetadata } from 'src/entities/content_metadata.entity';
 import { Message } from 'src/entities/message.entity';
@@ -43,7 +43,7 @@ export class UfMessagesController {
 
   @Get(":program_id/samples")
   async getMessageSamples(
-    @Query('program_id') programId: string,
+    @Param('program_id') programId: string,
     @Query('deployment') deployment: string,
     @Query('language') language: string,
   ) {
@@ -62,10 +62,11 @@ export class UfMessagesController {
       .andWhere("uf_messages.deploymentnumber = :deployment", { deployment })
       .andWhere("uf_messages.language = :language", { language })
       .andWhere("uf_messages.is_useless IS FALSE")
-      .andWhereExists(Analysis
-        .createQueryBuilder("uf_analysis")
-        .where("uf_analysis.message_uuid = uf_messages.message_uuid")
-      )
+      .orWhere("uf_messages.is_useless IS NULL")
+      // .andWhereExists(Analysis
+      //   .createQueryBuilder("uf_analysis")
+      //   .where("uf_analysis.message_uuid = uf_messages.message_uuid")
+      // )
       .orderBy("RANDOM()")
       .limit(total)
       .leftJoinAndMapOne("uf_messages.recipient", Recipient, "recipient", "uf_messages.recipientid = recipient.recipientid")
@@ -75,9 +76,9 @@ export class UfMessagesController {
     return ApiResponse.Success({ data: result })
   }
 
-  @Get(":program_id/transcribe")
+  @Post(":program_id/transcribe")
   async transcribeMessage(
-    @Query('program_id') programId: string,
+    @Param('program_id') programId: string,
     @Body('message_id') message_id: string,
     @Body('transcription') transcription: string,
   ) {

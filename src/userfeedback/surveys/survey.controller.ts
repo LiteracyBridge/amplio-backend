@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { SurveyService } from './survey.service';
 import { ApiResponse } from 'src/utilities/api_response';
 import { Survey, SurveyStatus } from 'src/entities/survey.entity';
@@ -23,7 +23,7 @@ export class SurveyController {
   @Put(':id/status')
   async changeStatus(
     @Param('id') id: number,
-    @Body("status") status: string
+    @Query("status") status: string
   ) {
     const survey = await this.service.findById(id);
     survey.status = status as SurveyStatus

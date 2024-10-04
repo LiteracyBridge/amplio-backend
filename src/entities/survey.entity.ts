@@ -13,6 +13,8 @@ import { SurveySection } from './survey_section.entity';
 
 export enum SurveyStatus {
   draft = 'draft',
+  published = 'published',
+  archived = 'archived'
 }
 @Entity('uf_surveys')
 export class Survey extends BaseEntity {

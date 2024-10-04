@@ -44,8 +44,8 @@ export class AnalysisController {
         .where("uf_analysis.message_uuid = uf_messages.message_uuid")
       )
       .orderBy("uf_messages.message_uuid")
-      .leftJoinAndMapOne("uf_messages.recipient", Recipient, "recipient")
-      .leftJoinAndMapOne("uf_messages.content_metadata", ContentMetadata, "content_metadata")
+      .leftJoinAndMapOne("uf_messages.recipient", Recipient, "recipient", "recipient.recipientid = uf_messages.recipientid")
+      .leftJoinAndMapOne("uf_messages.content_metadata", ContentMetadata, "content_metadata", "content_metadata.contentid = uf_messages.relation")
       .getMany()
 
     return ApiResponse.Success({ data: result })
@@ -76,5 +76,16 @@ export class AnalysisController {
     @Body() dto: AnalysisDto
   ) {
     return ApiResponse.Success({ data: await this.analysisService.createOrUpdate(surveyId, dto) })
+  }
+
+  @Get(":survey_id/stats")
+  async getStats(
+    @Param('survey_id') survey_id: number,
+@Query("email")		email: string,
+@Query("language")		language: string,
+@Query("deployment")		deployment: string,
+  ) {
+    return ApiResponse.Success({ data: await this.analysisService.stats({survey_id, email, language, deployment
+    }) })
   }
 }

@@ -182,6 +182,7 @@ export class SurveyService {
 
     section.name ??= dto.name ?? "Untitled Section";
     section.survey_id ??= surveyId;
+    section._id ??= sectionId;
     await section.save();
 
     return section;
