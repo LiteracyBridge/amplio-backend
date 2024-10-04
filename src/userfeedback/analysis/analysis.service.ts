@@ -39,6 +39,7 @@ export class AnalysisService {
 		deployment: string;
 		language: string;
 		skipped_messages: string;
+		survey_id: number;
 	}) {
 		const { programId, deployment, language, skipped_messages } = opts;
 		if (deployment == null && language == null) {
@@ -58,7 +59,8 @@ export class AnalysisService {
 				"(uf_messages.is_useless IS FALSE OR uf_messages.is_useless IS NULL)",
 			)
 			.andWhere(
-				"NOT EXISTS (SELECT 1 FROM uf_analysis WHERE uf_analysis.message_uuid = uf_messages.message_uuid)",
+				"NOT EXISTS (SELECT 1 FROM uf_analysis a INNER JOIN uf_questions q ON q.survey_id = :surveyId AND q.id = a.question_id WHERE a.message_uuid = uf_messages.message_uuid)",
+				{ surveyId: opts.survey_id || 1 },
 			);
 
 		if (skip.length > 0) {
@@ -89,12 +91,14 @@ export class AnalysisService {
 			.orderBy("uf_messages.message_uuid")
 			.limit(1);
 
-		return (await result.getMany()).map((m) => {
+		const data = (await result.getMany()).map((m) => {
 			return {
 				...m,
 				url: `https://amplio-uf.s3.us-west-2.amazonaws.com/collected/${m.program_id}/${m.deployment_number}/${m.message_uuid}.mp3`,
 			};
 		});
+		// console.log(data);
+		return data;
 	}
 
 	private async _save_choices(analysis: Analysis, choices: number[]) {
@@ -130,7 +134,7 @@ export class AnalysisService {
 		}
 
 		message.transcription = dto.transcription;
-		message.is_useless = dto.is_useless;
+		message.is_useless = dto.is_useless || false;
 		await message.save();
 
 		if (dto.is_useless) {
@@ -142,7 +146,13 @@ export class AnalysisService {
 			if (item == null) continue;
 
 			const analysis =
-				(await Analysis.findOne({ where: { id: item.id } })) ?? new Analysis();
+				(await Analysis.findOne({
+					where: {
+						question: { _id: item.question_id },
+						message_uuid: message.message_uuid,
+					},
+				})) ?? new Analysis();
+
 			analysis.message_uuid = dto.message_uuid;
 			analysis.question_id = survey.questions.find(
 				(q) => q._id === item.question_id || q.id === item.question_id,
@@ -153,7 +163,8 @@ export class AnalysisService {
 			analysis.updated_at = new Date();
 			analysis.submit_time = new Date(dto.submit_time);
 			analysis.response = item.response;
-			await analysis.save();
+			await Analysis.save(analysis);
+			// await analysis.save();
 
 			// # Save choices
 			const single_choice = item.single_choice;
@@ -166,10 +177,11 @@ export class AnalysisService {
 
 			await this._save_choices(analysis, item.choices ?? []);
 
-			await UserFeedbackMessage.update(
-				{ message_uuid: dto.message_uuid },
-				{ is_useless: false },
-			);
+			// console.log(analysis.id);
+			// await UserFeedbackMessage.update(
+			// 	{ message_uuid: dto.message_uuid },
+			// 	{ is_useless: false },
+			// );
 		}
 
 		return true;
@@ -207,6 +219,7 @@ export class AnalysisService {
 			opts.deployment ?? 1,
 		]);
 
+		// console.log(results);
 		return {
 			by_current_user: results[0].by_current_user,
 			total_analysed: results[0].total_analysed,
