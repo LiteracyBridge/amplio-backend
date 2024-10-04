@@ -13,6 +13,7 @@ import {
 @Injectable()
 export class UsersService {
 	async me(email: string): Promise<User | null> {
+    // TODO: load permissions
 		return await User.findOne({
 			where: { email: email },
 			relations: {
@@ -84,5 +85,26 @@ export class UsersService {
 			await Invitation.remove(invite);
 		}
 		return invite;
+	}
+
+	async allUsers(currentUser: User) {
+		let query: any = {};
+		if (currentUser.organisation.isParent) {
+			query = [
+				{ organisation_id: currentUser.organisation_id },
+				{ organisation_id: currentUser.organisation.parent_id },
+			];
+		} else {
+			query = { organisation_id: currentUser.organisation_id };
+		}
+
+		return await User.find({
+			where: query,
+			relations: {
+				roles: { role: true },
+				organisation: true,
+				programs: true,
+			},
+		});
 	}
 }

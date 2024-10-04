@@ -313,7 +313,7 @@ export class AnalysisService {
 				}
 			}
 
-      excel_rows.push(_row);
+			excel_rows.push(_row);
 		}
 		return { headers: excel_headers, rows: excel_rows };
 	}

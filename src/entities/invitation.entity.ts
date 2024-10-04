@@ -5,6 +5,10 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  BaseEntity,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
   JoinColumn,
 } from 'typeorm';
 import { _BaseEntity } from './base.entity';
@@ -12,7 +16,10 @@ import { Organisation } from './organisation.entity';
 import { User } from './user.entity';
 
 @Entity('invitations')
-export class Invitation extends _BaseEntity {
+export class Invitation extends BaseEntity {
+  @PrimaryGeneratedColumn("uuid")
+	id: string;
+
   @Column({ type: 'varchar', nullable: true })
   first_name: string;
 
@@ -34,6 +41,15 @@ export class Invitation extends _BaseEntity {
   @ManyToOne(() => Organisation)
   @JoinColumn({ name: 'organisation_id' })
   organisation: Organisation;
+
+  @CreateDateColumn({ type: "timestamptz" })
+	created_at: Date;
+
+	@UpdateDateColumn({ type: "timestamptz" })
+	updated_at: Date;
+
+	@DeleteDateColumn({ type: "timestamptz" })
+	deleted_at?: Date;
 
   static async createUser(email: string | Invitation): Promise<User | null> {
     const invitation = typeof email !== 'string' ? email : (await Invitation.findOne({ where: { email } }));
