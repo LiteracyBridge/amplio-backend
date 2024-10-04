@@ -15,13 +15,16 @@ import {
 	IsOptional,
 	IsString,
 } from "class-validator";
+import { groupBy } from "remeda";
 import { Analysis } from "src/entities/analysis.entity";
 import { AnalysisChoice } from "src/entities/analysis_choice.entity";
 import { ContentMetadata } from "src/entities/content_metadata.entity";
 import { Recipient } from "src/entities/recipient.entity";
 import { Survey } from "src/entities/survey.entity";
 import { UserFeedbackMessage } from "src/entities/uf_message.entity";
+import { Question } from "src/entities/uf_question.entity";
 import { ApiResponse } from "src/utilities/api_response";
+import { FindOptionsWhere } from "typeorm";
 
 const MINIMUM_SECONDS_FILTER = 0; // filters out any UF messages of less than this # of seconds
 const MAXIMUM_MINUTES_CHECKOUT = 5; // re-issues the same UUID after this many minutes if the form hasn't yet been submitted
@@ -226,6 +229,93 @@ export class AnalysisService {
 			total_useless: results[0].total_useless,
 			total_messages: results[0].total_messages,
 		};
+	}
+
+	async generateReport(opts: {
+		survey_id: number;
+		deployment: string;
+		language: string;
+		message_id?: string;
+	}) {
+		const { survey_id, deployment, language, message_id } = opts;
+		const query: FindOptionsWhere<Analysis> = {
+			message: { deployment_number: deployment, language: language },
+			question: { survey_id: survey_id },
+		};
+		if (message_id != null) {
+			query.message_uuid = message_id;
+		}
+
+		const analysis = await Analysis.find({
+			where: query,
+			relations: {
+				message: { recipient: true, content_metadata: true },
+				choices: { choice: true },
+				question: true,
+			},
+		});
+		const questions = await Question.find({ where: { survey_id: survey_id } });
+
+		// # Create row header, each header item must have unique key.
+		// # The key is used to create the row.
+		// # NOTE: This structure is used because https://www.npmjs.com/package/exceljs#rows
+		// # library used by the frontend
+		const excel_headers: Array<{
+			header: string;
+			key: string;
+			width?: number;
+		}> = [
+			{ header: "Message", key: "message" },
+			{ header: "Transcription", key: "transcription", width: 30 },
+			{ header: "District", key: "district" },
+			{ header: "Community", key: "community" },
+			{ header: "Group", key: "group" },
+			{ header: "Region", key: "region" },
+			{ header: "Language", key: "language" },
+			{ header: "Agent", key: "agent" },
+		];
+		for (const q of questions) {
+			excel_headers.push({ header: q.question_label, key: q.id.toString() });
+		}
+
+		const excel_rows: Record<string, any> = [];
+
+		// # Group analysis by message_uuid
+		const grouped_analysis = groupBy(analysis, (a) => a.message_uuid);
+
+		// # Create a row for each message, corresponding to the questions index
+		for (const key in grouped_analysis) {
+			const messages = grouped_analysis[key].sort(
+				(a, b) => a.question_id - b.question_id,
+			);
+			const _row: Record<string, any> = {};
+
+			for (const a of messages) {
+				let value = a.response;
+
+				// # For multiple/single choice response, combine the response into one value
+				if (a.choices.length > 0) {
+					value = a.choices.map((c) => c.choice.value).join(", ");
+				}
+				_row.transcription = a.message.transcription;
+				_row[a.question_id] = value; // Set response value
+
+				if (a.message.content_metadata != null) {
+					_row.message = a.message.content_metadata.title;
+				}
+
+				if (a.message.recipient != null) {
+					_row.district = a.message.recipient.district;
+					_row.community = a.message.recipient.community_name;
+					_row.group = a.message.recipient.group_name;
+					_row.agent = a.message.recipient.agent;
+					_row.language = a.message.recipient.language;
+				}
+			}
+
+      excel_rows.push(_row);
+		}
+		return { headers: excel_headers, rows: excel_rows };
 	}
 }
 
