@@ -149,7 +149,13 @@ export class UserSubscriber implements EntitySubscriberInterface<User> {
 		event?: LoadEvent<User>,
 	): Promise<undefined | User> {
 		// Load the permissions from the roles
+
+		// @ts-ignore
+		entity.permissions ??= {};
+
 		for (const role of entity.roles) {
+      if (role.role == null) continue;
+
 			const items = Object.values(role.role.permissions).flat();
 			for (const action of items) {
 				entity.permissions[action] = true;

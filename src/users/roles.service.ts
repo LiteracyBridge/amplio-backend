@@ -49,7 +49,7 @@ export class RolesService {
 
 		// Remove roles that are not in the new list
 		for (const id of existingRoles) {
-			if (opts.roles.indexOf(id) > -1) {
+			if (opts.roles.indexOf(id) === -1) {
 				await UserRole.delete({ user_id: user.id, role_id: id });
 			}
 		}

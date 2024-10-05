@@ -38,7 +38,7 @@ export class Role extends BaseEntity {
 	description?: string;
 
 	@Column({ type: "jsonb", nullable: false })
-	permissions: Record<string, string[]>;
+	permissions: Record<string, string[]> = {}
 
 	@Column({ type: "int", name: "organisation_id" })
 	organisation_id: number;

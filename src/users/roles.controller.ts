@@ -10,7 +10,7 @@ import { InvitationDto } from "./invitation.dto";
 import { NewRoleDto, RolesService } from "./roles.service";
 import { PERMISSIONS_TEMPLATE } from "src/entities/role.entity";
 
-@Controller("roles")
+@Controller("users/roles")
 export class RolesController {
 	constructor(private service: RolesService) {}
 
