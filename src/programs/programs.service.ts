@@ -26,4 +26,20 @@ export class ProgramsService {
 			},
 		});
 	}
+
+	async getProgramOrganisationUsers(user: User, program_id: number) {
+		return await User.find({
+			where: {
+				organisation: user.organisation.isParent
+					? [
+							{ id: user.organisation_id, programs: { program_id } },
+							{ parent_id: user.organisation_id, programs: { program_id } },
+						]
+					: {
+							id: user.organisation_id,
+						},
+				// programs: { program_id },
+			},
+		});
+	}
 }
