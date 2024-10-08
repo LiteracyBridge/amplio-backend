@@ -43,6 +43,7 @@ import { ProgramsModule } from "./programs/programs.module";
 import { HttpExceptionFilter } from "./filters/http-exception.filter";
 import { SentryGlobalFilter, SentryModule } from "@sentry/nestjs/setup";
 import { Log } from "./entities/log.entity";
+import { AcmCheckoutModule } from './acm-checkout/acm-checkout.module';
 
 config();
 
@@ -108,7 +109,8 @@ const routes: Routes = [
     DashboardQueriesModule,
     UserfeedbackModule,
     ProgramsModule,
-    Log
+    Log,
+    AcmCheckoutModule
   ],
   controllers: [AppController, TableauController, CategoriesController],
   providers: [

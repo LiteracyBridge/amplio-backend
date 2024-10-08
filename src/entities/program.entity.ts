@@ -68,6 +68,9 @@ export class Program extends BaseEntity {
   @Column({ type: 'json', default: {} })
   direct_beneficiaries_additional_map: Record<string, any>;
 
+  /**
+   * Uses project 'code' as the foreign key
+   */
   @Column({ type: 'varchar', nullable: false, unique: true })
   program_id: string;
 
