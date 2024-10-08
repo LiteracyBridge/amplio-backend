@@ -29,7 +29,7 @@ export class UsersController {
 		return ApiResponse.Success({ data: user });
 	}
 
-	@Get("")
+	@Get()
 	async allUsers(@CurrentUser() user: User) {
 		return ApiResponse.Success({
 			data: await this.userService.allUsers(user),
