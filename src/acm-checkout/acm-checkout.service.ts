@@ -8,7 +8,7 @@ import {
 	IsString,
 } from "class-validator";
 import appConfig from "src/app.config";
-import { ACMCheckout } from "src/entities/checkout.entity";
+import { ACMCheckout, ACMState } from "src/entities/checkout.entity";
 import { User } from "src/entities/user.entity";
 import { sendSes } from "src/utilities";
 import { In } from "typeorm";
@@ -37,6 +37,14 @@ export class AcmCheckoutService {
 		}
 
 		const acm_name = dto.db!; // name of ACM (e.g. 'ACM-FB-2013-01') - primary key of dynamoDB table
+		const acm = await ACMCheckout.findOne({
+			where: {
+				project: {
+					code: acm_name,
+					program: { users: { user_id: currentUser.id } },
+				},
+			},
+		});
 
 		switch (action) {
 			case CheckoutAction.list:
@@ -44,9 +52,19 @@ export class AcmCheckoutService {
 			case CheckoutAction.report:
 				return await this.report(dto);
 			case CheckoutAction.statuscheck:
-			// TODO: implement next
+				return this.statusCheck(acm, programCode);
+			case CheckoutAction.checkout:
+				return await this.checkout(acm, dto);
+			case CheckoutAction.checkin:
+				return await this.check_in(acm, dto);
+			case CheckoutAction.discard:
+				return await this.discard(acm, dto);
 			case CheckoutAction.revokecheckout:
-				return await this.revokeCheckout(acm_name, currentUser);
+				return await this.revokeCheckout(acm);
+			case CheckoutAction.create:
+				return await this.create(acm, dto);
+			case CheckoutAction.reset:
+				return await this.reset(acm!, dto);
 			default:
 				return {
 					status: STATUS_DENIED,
@@ -55,17 +73,173 @@ export class AcmCheckoutService {
 		}
 	}
 
+	private async reset(acm: ACMCheckout, dto: AcmCheckoutDto) {
+		if (!acm.resettable) {
+			return {
+				data: STATUS_DENIED,
+				status: STATUS_DENIED,
+				error: "DB is not resettable",
+			};
+		}
+
+		acm.acm_state = ACMState.CHECKED_IN;
+		acm.last_in_file_name = dto.filename ?? "db1.zip"; // by convention, counts # of checkins
+		acm.last_in_name = dto.name ?? "system";
+		acm.last_in_contact = dto.contact ?? appConfig().emails.support; // phone number of requester
+		acm.last_in_date = new Date();
+		acm.last_in_version = dto.version; // current ACM version in format: r YY MM DD n (e.g. r1606221)
+		acm.acm_comment = dto.comment; // to allow for internal comments if later required
+		acm.now_out_key = dto.key;
+		await acm.save();
+
+		return {
+			data: STATUS_OK,
+			status: STATUS_OK,
+			state: acm,
+		};
+	}
+
+	private async create(_acm: ACMCheckout | null, dto: AcmCheckoutDto) {
+		if (_acm != null) {
+			// # Someone else released the record from under us. Count it as success.
+			return {
+				data: STATUS_DENIED,
+				status: STATUS_DENIED,
+				error: "DB already exists",
+			};
+		}
+
+		const acm = new ACMCheckout();
+		acm.acm_state = ACMState.CHECKED_IN;
+		acm.last_in_file_name = dto.filename;
+		acm.last_in_name = dto.name;
+		acm.last_in_contact = dto.contact;
+		acm.last_in_date = new Date();
+		acm.last_in_version = dto.version;
+		acm.acm_comment = dto.comment;
+		acm.now_out_key = dto.key;
+		await acm.save();
+
+		return {
+			data: STATUS_OK,
+			status: STATUS_OK,
+			state: acm,
+		};
+	}
+
+	private async discard(acm: ACMCheckout | null, dto: AcmCheckoutDto) {
+		if (
+			acm == null ||
+			acm.acm_state == ACMState.CHECKED_IN ||
+			acm.now_out_key !== dto.key
+		) {
+			// # Someone else released the record from under us. Count it as success.
+			return {
+				data: STATUS_OK,
+				status: STATUS_OK,
+			};
+		}
+
+		if (acm.acm_state !== ACMState.CHECKED_OUT || acm.now_out_key !== dto.key) {
+			// # Someone else released the record from under us. Count it as success.
+			return {
+				data: STATUS_OK,
+				status: STATUS_OK,
+			};
+		}
+
+		acm.acm_state = ACMState.CHECKED_IN;
+		acm.now_out_key = dto.key;
+		await acm.save();
+
+		return {
+			data: STATUS_OK,
+			status: STATUS_OK,
+			state: acm,
+		};
+	}
+
+	private async check_in(acm: ACMCheckout | null, dto: AcmCheckoutDto) {
+		if (acm == null) {
+			return {
+				response: "Unexpected Error",
+				data: STATUS_DENIED,
+				status: STATUS_DENIED,
+			};
+		}
+
+		if (acm.acm_state !== ACMState.CHECKED_OUT || acm.now_out_key !== dto.key) {
+			return {
+				error: "Not checked out by user",
+				data: STATUS_DENIED,
+				status: STATUS_DENIED,
+				state: acm,
+			};
+		}
+
+		acm.last_in_file_name = dto.filename;
+		acm.acm_state = ACMState.CHECKED_IN;
+		acm.last_in_contact = acm.now_out_contact;
+		acm.last_in_date = new Date();
+		acm.last_in_version = dto.version;
+		acm.now_out_key = dto.key;
+		await acm.save();
+
+		return {
+			data: STATUS_OK,
+			status: STATUS_OK,
+			state: acm,
+		};
+	}
+
+	private async checkout(acm: ACMCheckout | null, dto: AcmCheckoutDto) {
+		if (acm == null || acm.acm_state === ACMState.CHECKED_OUT) {
+			return {
+				response: "Unexpected Error",
+				data: STATUS_DENIED,
+				status: STATUS_DENIED,
+			};
+		}
+
+		acm.acm_state = ACMState.CHECKED_IN;
+		acm.now_out_name = dto.name;
+		acm.now_out_contact = dto.contact;
+		acm.now_out_version = dto.version;
+		acm.now_out_key = (Math.random() * (10000000 - 0 + 1)).toString();
+		acm.now_out_date = new Date();
+		acm.now_out_comment = dto.comment;
+		acm.now_out_computername = dto.computername;
+		await acm.save();
+
+		return {
+			data: STATUS_OK,
+			status: STATUS_OK,
+			state: acm,
+		};
+	}
+	/**
+	 * Determine if the db exists, and if it does, can it be checked out.
+	 * :return: 'available' if db is available for checkout, 'checkedout' if alreay  checked out, 'nodb' if no db.
+	 */
+	private statusCheck(acm: ACMCheckout | null, programCode: string) {
+		if (acm == null) {
+			return {
+				status: "nodb",
+				state: { acm_name: programCode },
+			};
+		}
+
+		return {
+			data: STATUS_OK,
+			status: acm.acm_state === ACMState.CHECKED_OUT ? "checkedout" : STATUS_OK,
+			state: acm,
+		};
+	}
+
 	/**
 	 * A successful 'revokeCheckOut' request deletes any ACM check-out entry from the db.
 	 */
-	private async revokeCheckout(acm_name: string, user: User) {
-		const acm = await ACMCheckout.findOne({
-			where: {
-				acm_state: "CHECKED_OUT",
-				project: { code: acm_name, program: { users: { user_id: user.id } } },
-			},
-		});
-
+	private async revokeCheckout(acm: ACMCheckout | null) {
 		if (acm == null) {
 			return {
 				response: "Unexpected Error",
