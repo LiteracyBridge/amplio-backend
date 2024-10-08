@@ -13,14 +13,17 @@ import {
 @Injectable()
 export class UsersService {
 	async me(email: string): Promise<User | null> {
-    // TODO: load permissions
+		// TODO: load permissions
 		return await User.findOne({
 			where: { email: email },
 			relations: {
 				organisation: true,
 				roles: { role: true },
 				programs: {
-					program: { project: { deployments: true, languages: true } },
+					program: {
+						project: { deployments: true, languages: true },
+						organisations: { organisation: true },
+					},
 				},
 			},
 		});

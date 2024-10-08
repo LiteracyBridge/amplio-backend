@@ -19,11 +19,11 @@ export class Organisation extends BaseEntity {
   name: string;
 
   @Column({ type: 'int', nullable: true })
-  parent_id: number | null;
+  parent_id?: number;
 
   @ManyToOne(() => Organisation, (organisation) => organisation.children)
   @JoinColumn({ name: 'parent_id' })
-  parent: Organisation | null;
+  parent?: Organisation;
 
   @OneToMany(() => Organisation, (organisation) => organisation.parent)
   children: Organisation[];

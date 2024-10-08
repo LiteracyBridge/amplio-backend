@@ -7,6 +7,9 @@ import {
 	Unique,
 	JoinColumn,
 	OneToOne,
+  CreateDateColumn,
+	DeleteDateColumn,
+  UpdateDateColumn,
 	BaseEntity,
 } from "typeorm";
 import { Organisation } from "./organisation.entity";
@@ -22,6 +25,15 @@ export class OrganisationProgram extends BaseEntity {
 
 	@Column({ name: "organisation_id", type: "bigint" })
 	organisation_id: number;
+
+  @CreateDateColumn({ type: "timestamptz" })
+	created_at: Date;
+
+	@UpdateDateColumn({ type: "timestamptz" })
+	updated_at: Date;
+
+	@DeleteDateColumn({ type: "timestamptz" })
+	deleted_at?: Date;
 
 	@ManyToOne(() => Organisation)
 	@JoinColumn({ referencedColumnName: "id", name: "organisation_id" })

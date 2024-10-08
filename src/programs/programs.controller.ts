@@ -19,7 +19,7 @@ export class ProgramsController {
     return ApiResponse.Success({ data: await this.service.getAll(user) })
   }
 
-  @Get(":program_id/org-user")
+  @Get(":program_id/users")
   async programUsers(
     @Param("program_id") program_id: number,
     @CurrentUser() user: User

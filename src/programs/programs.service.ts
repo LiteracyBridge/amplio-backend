@@ -9,12 +9,14 @@ export class ProgramsService {
 		return await Program.find({
 			where: {
 				organisations: user.organisation.isParent
-					? { organisation_id: user.organisation_id }
+					? {
+							organisation: [
+								{ id: user.organisation_id },
+								{ parent_id: user.organisation_id },
+							],
+						}
 					: {
-							organisation_id: In([
-								user.organisation.id,
-								user.organisation.parent_id,
-							]),
+							organisation_id: user.organisation_id,
 						},
 			},
 			relations: {
