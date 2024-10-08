@@ -91,12 +91,12 @@ export class User extends BaseEntity {
 		return data;
 	}
 
-	get organisationQuery(): FindOptionsWhere<OrganisationProgram> {
+	get organisationQuery(): FindOptionsWhere<Organisation> {
 		if (this.organisation.isParent) {
-			return { organisation_id: this.organisation_id };
+			return { id: this.organisation_id };
 		}
 		return {
-			organisation_id: In([this.organisation.id, this.organisation.parent_id]),
+			id: In([this.organisation.id, this.organisation.parent_id]),
 		};
 	}
 
@@ -154,7 +154,7 @@ export class UserSubscriber implements EntitySubscriberInterface<User> {
 		entity.permissions ??= {};
 
 		for (const role of entity.roles) {
-      if (role.role == null) continue;
+			if (role.role == null) continue;
 
 			const items = Object.values(role.role.permissions).flat();
 			for (const action of items) {
