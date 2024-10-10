@@ -7,7 +7,7 @@ import {
 	BaseEntity,
 } from "typeorm";
 import { Project } from "./project.entity";
-import { instanceToPlain } from "class-transformer";
+import { Expose, instanceToPlain } from "class-transformer";
 
 export enum ACMState {
 	CHECKED_IN = "CHECKED_IN",
@@ -74,9 +74,9 @@ export class ACMCheckout extends BaseEntity {
 	@JoinColumn({ name: "project_id" })
 	project?: Project;
 
-	toJSON() {
-		const data = instanceToPlain(this);
-		data.acm_name = this.project?.code;
-		return data;
+	@Expose()
+	get acm_name() {
+		// @ts-ignore
+		return this.project.code;
 	}
 }

@@ -4,7 +4,7 @@ import { CurrentUser } from "src/decorators/user.decorator";
 import { User } from "src/entities/user.entity";
 import { SkipJwtAuth } from "src/decorators/skip-jwt-auth.decorator";
 
-@Controller("acm-checkout")
+@Controller("acm")
 export class AcmCheckoutController {
 	constructor(private readonly service: AcmCheckoutService) {}
 
@@ -47,6 +47,24 @@ export class AcmCheckoutController {
 			dto,
 			currentUser: user,
 			programCode: dto.program
+		});
+	}
+
+	@Get("report")
+	@Post("report")
+	async handlerReport(
+		@Body() body: AcmCheckoutDto,
+		@Query() query: AcmCheckoutDto,
+		@CurrentUser() user: User,
+	) {
+		const dto = new AcmCheckoutDto();
+		// Merge the query and body into the dto
+		Object.assign(dto, body, query);
+
+		return await this.service.handleEvent({
+			dto,
+			currentUser: user,
+			programCode: dto.db || dto.program
 		});
 	}
 }

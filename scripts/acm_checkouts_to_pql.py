@@ -30,7 +30,7 @@ def run():
         FROM projects
         WHERE (LOWER(projectcode) = :project_id) OR (LOWER(projectcode) = :project_id_2)
         LIMIT 1
-        ON CONFLICT (project_id) DO UPDATE SET last_in_name = EXCLUDED.last_in_name, last_in_version = EXCLUDED.last_in_version, last_in_comment = EXCLUDED.last_in_comment, last_in_contact = EXCLUDED.last_in_contact, acm_comment = EXCLUDED.acm_comment, acm_state = EXCLUDED.acm_state, last_in_file_name = EXCLUDED.last_in_file_name, last_in_date = EXCLUDED.last_in_date, now_out_name = EXCLUDED.now_out_name, now_out_version = EXCLUDED.now_out_version, now_out_comment = EXCLUDED.now_out_comment, now_out_contact = EXCLUDED.now_out_contact, now_out_date = EXCLUDED.now_out_date, now_out_key = EXCLUDED.now_out_key;
+        ON CONFLICT ON CONSTRAINT acm_checkout_project_id_key DO UPDATE SET last_in_name = EXCLUDED.last_in_name, last_in_version = EXCLUDED.last_in_version, last_in_comment = EXCLUDED.last_in_comment, last_in_contact = EXCLUDED.last_in_contact, acm_comment = EXCLUDED.acm_comment, acm_state = EXCLUDED.acm_state, last_in_file_name = EXCLUDED.last_in_file_name, last_in_date = EXCLUDED.last_in_date, now_out_name = EXCLUDED.now_out_name, now_out_version = EXCLUDED.now_out_version, now_out_comment = EXCLUDED.now_out_comment, now_out_contact = EXCLUDED.now_out_contact, now_out_date = EXCLUDED.now_out_date, now_out_key = EXCLUDED.now_out_key;
         """
         db.execute(
             sa.text(query),
@@ -61,11 +61,11 @@ def run():
                     ).isoformat()
                 ),
                 "project_id": row["acm_name"].lower(),
-                "project_id_2": row["acm_name"].replace("ACM-", ""),
+                "project_id_2": row["acm_name"].lower().replace("acm-", ""),
             },
         )
 
-    db.commit()
+        db.commit()
 
 
 if __name__ == "__main__":

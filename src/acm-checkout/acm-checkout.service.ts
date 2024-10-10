@@ -11,7 +11,7 @@ import appConfig from "src/app.config";
 import { ACMCheckout, ACMState } from "src/entities/checkout.entity";
 import { User } from "src/entities/user.entity";
 import { sendSes } from "src/utilities";
-import { In } from "typeorm";
+import { ILike, In } from "typeorm";
 
 const STATUS_DENIED = "denied";
 const STATUS_OK = "ok";
@@ -36,15 +36,18 @@ export class AcmCheckoutService {
 			};
 		}
 
-		const acm_name = dto.db!; // name of ACM (e.g. 'ACM-FB-2013-01') - primary key of dynamoDB table
-		const acm = await ACMCheckout.findOne({
-			where: {
-				project: {
-					code: acm_name,
-					program: { users: { user_id: currentUser.id } },
-				},
-			},
-		});
+		// const acm_name = dto.db!; // name of ACM (e.g. 'ACM-FB-2013-01') - primary key of dynamoDB table
+		const acm =
+			opts.programCode == null
+				? null
+				: await ACMCheckout.findOne({
+						where: {
+							project: {
+								code: ILike(opts.programCode.replace("ACM-", "")),
+								program: { users: { user_id: currentUser.id } },
+							},
+						},
+					});
 
 		switch (action) {
 			case CheckoutAction.list:
