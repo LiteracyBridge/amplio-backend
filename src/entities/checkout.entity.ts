@@ -7,6 +7,7 @@ import {
 	BaseEntity,
 } from "typeorm";
 import { Project } from "./project.entity";
+import { instanceToPlain } from "class-transformer";
 
 export enum ACMState {
 	CHECKED_IN = "CHECKED_IN",
@@ -66,10 +67,16 @@ export class ACMCheckout extends BaseEntity {
 	@Column({ type: "uuid", unique: true, nullable: true })
 	project_id: string;
 
-	@Column({ type: "boolean",  nullable: true })
+	@Column({ type: "boolean", nullable: true })
 	resettable?: boolean;
 
 	@ManyToOne(() => Project)
 	@JoinColumn({ name: "project_id" })
 	project?: Project;
+
+	toJSON() {
+		const data = instanceToPlain(this);
+		data.acm_name = this.project?.code;
+		return data;
+	}
 }

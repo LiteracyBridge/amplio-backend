@@ -44,6 +44,8 @@ def run():
                 "now_out_contact": row.get("now_out_contact", None),
                 "now_out_version": row.get("now_out_version", None),
                 "now_out_comment": row.get("now_out_comment", None),
+                "now_out_computername": row.get("now_out_computername", None),
+                "resettable": row.get("resettable", None),
                 "now_out_key": row.get("now_out_key", None),
                 "acm_comment": row.get("acm_comment", None),
                 "acm_state": row["acm_state"],
