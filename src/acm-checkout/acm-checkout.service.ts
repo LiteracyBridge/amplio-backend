@@ -133,7 +133,7 @@ export class AcmCheckoutService {
 	private async discard(acm: ACMCheckout | null, dto: AcmCheckoutDto) {
 		if (
 			acm == null ||
-			acm.acm_state == ACMState.CHECKED_IN ||
+			acm.acm_state === ACMState.CHECKED_IN ||
 			acm.now_out_key !== dto.key
 		) {
 			// # Someone else released the record from under us. Count it as success.
@@ -163,17 +163,21 @@ export class AcmCheckoutService {
 	}
 
 	private async check_in(acm: ACMCheckout | null, dto: AcmCheckoutDto) {
-		if (acm == null) {
-			return {
-				response: "Unexpected Error",
-				data: STATUS_DENIED,
-				status: STATUS_DENIED,
-			};
+    if (dto.key === "new") {
+      return await this.newCheckIn(acm, dto);
 		}
 
-		if (acm.acm_state !== ACMState.CHECKED_OUT || acm.now_out_key !== dto.key) {
+    if (acm == null) {
+      return {
+        response: "Create new ACM",
+        data: STATUS_DENIED,
+        status: STATUS_DENIED,
+      };
+    }
+
+		if (acm.acm_state === ACMState.CHECKED_IN) {
 			return {
-				error: "Not checked out by user",
+				response: "ACM is already checked-in",
 				data: STATUS_DENIED,
 				status: STATUS_DENIED,
 				state: acm,
@@ -186,12 +190,43 @@ export class AcmCheckoutService {
 		acm.last_in_date = new Date();
 		acm.last_in_version = dto.version;
 		acm.now_out_key = dto.key;
+		acm.last_in_name = dto.name;
 		await acm.save();
 
 		return {
 			data: STATUS_OK,
 			status: STATUS_OK,
 			state: acm,
+		};
+	}
+
+	/**
+	 * Allows the user to create a new ACM by specifying the action as 'checkIn' and
+	 * the key as 'new.' Only works for ACMs that do not already exist
+	 */
+	private async newCheckIn(acm: ACMCheckout | null, dto: AcmCheckoutDto) {
+		if (acm != null) {
+			return {
+				response: "ACM already exists",
+				data: STATUS_DENIED,
+				status: STATUS_DENIED,
+			};
+		}
+
+		// # parameters received from HTTPS POST request
+		const newAcm = new ACMCheckout();
+		newAcm.acm_state = ACMState.CHECKED_IN;
+		newAcm.last_in_file_name = dto.filename; // tracks number of times ACM has been checked out, format db##.zip (e.g. db12.zip)
+		newAcm.last_in_name = dto.name; // # name of requester
+		newAcm.last_in_contact = dto.contact;
+		newAcm.last_in_date = new Date();
+		newAcm.acm_comment = dto.comment; // to allow for internal comments if later required
+		await newAcm.save();
+
+		return {
+			response: "SUCCESS. Created new ACM",
+			data: STATUS_OK,
+			status: STATUS_OK,
 		};
 	}
 
@@ -204,11 +239,11 @@ export class AcmCheckoutService {
 			};
 		}
 
-		acm.acm_state = ACMState.CHECKED_IN;
+		acm.acm_state = ACMState.CHECKED_OUT;
 		acm.now_out_name = dto.name;
 		acm.now_out_contact = dto.contact;
 		acm.now_out_version = dto.version;
-		acm.now_out_key = (Math.random() * (10000000 - 0 + 1)).toString();
+		acm.now_out_key = dto.key ?? Math.round(Math.random() * (10000000 - 1)).toString()
 		acm.now_out_date = new Date();
 		acm.now_out_comment = dto.comment;
 		acm.now_out_computername = dto.computername;
