@@ -247,7 +247,7 @@ export class AcmCheckoutService {
 				status: STATUS_DENIED,
 			};
 		}
-		acm.acm_state = "CHECKED_IN";
+		acm.acm_state = ACMState.CHECKED_IN;
 		await acm.save();
 
 		return {
@@ -295,22 +295,51 @@ enum CheckoutAction {
 	reset = "reset",
 }
 
-class AcmCheckoutDto {
+export class AcmCheckoutDto {
 	@IsOptional()
 	@IsString()
 	@Transform((value) => value.value.toLowerCase())
 	@IsIn(Object.keys(CheckoutAction))
 	action?: CheckoutAction;
 
+	@IsOptional()
+	@IsString()
 	db?: string;
+
+	@IsOptional()
+	@IsString()
 	program?: string;
+
+	@IsOptional()
+	@IsString()
 	name?: string;
-	phone_number: string;
-	contact: string;
+
+	@IsOptional()
+	@IsString()
+	phone_number?: string;
+
+	@IsOptional()
+	@IsString()
+	contact?: string;
+
+	@IsOptional()
+	@IsString()
 	version?: string;
+
+	@IsOptional()
+	@IsString()
 	computername?: string;
+
+	@IsOptional()
+	@IsString()
 	key?: string;
+
+	@IsOptional()
+	@IsString()
 	filename?: string;
+
+	@IsOptional()
+	@IsString()
 	comment?: string;
 
 	@IsOptional()
