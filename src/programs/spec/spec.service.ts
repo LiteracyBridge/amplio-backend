@@ -574,7 +574,7 @@ export class ProgramSpecService {
         variant: r.variant,
         listening_model: r.listening_model,
         group_size: r.group_size,
-        numhouseholds: r.num_households,
+        numhouseholds: r.numhouseholds,
         numtbs: r.numtbs,
         supportentity: r.support_entity,
         agent_gender: r.agent_gender,
@@ -706,7 +706,7 @@ const RECIPIENT_SCHEMA = {
   "Language Code": { prop: "language", type: String, required: true },
   "Group Name": { prop: "group_name", type: String, required: false },
   "Group Size": { prop: "group_size", type: Number, required: false },
-  "# HH": { prop: "num_households", type: Number, required: false },
+  "# HH": { prop: "numhouseholds", type: Number, required: false },
   "# TBs": { prop: "numtbs", type: Number, required: false },
   "Direct Beneficiaries": {
     prop: "direct_beneficiaries",

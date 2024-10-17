@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
+import {
+	Body,
+	Controller,
+	Delete,
+	Get,
+	Param,
+	Post,
+	Query,
+} from "@nestjs/common";
 import { CurrentUser } from "src/decorators/user.decorator";
 import { OrganisationProgram } from "src/entities/org_program.entity";
 import { Program } from "src/entities/program.entity";
@@ -12,8 +20,21 @@ import { ProgramUser } from "src/entities/program_user.entity";
 export class ProgramsController {
 	constructor(private service: ProgramsService) {}
 
-	@Get("all")
-	async AllPrograms(@CurrentUser() user: User) {
+	@Get()
+	async allPrograms(
+		@CurrentUser() user: User,
+		@Query("for-acm") forAcm?: boolean,
+	) {
+		if (forAcm) {
+			return {
+				result: {
+					programs: await this.service.programsForACM(user),
+					implicit_repository: "s3",
+					status: "ok",
+				},
+			};
+		}
+
 		return ApiResponse.Success({ data: await this.service.getAll(user) });
 	}
 

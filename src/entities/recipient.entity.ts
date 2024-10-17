@@ -59,7 +59,7 @@ export class Recipient extends BaseEntity {
   partner: string;
 
   @Column({ name: "numhouseholds", type: "int" })
-  num_households: number;
+  numhouseholds: number;
 
   @Column({ name: "numtbs", type: "int" })
   numtbs: number;
