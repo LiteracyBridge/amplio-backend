@@ -57,7 +57,7 @@ class Recipient(BaseModel):
     country = Column(String, nullable=False)
     region = Column(String, nullable=False)
     district = Column(String, nullable=False)
-    num_households = Column("numhouseholds", Integer, nullable=False)
+    numhouseholds = Column("numhouseholds", Integer, nullable=False)
     # num_tbs = Column("numtbs", Integer, nullable=False)
     numtbs = Column("numtbs", Integer, nullable=False)
     support_entity = Column("supportentity", String, nullable=False)
