@@ -45,6 +45,7 @@ import { SentryGlobalFilter, SentryModule } from "@sentry/nestjs/setup";
 import { Log } from "./entities/log.entity";
 import { AcmCheckoutModule } from './acm-checkout/acm-checkout.module';
 import { TalkingBookLoaderId } from "./entities/tbloader-ids.entity";
+import { TbLoaderModule } from './tb-loader/tb-loader.module';
 
 config();
 
@@ -112,7 +113,8 @@ const routes: Routes = [
     UserfeedbackModule,
     ProgramsModule,
     Log,
-    AcmCheckoutModule
+    AcmCheckoutModule,
+    TbLoaderModule
   ],
   controllers: [AppController, TableauController, CategoriesController],
   providers: [

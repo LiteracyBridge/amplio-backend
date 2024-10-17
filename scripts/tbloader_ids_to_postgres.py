@@ -17,9 +17,9 @@ def run():
     for row in checkout_id:
         query = """
         INSERT INTO tb_loader_ids (
-            email, reserved, tb_loader_id, hex_id, created_at, updated_at
-        ) VALUES (:email, :reserved, :tb_loader_id, :hex_id, NOW(), NOW())
-        ON CONFLICT ON CONSTRAINT uniq_email DO UPDATE SET reserved = EXCLUDED.reserved, tb_loader_id = EXCLUDED.tb_loader_id, hex_id = EXCLUDED.hex_id, updated_at = NOW()
+            email, reserved, tb_loader_id, hex_id, max_tb_loader, created_at, updated_at
+        ) VALUES (:email, :reserved, :tb_loader_id, :hex_id, :max, NOW(), NOW())
+        ON CONFLICT ON CONSTRAINT uniq_email DO UPDATE SET reserved = EXCLUDED.reserved, tb_loader_id = EXCLUDED.tb_loader_id, hex_id = EXCLUDED.hex_id, max_tb_loader = EXCLUDED.max_tb_loader, updated_at = NOW()
         """
         db.execute(
             sa.text(query),
@@ -28,6 +28,7 @@ def run():
                 "reserved": row.get("reserved", None),
                 "tb_loader_id": row.get("tbloaderid", None),
                 "hex_id": row.get("hexid", None),
+                "max": row.get("maxtbloader", None),
             },
         )
 

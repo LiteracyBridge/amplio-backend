@@ -26,6 +26,9 @@ export class TalkingBookLoaderId extends BaseEntity {
 	@Column({ type: "int", nullable: true })
 	tb_loader_id?: number;
 
+	@Column({ type: "int", nullable: true })
+	max_tb_loader?: number;
+
 	@Column({ type: "varchar", nullable: true })
 	hex_id?: string;
 
