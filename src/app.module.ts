@@ -44,6 +44,7 @@ import { HttpExceptionFilter } from "./filters/http-exception.filter";
 import { SentryGlobalFilter, SentryModule } from "@sentry/nestjs/setup";
 import { Log } from "./entities/log.entity";
 import { AcmCheckoutModule } from './acm-checkout/acm-checkout.module';
+import { TalkingBookLoaderId } from "./entities/tbloader-ids.entity";
 
 config();
 
@@ -96,6 +97,7 @@ const routes: Routes = [
         Choice,
         Question,
         UserFeedbackMessage,
+        TalkingBookLoaderId
       ],
       subscribers: [
         PlaylistSubscriber,

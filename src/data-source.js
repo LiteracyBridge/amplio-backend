@@ -29,6 +29,7 @@ const { TalkingBookDeployed } = require("../dist/entities/tb_deployed.entity");
 const { Choice } = require("../dist/entities/uf_choice.entity");
 const { Question } = require("../dist/entities/uf_question.entity");
 const { UserFeedbackMessage } = require("../dist/entities/uf_message.entity");
+const { TalkingBookLoaderId } = require("../dist/entities/tbloader-ids.entity");
 const { Role } = require("../dist/entities/role.entity");
 const { Log } = require("../dist/entities/log.entity");
 
@@ -70,6 +71,7 @@ const AppDataSource = new DataSource({
 		Choice,
 		Question,
 		UserFeedbackMessage,
+    TalkingBookLoaderId
 	],
 	migrations: ["./migrations/*.ts"],
 	// These two lines have been added:

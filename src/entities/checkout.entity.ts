@@ -76,7 +76,10 @@ export class ACMCheckout extends BaseEntity {
 
 	@Expose()
 	get acm_name() {
-		// @ts-ignore
-		return this.project.code;
+		return this.project?.code;
 	}
+
+  toJSON(){
+    return instanceToPlain(this);
+  }
 }
