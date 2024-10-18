@@ -7,7 +7,6 @@ import { Project } from "src/entities/project.entity";
 @Injectable()
 export class ProgramsService {
 	async programsForACM(user: User) {
-		console.log(user.permissions);
 		const results = await Project.find({
 			where: {
 				program: {
