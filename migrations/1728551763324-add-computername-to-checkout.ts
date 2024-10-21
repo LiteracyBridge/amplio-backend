@@ -25,7 +25,7 @@ export class AddComputernameToCheckout1728551763324
 					last_in_file_name VARCHAR NOT NULL,
 					last_in_date TIMESTAMP WITH TIME ZONE NOT NULL,
 					project_id UUID UNIQUE,
-					FOREIGN KEY (project_id) REFERENCES projects (id)
+					FOREIGN KEY (project_id) REFERENCES projects (_id)
 				);
 			`)
 		}
