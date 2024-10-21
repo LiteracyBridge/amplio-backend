@@ -24,10 +24,10 @@ export enum DeploymentInterval {
 @Entity('projects')
 export class Project extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  _id: string;
 
   @Column({ nullable: true })
-  _id: number;
+  id: number;
 
   @Column({ name: 'project', nullable: false })
   name: string;
