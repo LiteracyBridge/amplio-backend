@@ -10,5 +10,5 @@ RUN npm clean-install --no-audit --no-fund --progress=false --omit dev
 
 
 # CMD ["node", "lambda.js"]
-ENTRYPOINT ["/lambda-entrypoint.sh", "lambda.handler"]
+# ENTRYPOINT ["/lambda-entrypoint.sh", "lambda.handler"]
 CMD [ "lambda.handler" ]
