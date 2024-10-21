@@ -8,11 +8,6 @@
     "webpackConfigPath": "webpack.config.js",
     "watchAssets": true,
     "deleteOutDir": true,
-    "assets": [
-      {
-        "include": "programs/spec/template.xlsx",
-        "outDir": "dist/template.xlsx"
-      }
-    ]
+    "assets": []
   }
 }

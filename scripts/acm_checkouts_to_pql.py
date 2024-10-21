@@ -26,7 +26,7 @@ def run():
         SELECT :last_in_name, :last_in_version, :last_in_comment, :last_in_contact, :acm_comment,
             :acm_state, :last_in_file_name, :last_in_date, :now_out_name,
             :now_out_version, :now_out_comment, :now_out_contact, :now_out_date,
-            :now_out_key, projects.id
+            :now_out_key, projects._id
         FROM projects
         WHERE (LOWER(projectcode) = :project_id) OR (LOWER(projectcode) = :project_id_2)
         LIMIT 1
