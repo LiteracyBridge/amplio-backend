@@ -8,7 +8,7 @@
   "scripts": {
     "nest": "nest",
     "build": "nest build",
-    "build:lambda": "nest build --config nest-cli.lambda.json --webpack; echo $PWD; cp --verbose src/programs/spec/template.xlsx ./dist",
+    "build:lambda": "nest build --config nest-cli.lambda.json --webpack; cp --verbose src/programs/spec/template.xlsx dist",
     "start:lambda": "node ./dist/index.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
