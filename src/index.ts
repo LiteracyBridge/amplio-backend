@@ -1,23 +1,23 @@
-import serverlessExpress from '@codegenie/serverless-express';
-import express from 'express';
 
+import { NestFactory } from '@nestjs/core';
+import serverlessExpress from '@codegenie/serverless-express';
+import { Callback, Context, Handler } from 'aws-lambda';
 import { bootstrap } from './main';
 
-let cachedServer;
+let server: Handler;
 
-async function bootstrapLambda() {
-  if (!cachedServer) {
-    const expressApp = express();
-    bootstrap(false, expressApp)
+async function bootstrapLambda(): Promise<Handler> {
+  const app = await bootstrap(false)
 
-    cachedServer = serverlessExpress({ app: expressApp });
-  }
-
-  return cachedServer;
+  const expressApp = app!.getHttpAdapter().getInstance();
+  return serverlessExpress({ app: expressApp });
 }
 
-export const handler = async (event: any, context: any, callback: any) => {
-  const server = await bootstrapLambda();
-
+export const handler: Handler = async (
+  event: any,
+  context: Context,
+  callback: Callback,
+) => {
+  server = server ?? (await bootstrapLambda());
   return server(event, context, callback);
 };
