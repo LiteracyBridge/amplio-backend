@@ -190,12 +190,10 @@ export class ProgramSpecService {
 				messages.push(m);
 			}
 			// -- delete removed messages
-			await manager
-				.getRepository(Message)
-				.delete({
-					_id: Not(In(messages.map((m) => m._id))),
-					program_id: project.code,
-				});
+			await manager.getRepository(Message).delete({
+				_id: Not(In(messages.map((m) => m._id))),
+				program_id: project.code,
+			});
 
 			// Save Message languages
 			const updatedMessages = await manager.getRepository(Message).find({
@@ -311,7 +309,7 @@ export class ProgramSpecService {
 			"READ UNCOMMITTED",
 			async (manager) => {
 				const program = project.general ?? project.program;
-				const allDeployments = project.deployments;
+				let allDeployments = project.deployments;
 
 				// Save languages
 				await manager.upsert(
@@ -340,6 +338,9 @@ export class ProgramSpecService {
 						await this.saveDeployments(manager, [d], program);
 					}
 				}
+				allDeployments = await manager
+					.getRepository(Deployment)
+					.find({ where: { project_id: program.program_id } });
 
 				//
 				// Save content
@@ -352,6 +353,7 @@ export class ProgramSpecService {
         VALUES ${values}
         ON CONFLICT DO NOTHING;`;
 				});
+
 				await manager.query(_contentQuery.join("\n"));
 
 				// Messages
@@ -371,12 +373,15 @@ export class ProgramSpecService {
 							i.title === row.playlist_title &&
 							i.deployment.deploymentnumber === row.deployment_number,
 					)!.id;
-					const sdgId = (row.sdg_goals as string).split(
-						",",
-					)[0] as unknown as number; // pick the first goal if multiple
 
-					await manager
-						.createQueryBuilder()
+					if (row.sdg_goals != null) {
+						row.sdg_goal_id = (row.sdg_goals as string).split(
+							",",
+						)[0] as unknown as number; // pick the first goal if multiple
+					}
+
+					const msgQuery = await manager
+						.createQueryBuilder(manager.queryRunner)
 						.insert()
 						.into(Message)
 						.values({
@@ -385,8 +390,9 @@ export class ProgramSpecService {
 							title: row.message_title as string,
 							playlist_id: pId,
 							position: index + 1,
-							sdg_goal_id: sdgId,
+							// sdg_goal_id: sdgId,
 							sdg_target_id: row.sdg_targets as string,
+							program_id: program.program_id,
 						})
 						.orUpdate(
 							[
@@ -401,16 +407,27 @@ export class ProgramSpecService {
 							],
 							["program_id", "playlist_id", "position"],
 						)
-						.execute();
+						.getQueryAndParameters();
+					await manager.query(msgQuery[0], msgQuery[1]);
 				}
 
 				// Message languages
 
 				// First, we need to make sure that all message languages are captured on the "Languages" sheet
-				const set1 = new Set<string>(
-					languages.flatMap((row) => row.code as string),
-				);
+				const specLanguages: Record<string, string> = {}; // {code: code, name: code}
+				for (const row of languages) {
+					// @ts-ignore
+					specLanguages[row.code] = row.code;
+					// @ts-ignore
+					specLanguages[row.name] = row.code;
+				}
 
+				console.log(
+					await manager.query(
+						"SELECT count(*) FROM messages WHERE program_id = $1",
+						[program.program_id],
+					),
+				);
 				const messages = await manager.getRepository(Message).find({
 					where: { program_id: program.program_id },
 					relations: { playlist: { deployment: true } },
@@ -427,19 +444,20 @@ export class ProgramSpecService {
 					);
 
 					if (msg == null) {
+						console.log(row, msg);
 						throw new BadRequestException(
 							`Message '${row.message_title}' differ from what is already in the spec`,
 						);
 					}
 
 					return (row.languages as string[]).map((code) => {
-						if (!set1.has(code)) {
+						if (specLanguages[code] == null) {
 							throw new BadRequestException(
 								`Language code '${code}' of '${msg?.title}' message not found in the 'Languages' sheet`,
 							);
 						}
 
-						return `INSERT INTO "message_languages"("language_code", "message_id") VALUES ('${code}', ${msg.id}) ON CONFLICT DO NOTHING;`;
+						return `INSERT INTO "message_languages"("language_code", "message_id") VALUES ('${specLanguages[code]}', ${msg.id}) ON CONFLICT DO NOTHING;`;
 					});
 				});
 
@@ -449,19 +467,22 @@ export class ProgramSpecService {
 				for (let index = 0; index < recipients.length; index++) {
 					const row = recipients[index];
 					row.program_id = program.program_id;
-					row.num_households ??= 0;
+					row.numhouseholds ??= 0;
+					row.numtbs ??= 0;
+					row.group_size ??= 0;
 					row.direct_beneficiaries_additional ??= {};
 
 					if (row.recipient_id == null || row.recipient_id === "") {
 						delete row.recipient_id;
 					}
 
-					if (!set1.has(row.language as string)) {
+					if (specLanguages[row.language as string] == null) {
 						throw new BadRequestException(
 							`Language code '${row.language}' of recipient on row '${index + 1}' not found in the 'Languages' sheet`,
 						);
 					}
 
+					row.language = specLanguages[row.language as string];
 					await manager
 						.createQueryBuilder()
 						.insert()
@@ -658,7 +679,7 @@ export class ProgramSpecService {
 				variant: r.variant,
 				listening_model: r.listening_model,
 				group_size: r.group_size,
-				numhouseholds: r.numhouseholds,
+				numhouseholds: r.numhouseholds ?? 0,
 				numtbs: r.numtbs,
 				supportentity: r.support_entity,
 				agent_gender: r.agent_gender,
@@ -828,11 +849,15 @@ const RECIPIENT_SCHEMA = {
 	RecipientID: { prop: "recipient_id", type: String, required: false },
 	Deployments: {
 		prop: "deployments",
-		type: (value) =>
-			parseJson(
+		type: (value) => {
+			if (Number.isInteger(value)) {
+				return [+value];
+			}
+			return parseJson(
 				value,
 				"The format of 'Deployment' column in 'Recipient' workbook is wrong",
-			),
+			);
+		},
 		required: false,
 	},
 };
