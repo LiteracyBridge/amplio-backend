@@ -1,14 +1,15 @@
 FROM public.ecr.aws/lambda/nodejs:20
 
 # Copy final outputs after build to the lambda task root
-COPY ./dist/main.js ${LAMBDA_TASK_ROOT}
+COPY ./dist/index.js ${LAMBDA_TASK_ROOT}
 COPY ./dist/template.xlsx ${LAMBDA_TASK_ROOT}
 COPY ./package.json ${LAMBDA_TASK_ROOT}
 COPY ./package-lock.json ${LAMBDA_TASK_ROOT}
 
 RUN npm clean-install --no-audit --no-fund --progress=false --omit dev
+# COPY ./node_modules ${LAMBDA_TASK_ROOT}
 
 
 # CMD ["node", "lambda.js"]
 # ENTRYPOINT ["/lambda-entrypoint.sh", "lambda.handler"]
-CMD [ "main.handler" ]
+CMD [ "index.handler" ]

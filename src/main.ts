@@ -18,7 +18,7 @@ export async function bootstrap(
 			logger: new Logger(),
 		});
 	} else {
-		app = await NestFactory.create(AppModule);
+		app = await NestFactory.create(AppModule, { logger: new Logger() });
 	}
 
 	app.enableCors({

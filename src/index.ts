@@ -1,5 +1,4 @@
 
-import { NestFactory } from '@nestjs/core';
 import { configure as serverlessExpress }  from '@codegenie/serverless-express';
 import { Callback, Context, Handler } from 'aws-lambda';
 import { bootstrap } from './main';
