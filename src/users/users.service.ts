@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { User } from "src/entities/user.entity";
 import { InvitationDto } from "./invitation.dto";
 import { Invitation } from "src/entities/invitation.entity";
@@ -9,24 +9,37 @@ import {
 	AdminDeleteUserCommand,
 	CognitoIdentityProviderClient,
 } from "@aws-sdk/client-cognito-identity-provider";
+import { Program } from "src/entities/program.entity";
+import { ProgramUser } from "src/entities/program_user.entity";
 
 @Injectable()
 export class UsersService {
 	async me(email: string): Promise<User | null> {
 		// TODO: load permissions
-		return await User.findOne({
+		const user = await User.findOne({
 			where: { email: email },
 			relations: {
 				organisation: true,
 				roles: { role: true },
-				programs: {
-					program: {
-						project: { deployments: true, languages: true },
-						organisations: { organisation: true },
-					},
+				programs: {},
+			},
+		});
+
+		if (user == null) {
+			throw new BadRequestException("User not found");
+		}
+
+		user.programs = await ProgramUser.find({
+			where: { user_id: user.id },
+			relations: {
+				program: {
+					project: { deployments: true, languages: true },
+					organisations: { organisation: true },
 				},
 			},
 		});
+
+		return user;
 	}
 
 	async createInvitation(dto: InvitationDto, user: User) {
