@@ -53,7 +53,7 @@ jobs:
       - name: Update lambda function
         id: update-function
         env:
-          LAMBDA_FUNCTION: ${{ github.ref_name == 'stable' && secrets.PROD_LAMBDA_FUNCTION || secrets.SANDBOX_LAMBDA_FUNCTION  }}
+          LAMBDA_FUNCTION: ${{ github.ref_name == 'api-rewrite' && secrets.PROD_LAMBDA_FUNCTION || secrets.SANDBOX_LAMBDA_FUNCTION  }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPO }}
           IMAGE_TAG: latest
