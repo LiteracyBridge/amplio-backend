@@ -66,18 +66,4 @@ export class SpecController {
       data: await this.service.findByCode(code, user),
     });
   }
-
-  @Get("download")
-  async downloadSpec(
-    @Query("programid") code: string,
-    @CurrentUser() user: User,
-    @Res() res: Response
-  ) {
-    console.log("here")
-    const file = await this.service.download(code, user);
-    const path = `${tmpdir()}/${code}_${new Date().toISOString()}.xlsx`;
-
-    await file.xlsx.writeFile(path)
-    return createReadStream(path).pipe(res);
-  }
 }

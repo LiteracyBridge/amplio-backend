@@ -503,11 +503,6 @@ export class ProgramSpecService {
 		);
 	}
 
-	async download(code: string, user: User) {
-		const project = await this.findByCode(code);
-		return await this.createExcel(project);
-	}
-
 	async publish(code: string, user: User) {
 		const project = await this.findByCode(code);
 		await this.writeToS3({
