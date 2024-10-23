@@ -153,14 +153,18 @@ export class UserSubscriber implements EntitySubscriberInterface<User> {
 		// @ts-ignore
 		entity.permissions ??= {};
 
-		for (const role of (entity.roles || [])) {
-			if (role.role == null) continue;
+    for(const key in Permission){
+      entity.permissions[key] = true
+    }
 
-			const items = Object.values(role.role.permissions).flat();
-			for (const action of items) {
-				entity.permissions[action] = true;
-			}
-		}
+		// for (const role of (entity.roles || [])) {
+		// 	if (role.role == null) continue;
+
+		// 	const items = Object.values(role.role.permissions).flat();
+		// 	for (const action of items) {
+		// 		entity.permissions[action] = true;
+		// 	}
+		// }
 		return entity;
 	}
 }
