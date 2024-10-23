@@ -47,13 +47,15 @@ export class ProgramSpecService {
 			throw new NotFoundException("Program not found");
 		}
 
-    const deployments = await Deployment.find({
-      where: { project_id: found.code },
-      relations: { playlists: { messages: { languages: true } } },
-    });
-    found.deployments = deployments;
-    console.log("ere now")
-		return found;
+		const deployments = await Deployment.find({
+			where: { project_id: found.code },
+			relations: { playlists: { messages: { languages: true } } },
+			order: { playlists: { position: "ASC", messages: { position: "ASC" } } },
+		});
+		found.deployments = deployments;
+
+
+    return found;
 	}
 
 	async updateProgram(
