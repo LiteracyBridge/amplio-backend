@@ -76,8 +76,7 @@ export class AuthGuard implements CanActivate {
 
       return true
     } catch (err) {
-      console.log(err);
-      throw new UnauthorizedException();
+      throw new UnauthorizedException("Invalid session token");
     }
   }
 
