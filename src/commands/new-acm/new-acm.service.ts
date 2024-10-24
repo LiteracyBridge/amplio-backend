@@ -1,10 +1,38 @@
+import {
+	_Object,
+	CopyObjectCommand,
+	ListObjectsV2Command,
+	S3Client,
+} from "@aws-sdk/client-s3";
 import { Injectable } from "@nestjs/common";
+import { DateTime } from "luxon";
 import { Command, Console } from "nestjs-console";
+import appConfig from "src/app.config";
+import { ACMCheckout } from "src/entities/checkout.entity";
+import { Deployment } from "src/entities/deployment.entity";
+import { OrganisationProgram } from "src/entities/org_program.entity";
+import { Organisation } from "src/entities/organisation.entity";
+import { Program } from "src/entities/program.entity";
+import { Project } from "src/entities/project.entity";
 
-// Interface Options {
-//   option1?: any
-//   option2: any
-// }
+type args = "both" | "check" | "none";
+
+interface Options {
+	parentOrg: string | "Amplio";
+	doAcm: args;
+	doSql: args;
+	doCheckout: args;
+	doProgspec: args;
+	doContent: args;
+	doProgram: args;
+	doOrganization: args;
+	name: string;
+	programCode: string;
+	org: string;
+	salesforceId?: string;
+	dryRun?: boolean;
+}
+
 @Console()
 export class NewAcmService {
 	@Command({
@@ -17,7 +45,7 @@ export class NewAcmService {
 				description: "What the customer calls the program.",
 			},
 			{
-				flags: "--acm, <code>",
+				flags: "--program-code, <code>",
 				required: true,
 				description: "The project code",
 			},
@@ -38,7 +66,7 @@ export class NewAcmService {
 				description: "Don't update anything.",
 			},
 			{
-				flags: "--do-content, --do-acm <none | check | both>",
+				flags: "--do-content <none | check | both>",
 				required: false,
 				defaultValue: "both",
 				description:
@@ -77,7 +105,251 @@ export class NewAcmService {
 			},
 		],
 	})
-	async createAcm(options: any): Promise<void> {
-		console.log(`Creating ACM in ${options["do-sql"]} mode`);
+	async createAcm(opts: Options): Promise<void> {
+		console.log(`\nCreating entries for ${opts.programCode}.\n`);
+
+		let ok = true;
+
+		ok = (await this.createOrganisationRecord(opts)) && ok;
+		if (ok) {
+			ok = (await this.createProjectRecord(opts)) && ok;
+		}
+		if (ok) {
+			ok = (await this.create_and_populate_s3_object(opts)) && ok;
+		}
+		if (opts.doCheckout !== "none") {
+			ok = (await this.check_for_checkout(opts.programCode)) && ok;
+		}
+
+		console.log(opts);
+		console.log(`Creating ACM in ${opts["do-sql"]} mode`);
+	}
+
+	private async check_for_checkout(code: string) {
+		process.stdout.write(
+			`Looking for '${code}' checkout record in dynamoDb...`,
+		);
+		const ok = await ACMCheckout.exists({
+			where: { project: { code: code } },
+		});
+		if (ok) {
+			console.log();
+			console.log(`\n  Checkout record exists for ${code}`);
+			return false;
+		}
+		console.log("ok");
+		return true;
+	}
+
+	private async createProgramRecords(opts: Options): Promise<boolean> {
+		console.log(`Creating program record for '${opts.programCode}'....`);
+
+		const project = (await Project.findOne({
+			where: { code: opts.programCode },
+		}))!;
+
+		// Use 'TEST' project as the base template, and create new program from it
+		const template = await Program.findOne({ where: { program_id: "TEST" } });
+		if (template == null) {
+			console.log(
+				`\n   'TEST' program which will be used a template do not exists!`,
+			);
+			return false;
+		}
+
+		if (opts.dryRun) {
+			console.log("\n   Dry run: would have created program record");
+			return true;
+		}
+
+		const program = Program.merge(new Program(), template);
+		program.id =
+			(await Program.query("SELECT MAX(id) as id FROM programs")).id + 1;
+		program.project_id = project._id;
+		program.program_id = project.code;
+		program.salesforce_id = opts.salesforceId;
+		program.deployments_first = new Date();
+		await program.save();
+
+		// Create program organisation record
+		const programOrg = new OrganisationProgram();
+		programOrg.program_id = program.id;
+		programOrg.organisation_id = (await Organisation.findOne({
+			where: { name: opts.org },
+		}))!.id;
+		await programOrg.save();
+
+    // Create first deployment record
+    const deployment = new Deployment();
+		deployment.deploymentname = `${project.code}-${DateTime.now().toFormat("yy")}-1`;
+		deployment.deployment = deployment.deploymentname
+    deployment.deploymentnumber = 1
+    deployment.start_date = new Date()
+    deployment.project_id = project.code
+
+		await deployment.save();
+
+		console.log("ok");
+		return true;
+	}
+
+	private async createProjectRecord(opts: Options): Promise<boolean> {
+		console.log(`Creating project record for '${opts.programCode}'....`);
+
+		const exists = await Project.exists({ where: { code: opts.programCode } });
+		if (exists) {
+			console.log(
+				`\n   Program record for '${opts.programCode}' already exists.`,
+			);
+			return true;
+		}
+
+		if (opts.dryRun) {
+			console.log("\n   Dry run: would have created project record");
+			return true;
+		}
+
+		const project = new Project();
+		project.code = opts.programCode.trim();
+		project.name = opts.name;
+		await project.save();
+
+		console.log("ok");
+		return true;
+	}
+
+	private async createOrganisationRecord(opts: Options): Promise<boolean> {
+		process.stdout.write("Creating organisation entry in database...");
+		const exists = await Organisation.exists({
+			where: { name: opts.org },
+		});
+
+		if (exists) {
+			console.log(`\n   Organisation record for '${opts.org}' already exists.`);
+			return true;
+		}
+
+		let parentId: number | undefined = undefined;
+		if (opts.parentOrg !== "Amplio" && opts.parentOrg != null) {
+			const parent = await Organisation.findOne({
+				where: { name: opts.parentOrg },
+			});
+			if (parent == null) {
+				console.log(`\n   Parent organisation '${opts.parentOrg}' not found.`);
+				return false;
+			}
+			parentId = parent.id;
+		}
+
+		if (opts.dryRun) {
+			console.log("\n   Dry run: would have created organisation record");
+			return true;
+		}
+
+		const org = new Organisation();
+		org.name = opts.org;
+		org.parent_id = parentId;
+		await org.save();
+
+		console.log("ok");
+		return true;
+	}
+
+	/**
+	 * Checks to see if there is program content in S3 for the given acm.
+	 *
+	 * @return  {boolean} True if there is no existing program content, False if there is
+	 */
+	private async create_and_populate_s3_object(opts: Options): Promise<boolean> {
+		const { dryRun, programCode } = opts;
+
+		process.stdout.write(
+			`Looking for program '${programCode}' content objects in s3...`,
+		);
+
+		const client = new S3Client({ region: appConfig().aws.region });
+		const resp = await client.send(
+			new ListObjectsV2Command({
+				Bucket: appConfig().buckets.content,
+				Prefix: `${programCode}/`,
+			}),
+		);
+
+		const objs: any = [];
+		for (const obj of resp?.Contents ?? []) {
+			objs.push(obj);
+		}
+
+		if (objs.length > 0) {
+			console.log();
+			console.log(`\n  Found program content objects for  '${programCode}'.`);
+			return true;
+		}
+		console.log("ok");
+
+		if (dryRun) {
+			console.log("Dry run: would have created content objects.");
+			return true;
+		}
+
+		// Copy content from ${content_bucket}/template to ${content_bucket}/${program_name}
+		try {
+			process.stdout.write(
+				`Creating and populating s3 folder for ${programCode}...`,
+			);
+			const contents = await this._list_objects({
+				bucket: appConfig().buckets.content,
+				prefix: "template/",
+				client: client,
+			});
+			for (const obj of contents) {
+				await client.send(
+					new CopyObjectCommand({
+						Bucket: appConfig().buckets.content,
+						CopySource: obj.Key,
+						Key: `${programCode}/${obj.Key!.slice(8)}`,
+					}),
+				);
+			}
+			console.log("ok");
+			return true;
+		} catch (ex) {
+			console.log(`Exception copying template acm: ${ex}`);
+			console.error(ex);
+			return false;
+		}
+	}
+
+	private async _list_objects(opts: {
+		bucket: string;
+		prefix?: string;
+		client: S3Client;
+		objs?: _Object[];
+		token?: string;
+	}): Promise<_Object[]> {
+		const objs: _Object[] = opts.objs ?? [];
+
+		const resp = await opts.client.send(
+			new ListObjectsV2Command({
+				Bucket: appConfig().buckets.content,
+				Prefix: opts.prefix ?? "template/",
+				ContinuationToken: opts.token,
+			}),
+		);
+		if (resp.ContinuationToken != null && resp.IsTruncated) {
+			console.log("Truncated response");
+			return await this._list_objects({
+				bucket: opts.bucket,
+				prefix: opts.prefix,
+				client: opts.client,
+				objs: objs,
+			});
+		}
+
+		for (const obj of resp.Contents ?? []) {
+			objs.push(obj);
+		}
+
+		return objs;
 	}
 }

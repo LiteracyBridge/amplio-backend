@@ -1,90 +1,102 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  OneToMany,
-  Unique,
-  JoinColumn,
-  OneToOne,
-  BaseEntity
-} from 'typeorm';
-import { Project } from './project.entity';
-import { ProgramUser } from './program_user.entity';
-import { OrganisationProgram } from './org_program.entity';
-import { Deployment } from './deployment.entity';
+	Entity,
+	PrimaryGeneratedColumn,
+	Column,
+	ManyToOne,
+	OneToMany,
+	Unique,
+	JoinColumn,
+	OneToOne,
+	BaseEntity,
+} from "typeorm";
+import { Project } from "./project.entity";
+import { ProgramUser } from "./program_user.entity";
+import { OrganisationProgram } from "./org_program.entity";
+import { Deployment } from "./deployment.entity";
 
 enum DirectBeneficiaries {
-  "male" = "Number of Male",
-  "female" = "Number of Female",
-  "youth" = "Number of Youth",
+	male = "Number of Male",
+	female = "Number of Female",
+	youth = "Number of Youth",
 }
 
-@Entity('programs')
-@Unique(['program_id'])
+@Entity("programs")
+@Unique(["program_id"])
 export class Program extends BaseEntity {
-  @PrimaryGeneratedColumn("increment", {name: 'id'})
-  id: number;
+	@PrimaryGeneratedColumn("increment", { name: "id" })
+	id: number;
 
-  @Column({ length: 50, nullable: false })
-  country: string;
+	@Column({ length: 50, nullable: false })
+	country: string;
 
-  @Column({ type: 'json', nullable: false })
-  region: string[];
+	@Column({ type: "json", nullable: false })
+	region: string[];
 
-  @Column({ nullable: true })
-  partner: string;
+	@Column({ nullable: true })
+	partner: string;
 
-  @Column({ nullable: true })
-  affiliate: string;
+	@Column({ nullable: true })
+	affiliate: string;
 
-  @Column({ type: 'jsonb', nullable: false })
-  sustainable_development_goals: string[];
+	@Column({ type: "jsonb", nullable: false })
+	sustainable_development_goals: string[];
 
-  @Column({ type: 'jsonb', nullable: false })
-  listening_models: any;
+	@Column({ type: "jsonb", nullable: false })
+	listening_models: any;
 
-  @Column({ nullable: false })
-  deployments_count: number;
+	@Column({ nullable: false })
+	deployments_count: number;
 
-  @Column({ length: 50, nullable: false })
-  deployments_length: string;
+	@Column({ length: 50, nullable: false })
+	deployments_length: string;
 
-  @Column({ length: 100, nullable: true })
-  tableau_id: string;
+	@Column({ length: 100, nullable: true })
+	tableau_id?: string;
 
-  @Column({ type: 'date', nullable: false })
-  deployments_first: Date;
+	@Column({ type: "varchar", length: 100, nullable: true })
+	salesforce_id?: string;
 
-  @Column({ length: 50, nullable: false })
-  feedback_frequency: string;
+	@Column({ type: "date", nullable: false })
+	deployments_first: Date;
 
-  @Column({ type: 'json', nullable: false })
-  languages: string[];
+	@Column({ length: 50, nullable: false })
+	feedback_frequency: string;
 
-  @Column({ type: 'jsonb' })
-  direct_beneficiaries_map: DirectBeneficiaries;
+	@Column({ type: "json", nullable: false })
+	languages: string[];
 
-  @Column({ type: 'json', default: {} })
-  direct_beneficiaries_additional_map: Record<string, any>;
+	@Column({ type: "jsonb" })
+	direct_beneficiaries_map: DirectBeneficiaries;
 
-  /**
-   * Uses project 'code' as the foreign key
-   */
-  @Column({ type: 'varchar', nullable: false, unique: true })
-  program_id: string;
+	@Column({ type: "json", default: {} })
+	direct_beneficiaries_additional_map: Record<string, any>;
 
-  @Column({ type: 'uuid', nullable: false, unique: true })
-  project_id: string;
+	/**
+	 * Uses project 'code' as the foreign key
+	 */
+	@Column({ type: "varchar", nullable: false, unique: true })
+	program_id: string;
 
-  @ManyToOne(() => Project, (project) => project.program)
-  @JoinColumn({ name: 'program_id', referencedColumnName: 'code' })
-  project: Project;
+	@Column({ type: "uuid", nullable: false, unique: true })
+	project_id: string;
 
-  @OneToMany(() => OrganisationProgram, (row) => row.program)
-  @JoinColumn({ referencedColumnName: 'id', name: 'organisation_id' })
-  organisations: OrganisationProgram[];
+	@ManyToOne(
+		() => Project,
+		(project) => project.program,
+	)
+	@JoinColumn({ name: "program_id", referencedColumnName: "code" })
+	project: Project;
 
-  @OneToMany(() => ProgramUser, (programUser) => programUser.program)
-  users: ProgramUser[];
+	@OneToMany(
+		() => OrganisationProgram,
+		(row) => row.program,
+	)
+	@JoinColumn({ referencedColumnName: "id", name: "organisation_id" })
+	organisations: OrganisationProgram[];
+
+	@OneToMany(
+		() => ProgramUser,
+		(programUser) => programUser.program,
+	)
+	users: ProgramUser[];
 }

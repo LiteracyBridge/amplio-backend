@@ -13,6 +13,7 @@ export default () =>
 		},
 		buckets: {
 			programSpec: "amplio-progspecs",
+      content: "amplio-program-content"
 		},
 		emails: {
 			support: "techsupport@amplio.org",
