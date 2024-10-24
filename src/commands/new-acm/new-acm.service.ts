@@ -4,7 +4,6 @@ import {
 	ListObjectsV2Command,
 	S3Client,
 } from "@aws-sdk/client-s3";
-import { Injectable } from "@nestjs/common";
 import { DateTime } from "luxon";
 import { Command, Console } from "nestjs-console";
 import appConfig from "src/app.config";
@@ -15,8 +14,8 @@ import { Organisation } from "src/entities/organisation.entity";
 import { Program } from "src/entities/program.entity";
 import { Project } from "src/entities/project.entity";
 import { ProgramSpecService } from "src/programs/spec/spec.service";
+import { DataSource, In, Not, EntityManager } from "typeorm";
 
-type args = "both" | "check" | "none";
 
 interface Options {
 	parentOrg: string | "Amplio";
@@ -29,7 +28,10 @@ interface Options {
 
 @Console()
 export class NewAcmService {
-	constructor(private specService: ProgramSpecService) {}
+	constructor(
+		private specService: ProgramSpecService,
+		private dataSource: DataSource,
+	) {}
 
 	@Command({
 		command: "new-acm",
@@ -73,32 +75,30 @@ export class NewAcmService {
 		console.log(`\nCreating entries for ${opts.programCode}.\n`);
 
 		let ok = true;
+		await this.dataSource.manager.transaction(async (manager) => {
+			ok = await this.createOrganisationRecord(opts, manager);
+			if (ok) {
+				ok = await this.createProjectRecord(opts, manager);
+			}
+			if (ok) {
+				ok = await this.createProgramRecords(opts, manager);
+			}
+			if (ok) {
+				ok = await this.create_and_populate_s3_object(opts);
+			}
+			if (ok) {
+				ok = await this.create_checkout(opts, manager);
+			}
 
-		ok = (await this.createOrganisationRecord(opts));
-		if (ok) {
-			ok = (await this.createProjectRecord(opts));
-		}
-		if (ok) {
-			ok = (await this.createProgramRecords(opts));
-		}
-		if (ok) {
-			ok = (await this.create_and_populate_s3_object(opts));
-		}
-		if (ok) {
-			ok = (await this.publishSpec(opts));
-		}
-		if (ok) {
-			ok = (await this.publishSpec(opts));
-		}
-		if (ok) {
-			ok = (await this.create_checkout(opts));
-		}
+			console.log(opts);
+		});
 
-		console.log(opts);
-		console.log(`Creating ACM in ${opts["do-sql"]} mode`);
+		if (ok) {
+			ok = await this.publishSpec(opts);
+		}
 	}
 
-	private async create_checkout(opts: Options) {
+	private async create_checkout(opts: Options, manager: EntityManager) {
 		process.stdout.write(
 			`Looking for '${opts.programCode}' checkout record in dynamoDb...`,
 		);
@@ -115,8 +115,8 @@ export class NewAcmService {
 			return true;
 		}
 
-		await ACMCheckout.query(
-			"INSERT INTO acm_checkout(project_id, acm_state, last_in_file_name, last_in_name, last_in_contact, last_in_date, last_in_version, acm_comment) VALUES ((SELECT _id FROM projects WHERE code = $1 LIMIT 1), $2, $3, $4, $5, $6, $7, $8)",
+		await manager.query(
+			"INSERT INTO acm_checkout(project_id, acm_state, last_in_file_name, last_in_name, last_in_contact, last_in_date, last_in_version, acm_comment) VALUES ((SELECT _id FROM projects WHERE projectcode = $1 LIMIT 1), $2, $3, $4, $5, $6, $7, $8)",
 			[
 				opts.programCode,
 				"CHECKED_IN",
@@ -152,7 +152,10 @@ export class NewAcmService {
 		return true;
 	}
 
-	private async createProgramRecords(opts: Options): Promise<boolean> {
+	private async createProgramRecords(
+		opts: Options,
+		manager: EntityManager,
+	): Promise<boolean> {
 		console.log(`Creating program record for '${opts.programCode}'....`);
 
 		const project = (await Project.findOne({
@@ -173,14 +176,24 @@ export class NewAcmService {
 			return true;
 		}
 
+		const exists = await Program.exists({
+			where: { program_id: project.code },
+		});
+		if (exists) {
+			console.log(
+				`\n   Program record for '${opts.programCode}' already exists.`,
+			);
+			return true;
+		}
+
 		const program = Program.merge(new Program(), template);
 		program.id =
-			(await Program.query("SELECT MAX(id) as id FROM programs")).id + 1;
+			(await Program.query("SELECT MAX(id) as id FROM programs"))[0].id + 1;
 		program.project_id = project._id;
 		program.program_id = project.code;
 		program.salesforce_id = opts.salesforceId;
 		program.deployments_first = new Date();
-		await program.save();
+		await manager.save(Program, program);
 
 		// Create program organisation record
 		const programOrg = new OrganisationProgram();
@@ -188,7 +201,7 @@ export class NewAcmService {
 		programOrg.organisation_id = (await Organisation.findOne({
 			where: { name: opts.org },
 		}))!.id;
-		await programOrg.save();
+		await manager.save(OrganisationProgram, programOrg);
 
 		// Create first deployment record
 		const deployment = new Deployment();
@@ -197,15 +210,19 @@ export class NewAcmService {
 		deployment.deploymentnumber = 1;
 		deployment.start_date = new Date();
 		deployment.project_id = project.code;
-
-		await deployment.save();
+		await manager.save(Deployment, deployment);
 
 		console.log("ok");
 		return true;
 	}
 
-	private async createProjectRecord(opts: Options): Promise<boolean> {
-		console.log(`Creating project record for '${opts.programCode}'....`);
+	private async createProjectRecord(
+		opts: Options,
+		manager: EntityManager,
+	): Promise<boolean> {
+		process.stdout.write(
+			`Creating project record for '${opts.programCode}'....`,
+		);
 
 		const exists = await Project.exists({ where: { code: opts.programCode } });
 		if (exists) {
@@ -223,13 +240,16 @@ export class NewAcmService {
 		const project = new Project();
 		project.code = opts.programCode.trim();
 		project.name = opts.name;
-		await project.save();
+		await manager.save(Project, project);
 
 		console.log("ok");
 		return true;
 	}
 
-	private async createOrganisationRecord(opts: Options): Promise<boolean> {
+	private async createOrganisationRecord(
+		opts: Options,
+		manager: EntityManager,
+	): Promise<boolean> {
 		process.stdout.write("Creating organisation entry in database...");
 		const exists = await Organisation.exists({
 			where: { name: opts.org },
@@ -260,7 +280,7 @@ export class NewAcmService {
 		const org = new Organisation();
 		org.name = opts.org;
 		org.parent_id = parentId;
-		await org.save();
+		await manager.save(Organisation, org);
 
 		console.log("ok");
 		return true;
@@ -278,7 +298,13 @@ export class NewAcmService {
 			`Looking for program '${programCode}' content objects in s3...`,
 		);
 
-		const client = new S3Client({ region: appConfig().aws.region });
+		const client = new S3Client({
+			region: appConfig().aws.region,
+			credentials: {
+				accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+				secretAccessKey: process.env.AWS_SECRET!,
+			},
+		});
 		const resp = await client.send(
 			new ListObjectsV2Command({
 				Bucket: appConfig().buckets.content,
@@ -308,6 +334,7 @@ export class NewAcmService {
 			process.stdout.write(
 				`Creating and populating s3 folder for ${programCode}...`,
 			);
+
 			const contents = await this._list_objects({
 				bucket: appConfig().buckets.content,
 				prefix: "template/",
@@ -317,8 +344,8 @@ export class NewAcmService {
 				await client.send(
 					new CopyObjectCommand({
 						Bucket: appConfig().buckets.content,
-						CopySource: obj.Key,
-						Key: `${programCode}/${obj.Key!.slice(8)}`,
+						CopySource: `${appConfig().buckets.content}/${obj.Key}`,
+						Key: `${programCode}/${obj.Key!.slice(9)}`,
 					}),
 				);
 			}

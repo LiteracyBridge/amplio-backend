@@ -1,13 +1,13 @@
 import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Put,
-  Query,
-  Res,
-  UploadedFile,
-  UseInterceptors,
+	Body,
+	Controller,
+	Get,
+	Post,
+	Put,
+	Query,
+	Res,
+	UploadedFile,
+	UseInterceptors,
 } from "@nestjs/common";
 import { ProgramSpecService } from "./spec.service";
 import { ApiResponse } from "src/utilities/api_response";
@@ -21,49 +21,46 @@ import { tmpdir } from "node:os";
 
 @Controller("program-spec")
 export class SpecController {
-  constructor(private service: ProgramSpecService) { }
+	constructor(private service: ProgramSpecService) {}
 
-  @Get("content")
-  async getContent(
-    @Query("programid") code: string,
-    @CurrentUser() user: User,
-  ) {
-    return ApiResponse.Success({
-      data: await this.service.findByCode(code, user),
-    });
-  }
+	@Get("content")
+	async getContent(
+		@Query("programid") code: string,
+		@CurrentUser() user: User,
+	) {
+		return ApiResponse.Success({
+			data: await this.service.findByCode(code, user),
+		});
+	}
 
-  @Post("publish")
-  async publish(
-    @Query("programid") code: string,
-    @CurrentUser() user: User,
-  ) {
-    return ApiResponse.Success({
-      data: await this.service.publish(code, user),
-    });
-  }
+	@Post("publish")
+	async publish(@Query("programid") code: string, @CurrentUser() user: User) {
+		return ApiResponse.Success({
+			data: await this.service.publish({ code, email: user.email }),
+		});
+	}
 
-  @Put("content")
-  async updateContent(
-    @Query("programid") code: string,
-    @Body() dto: Record<string, any>,
-    @CurrentUser() user: User,
-  ) {
-    return ApiResponse.Success({
-      data: await this.service.updateProgram(dto as any, code),
-    });
-  }
+	@Put("content")
+	async updateContent(
+		@Query("programid") code: string,
+		@Body() dto: Record<string, any>,
+		@CurrentUser() user: User,
+	) {
+		return ApiResponse.Success({
+			data: await this.service.updateProgram(dto as any, code),
+		});
+	}
 
-  @Post("upload")
-  @UseInterceptors(FileInterceptor("file"))
-  async uploadSpec(
-    @UploadedFile() file: Express.Multer.File,
-    @Query("programid") code: string,
-    @CurrentUser() user: User,
-  ) {
-    await this.service.import(file, code);
-    return ApiResponse.Success({
-      data: await this.service.findByCode(code, user),
-    });
-  }
+	@Post("upload")
+	@UseInterceptors(FileInterceptor("file"))
+	async uploadSpec(
+		@UploadedFile() file: Express.Multer.File,
+		@Query("programid") code: string,
+		@CurrentUser() user: User,
+	) {
+		await this.service.import(file, code);
+		return ApiResponse.Success({
+			data: await this.service.findByCode(code, user),
+		});
+	}
 }
