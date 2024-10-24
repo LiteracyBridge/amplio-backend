@@ -20,13 +20,6 @@ type args = "both" | "check" | "none";
 
 interface Options {
 	parentOrg: string | "Amplio";
-	doAcm: args;
-	doSql: args;
-	doCheckout: args;
-	doProgspec: args;
-	doContent: args;
-	doProgram: args;
-	doOrganization: args;
 	name: string;
 	programCode: string;
 	org: string;
@@ -43,22 +36,28 @@ export class NewAcmService {
 		description: "Creates a new ACM",
 		options: [
 			{
-				flags: "-n, --name <name>",
+				flags: "-n, --name <value>",
 				required: true,
 				description: "What the customer calls the program.",
 			},
 			{
-				flags: "--program-code, <code>",
+				flags: "--program-code, <value>",
 				required: true,
 				description: "The project code",
 			},
 			{
-				flags: "-o, --org <organisation>",
+				flags: "-o, --org <value>",
 				required: true,
 				description: "The customer running or sponsoring the program.",
 			},
 			{
-				flags: "--parent-org <parent_organisation>",
+				flags: "--parent-org <value>",
+				required: true,
+				description: "The program's organization's parent.",
+				defaultValue: "Amplio",
+			},
+			{
+				flags: "--salesforce-id <value>",
 				required: true,
 				description: "The program's organization's parent.",
 				defaultValue: "Amplio",
@@ -67,44 +66,6 @@ export class NewAcmService {
 				flags: "--dry-run",
 				required: false,
 				description: "Don't update anything.",
-			},
-			{
-				flags: "--do-content <none | check | both>",
-				required: false,
-				defaultValue: "both",
-				description:
-					"Do or don't create ACM directory. Options: check, update, none.",
-			},
-			{
-				flags: "--do-sql <none | check | both>",
-				required: false,
-				defaultValue: "both",
-				description:
-					"Do or don't check or update projects table in PostgreSQL. Options: check, update, none.",
-			},
-			{
-				flags: "--do-checkout <none | check | both>",
-				required: false,
-				defaultValue: "both",
-				description: "Do or don't create a checkout record.",
-			},
-			{
-				flags: "--do-progspec <none | check | both>",
-				required: false,
-				defaultValue: "both",
-				description: "Do or don't check or create program specification.",
-			},
-			{
-				flags: "--do-program <none | check | both>",
-				required: false,
-				defaultValue: "both",
-				description: "Do or don't check or create a program record.",
-			},
-			{
-				flags: "--do-organization <none | check | both>",
-				required: false,
-				defaultValue: "both",
-				description: "Do or don't check or create an organization record.",
 			},
 		],
 	})
