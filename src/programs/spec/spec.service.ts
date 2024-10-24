@@ -50,12 +50,14 @@ export class ProgramSpecService {
 		const deployments = await Deployment.find({
 			where: { project_id: found.code },
 			relations: { playlists: { messages: { languages: true } } },
-			order: { playlists: { position: "ASC", messages: { position: "ASC" } } },
+			order: {
+				playlists: { position: "ASC", messages: { position: "ASC" } },
+				deploymentnumber: "ASC",
+			},
 		});
 		found.deployments = deployments;
 
-
-    return found;
+		return found;
 	}
 
 	async updateProgram(
@@ -206,10 +208,7 @@ export class ProgramSpecService {
 			// Save Message languages
 			const updatedMessages = await manager.getRepository(Message).find({
 				where: { program_id: code },
-				relations: { playlist: { deployment: true } },
-				select: {
-					playlist: { title: true, deployment: { deploymentnumber: true } },
-				},
+				relations: { languages: true },
 			});
 
 			// Save languages
@@ -224,7 +223,27 @@ export class ProgramSpecService {
 					);
 				}
 
-				for (const code of row.languages?.split(",") ?? []) {
+				const newLanguages = new Set<string>(
+					(row.languages?.split(",") ?? []).map((l) => l.trim()),
+				);
+				const uniqueLanguages: Record<string, true> = {};
+				for (const code of newLanguages) {
+					if (code === "") continue;
+
+					// if (uniqueLanguages[code]) {
+					const count = msg.languages.filter(
+						(l) => l.language_code === code,
+					).length;
+
+					if (count === 1) continue; // skip, language already in db
+
+					if (count > 1) {
+						// Database have duplicate languages for this message, so we need to do cleanup
+						await manager
+							.getRepository(MessageLanguages)
+							.delete({ language_code: code, message_id: msg.id });
+					}
+
 					await manager
 						.createQueryBuilder()
 						.insert()
@@ -259,7 +278,8 @@ export class ProgramSpecService {
 					.values(row as unknown as Recipient)
 					.orUpdate(["language"], "recipients_pkey")
 					.getQueryAndParameters();
-				manager.query(query, params);
+
+				await manager.query(query, params);
 			}
 		});
 
@@ -503,7 +523,7 @@ export class ProgramSpecService {
 		);
 	}
 
-	async publish(opts:{code: string, email: string}) {
+	async publish(opts: { code: string; email: string }) {
 		const project = await this.findByCode(opts.code);
 		await this.writeToS3({
 			email: opts.email,
