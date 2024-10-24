@@ -503,16 +503,16 @@ export class ProgramSpecService {
 		);
 	}
 
-	async publish(code: string, user: User) {
-		const project = await this.findByCode(code);
+	async publish(opts:{code: string, email: string}) {
+		const project = await this.findByCode(opts.code);
 		await this.writeToS3({
-			user,
+			email: opts.email,
 			xlsx: await this.createExcel(project, false),
 			format: "csv",
 			projectCode: project.code,
 		});
 		await this.writeToS3({
-			user,
+			email: opts.email,
 			xlsx: await this.createExcel(project),
 			format: "xlsx",
 			projectCode: project.code,
@@ -702,14 +702,14 @@ export class ProgramSpecService {
 
 	private async writeToS3(opts: {
 		comment?: string;
-		user: User;
+		email: string;
 		xlsx: Workbook;
 		projectCode: string;
 		format: "csv" | "xlsx";
 	}) {
 		const metadata = {
 			"submission-date": new Date().toISOString(),
-			"submitter-email": opts.user.email,
+			"submitter-email": opts.email,
 			"submitter-comment": opts.comment || "No comment provided",
 		};
 		const names = {

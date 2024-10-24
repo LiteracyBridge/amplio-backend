@@ -14,6 +14,7 @@ import { OrganisationProgram } from "src/entities/org_program.entity";
 import { Organisation } from "src/entities/organisation.entity";
 import { Program } from "src/entities/program.entity";
 import { Project } from "src/entities/project.entity";
+import { ProgramSpecService } from "src/programs/spec/spec.service";
 
 type args = "both" | "check" | "none";
 
@@ -35,6 +36,8 @@ interface Options {
 
 @Console()
 export class NewAcmService {
+	constructor(private specService: ProgramSpecService) {}
+
 	@Command({
 		command: "new-acm",
 		description: "Creates a new ACM",
@@ -110,33 +113,80 @@ export class NewAcmService {
 
 		let ok = true;
 
-		ok = (await this.createOrganisationRecord(opts)) && ok;
+		ok = (await this.createOrganisationRecord(opts));
 		if (ok) {
-			ok = (await this.createProjectRecord(opts)) && ok;
+			ok = (await this.createProjectRecord(opts));
 		}
 		if (ok) {
-			ok = (await this.create_and_populate_s3_object(opts)) && ok;
+			ok = (await this.createProgramRecords(opts));
 		}
-		if (opts.doCheckout !== "none") {
-			ok = (await this.check_for_checkout(opts.programCode)) && ok;
+		if (ok) {
+			ok = (await this.create_and_populate_s3_object(opts));
+		}
+		if (ok) {
+			ok = (await this.publishSpec(opts));
+		}
+		if (ok) {
+			ok = (await this.publishSpec(opts));
+		}
+		if (ok) {
+			ok = (await this.create_checkout(opts));
 		}
 
 		console.log(opts);
 		console.log(`Creating ACM in ${opts["do-sql"]} mode`);
 	}
 
-	private async check_for_checkout(code: string) {
+	private async create_checkout(opts: Options) {
 		process.stdout.write(
-			`Looking for '${code}' checkout record in dynamoDb...`,
+			`Looking for '${opts.programCode}' checkout record in dynamoDb...`,
 		);
 		const ok = await ACMCheckout.exists({
-			where: { project: { code: code } },
+			where: { project: { code: opts.programCode } },
 		});
 		if (ok) {
-			console.log();
-			console.log(`\n  Checkout record exists for ${code}`);
-			return false;
+			console.log(`\n  Checkout record exists for ${opts.programCode}`);
+			return true;
 		}
+
+		if (opts.dryRun === true) {
+			console.log("Dry run: would have created checkout record");
+			return true;
+		}
+
+		await ACMCheckout.query(
+			"INSERT INTO acm_checkout(project_id, acm_state, last_in_file_name, last_in_name, last_in_contact, last_in_date, last_in_version, acm_comment) VALUES ((SELECT _id FROM projects WHERE code = $1 LIMIT 1), $2, $3, $4, $5, $6, $7, $8)",
+			[
+				opts.programCode,
+				"CHECKED_IN",
+				"db1.zip",
+				"lawrence",
+				"techsupport@amplio.org",
+				DateTime.now().toISO(),
+				"c202002160",
+				"Created ACM",
+			],
+		);
+
+		console.log("ok");
+		return true;
+	}
+
+	private async publishSpec(opts: Options): Promise<boolean> {
+		process.stdout.write(
+			`Publishing program spec for '${opts.programCode}'....`,
+		);
+
+		if (opts.dryRun === true) {
+			console.log("Dry run: would have publish spec on s3");
+			return true;
+		}
+
+		await this.specService.publish({
+			code: opts.programCode.trim(),
+			email: "lawrence@amplio.org",
+		});
+
 		console.log("ok");
 		return true;
 	}
@@ -179,13 +229,13 @@ export class NewAcmService {
 		}))!.id;
 		await programOrg.save();
 
-    // Create first deployment record
-    const deployment = new Deployment();
+		// Create first deployment record
+		const deployment = new Deployment();
 		deployment.deploymentname = `${project.code}-${DateTime.now().toFormat("yy")}-1`;
-		deployment.deployment = deployment.deploymentname
-    deployment.deploymentnumber = 1
-    deployment.start_date = new Date()
-    deployment.project_id = project.code
+		deployment.deployment = deployment.deploymentname;
+		deployment.deploymentnumber = 1;
+		deployment.start_date = new Date();
+		deployment.project_id = project.code;
 
 		await deployment.save();
 
