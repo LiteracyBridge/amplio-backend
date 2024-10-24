@@ -16,7 +16,6 @@ import { Project } from "src/entities/project.entity";
 import { ProgramSpecService } from "src/programs/spec/spec.service";
 import { DataSource, In, Not, EntityManager } from "typeorm";
 
-
 interface Options {
 	parentOrg: string | "Amplio";
 	name: string;
@@ -89,7 +88,6 @@ export class NewAcmService {
 			if (ok) {
 				ok = await this.create_checkout(opts, manager);
 			}
-
 		});
 
 		if (ok) {
@@ -297,13 +295,7 @@ export class NewAcmService {
 			`Looking for program '${programCode}' content objects in s3...`,
 		);
 
-		const client = new S3Client({
-			region: appConfig().aws.region,
-			credentials: {
-				accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-				secretAccessKey: process.env.AWS_SECRET!,
-			},
-		});
+		const client = new S3Client({ region: appConfig().aws.region });
 		const resp = await client.send(
 			new ListObjectsV2Command({
 				Bucket: appConfig().buckets.content,
