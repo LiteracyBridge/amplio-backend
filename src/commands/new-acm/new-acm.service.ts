@@ -90,7 +90,6 @@ export class NewAcmService {
 				ok = await this.create_checkout(opts, manager);
 			}
 
-			console.log(opts);
 		});
 
 		if (ok) {

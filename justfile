@@ -34,7 +34,7 @@ prod: venv
     APP_ENV=production {{ PYTHONPATH }} {{ uvicorn }} src.app:app --reload
 
 new-acm *args='': venv
-	{{ PYTHONPATH }} {{ python }} scripts/new_acm/new_acm.py "$@"
+	npm run console new-acm -- "$@"
 
 tableau-geo *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/tableau/tableau_geo_importer.py "$@"
