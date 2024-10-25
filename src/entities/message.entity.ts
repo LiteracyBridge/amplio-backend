@@ -47,7 +47,7 @@ export class Message extends BaseEntity {
 	@Column({ nullable: true })
 	default_category_code: string;
 
-	@Column({ nullable: true })
+	@Column({ type: 'varchar', nullable: true })
 	variant: string;
 
 	@Column({ nullable: true })

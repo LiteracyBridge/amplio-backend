@@ -179,11 +179,17 @@ export class ProgramSpecService {
 					m.default_category_code === "" ? null : m.default_category_code;
 
 				if (existingMessageIds.has(m._id)) {
+					const _m = { ...m };
+
+					// biome-ignore lint/performance/noDelete: <explanation>
+					delete _m.languages;
+
 					await manager
 						.createQueryBuilder()
 						.update(Message)
-						.set(m)
-						.where("_id = :id", { id: m._id });
+						.set(_m)
+						.where("_id = :id", { id: m._id })
+						.execute();
 				} else {
 					await manager
 						.createQueryBuilder()
@@ -219,7 +225,7 @@ export class ProgramSpecService {
 				relations: { languages: true },
 			});
 
-			// Save languages
+			// Save message languages
 			for (const row of messages) {
 				const msg = updatedMessages.find(
 					(m) => row._id === m._id || m.id === row.id,
@@ -234,11 +240,9 @@ export class ProgramSpecService {
 				const newLanguages = new Set<string>(
 					(row.languages?.split(",") ?? []).map((l) => l.trim()),
 				);
-				const uniqueLanguages: Record<string, true> = {};
 				for (const code of newLanguages) {
 					if (code === "") continue;
 
-					// if (uniqueLanguages[code]) {
 					const count = msg.languages.filter(
 						(l) => l.language_code === code,
 					).length;
@@ -260,6 +264,12 @@ export class ProgramSpecService {
 						.orIgnore()
 						.execute();
 				}
+
+				// Also remove languages deleted by the from db
+				const deletedLang = msg.languages.filter(
+					(l) => !newLanguages.has(l.language_code),
+				);
+				await manager.getRepository(MessageLanguages).remove(deletedLang);
 			}
 
 			for (const row of dto.recipients) {
