@@ -213,6 +213,7 @@ export class ProgramSpecService {
 				}
 				messages.push(m);
 			}
+
 			// -- delete removed messages
 			await manager.getRepository(Message).delete({
 				_id: Not(In(messages.map((m) => m._id))),
@@ -273,12 +274,13 @@ export class ProgramSpecService {
 			}
 
 			for (const row of dto.recipients) {
+				row.id = row.id ?? row.recipientid ?? row.recipient_id;
 				row.program_id = project.code;
 				row.num_households ??= 0;
 				row.direct_beneficiaries_additional ??= {};
 
-				if (row.recipient_id == null || row.recipient_id === "") {
-					delete row.recipient_id;
+				if (row.id == null || row.id === "") {
+					delete row.id;
 				}
 
 				if (!languages.has(row.language as string)) {
@@ -468,12 +470,6 @@ export class ProgramSpecService {
 					specLanguages[row.name] = row.code;
 				}
 
-				console.log(
-					await manager.query(
-						"SELECT count(*) FROM messages WHERE program_id = $1",
-						[program.program_id],
-					),
-				);
 				const messages = await manager.getRepository(Message).find({
 					where: { program_id: program.program_id },
 					relations: { playlist: { deployment: true } },
@@ -490,7 +486,6 @@ export class ProgramSpecService {
 					);
 
 					if (msg == null) {
-						console.log(row, msg);
 						throw new BadRequestException(
 							`Message '${row.message_title}' differ from what is already in the spec`,
 						);
