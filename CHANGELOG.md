@@ -1,3 +1,7 @@
+## [0.0.3](https://github.com/LiteracyBridge/amplio-backend/compare/v0.0.2...v0.0.3) (2024-10-25)
+
+
+
 ## [0.0.2](https://github.com/LiteracyBridge/amplio-backend/compare/v0.2.2...v0.0.2) (2024-10-25)
 
 
@@ -121,10 +125,6 @@
 * **users: invitation:** implement creating of user a/c when invitation is accepted ([7f2fa1a](https://github.com/LiteracyBridge/amplio-backend/commit/7f2fa1ab694d3db061bebe50f9d38ec41aa8c069))
 * **users:** add organisations endpoint ([aaee127](https://github.com/LiteracyBridge/amplio-backend/commit/aaee127868903c5e33ab1bff775a0c4ec1c55b4a))
 * **users:** include program->project in use programs response ([e29fc61](https://github.com/LiteracyBridge/amplio-backend/commit/e29fc61f6f6c2f981e4251ab3cf3d77f33ca7baa))
-
-
-
-## [0.1.5](https://github.com/LiteracyBridge/amplio-backend/compare/v0.1.4...v0.1.5) (2024-09-03)
 
 
 
