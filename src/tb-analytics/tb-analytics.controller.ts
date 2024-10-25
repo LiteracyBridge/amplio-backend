@@ -5,7 +5,7 @@ import { Recipient } from 'src/entities/recipient.entity';
 import { TalkingBookDeployed } from 'src/entities/tb_deployed.entity';
 import { Deployment } from 'src/entities/deployment.entity';
 
-@Controller('dashboard-queries')
+@Controller('tb-analytics')
 export class TalkingBookAnalyticsController {
   constructor(protected service: TalkingBookAnalyticsService) { }
 
@@ -27,14 +27,20 @@ export class TalkingBookAnalyticsController {
   ) {
     return ApiResponse.Success({
       data: await Recipient.createQueryBuilder("recipients")
-        .where("user.project = :programId", { programId: programId })
+        .where("recipients.project = :programId", { programId: programId })
         .andWhereExists(TalkingBookDeployed
           .createQueryBuilder("tbsdeployed")
           .where("tbsdeployed.recipientid = recipients.id")
           .andWhere("tbsdeployed.deployment = :deployment", { deployment: deployment })
         )
-        .leftJoinAndMapMany("recipients.talkingbooksDeployed", TalkingBookDeployed, "talkingbooksDeployed")
-        .leftJoinAndMapOne("recipients.talkingbooksDeployed.deployment", Deployment, "deployment")
+        .leftJoinAndMapMany("recipients.talkingbooks_deployed", TalkingBookDeployed, "talkingbooks_deployed", 'recipients.recipientid = "talkingbooks_deployed".recipientid')
+        // .leftJoinAndMapMany(
+        //   "uf_messages.analysis",
+        //   Analysis,
+        //   "analysis",
+        //   "uf_messages.message_uuid = analysis.message_uuid",
+        // )
+        // .leftJoinAndMapOne("recipients.talkingbooksDeployed.deployment", Deployment, "deployment")
         .getMany()
     })
   }

@@ -7,35 +7,36 @@ import {
   BaseEntity
 } from 'typeorm';
 import { Deployment } from './deployment.entity';
+import { Recipient } from './recipient.entity';
 
 @Entity('tbsdeployed')
 export class TalkingBookDeployed extends BaseEntity {
   @PrimaryColumn({ name: 'talkingbookid', type: 'varchar' })
-  talkingbookId: string;
+  talkingbook_id: string;
 
   @PrimaryColumn({ name: 'deployedtimestamp', type: 'timestamp' })
-  deployedTimestamp: Date;
+  deployed_timestamp: Date;
 
   @Column({ name: 'recipientid', type: 'varchar', nullable: true })
-  recipientId: string;
+  recipient_id: string;
 
   @Column({ type: 'varchar', nullable: false })
   project: string;
 
   @Column({ name: 'deployment', type: 'varchar', nullable: false })
-  deploymentName: string;
+  deployment_name: string;
 
   @Column({ type: 'varchar', name: "deployment_uuid", nullable: true })
-  deploymentUuid: string;
+  deployment_uuid: string;
 
   @Column({ name: 'contentpackage', type: 'varchar', nullable: true })
-  contentPackage: string;
+  content_package: string;
 
   @ManyToOne(() => Deployment)
   @JoinColumn({ name: 'deployment', referencedColumnName: 'deployment' })
   deployment: Deployment;
 
-  @ManyToOne(() => TalkingBookDeployed, (row) => row.recipient)
-  // @JoinColumn({ name: 'deployment', referencedColumnName: 'deployment' })
-  recipient: TalkingBookDeployed;
+  @ManyToOne(() => Recipient, (row) => row.talkingbooks_deployed)
+  @JoinColumn({ name: 'recipientid', referencedColumnName: 'id' })
+  recipient: Recipient;
 }
