@@ -19,6 +19,9 @@ import { Workbook } from "exceljs";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import appConfig from "src/app.config";
 import { join } from "node:path";
+import { PublishedProgramSpecs } from "src/entities/published_spec.entity";
+import { instanceToPlain } from "class-transformer";
+import { diff } from "json-diff-ts";
 
 @Injectable()
 export class ProgramSpecService {
@@ -169,6 +172,11 @@ export class ProgramSpecService {
 						`Playlist id cannot be found for '${m.title}' message`,
 					);
 				}
+
+				m.playlist_id = _found.id;
+				m.program_id = project.code;
+				m.default_category_code =
+					m.default_category_code === "" ? null : m.default_category_code;
 
 				if (existingMessageIds.has(m._id)) {
 					await manager
@@ -525,6 +533,20 @@ export class ProgramSpecService {
 
 	async publish(opts: { code: string; email: string }) {
 		const project = await this.findByCode(opts.code);
+
+		// Save to db
+		const recent = await PublishedProgramSpecs.findOne({
+			where: { project_id: project._id },
+			order: { created_at: "DESC" },
+		});
+		const tracker = new PublishedProgramSpecs();
+		tracker.project_id = project._id;
+		tracker.spec = instanceToPlain(project);
+		tracker.publisher = opts.email;
+		tracker.diff = diff(recent?.spec ?? {}, tracker.spec);
+		tracker.previous_id = recent?.id;
+		await tracker.save();
+
 		await this.writeToS3({
 			email: opts.email,
 			xlsx: await this.createExcel(project, false),
