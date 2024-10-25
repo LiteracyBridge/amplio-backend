@@ -1,3 +1,7 @@
+## [0.0.2](https://github.com/LiteracyBridge/amplio-backend/compare/v0.2.2...v0.0.2) (2024-10-25)
+
+
+
 ## [0.2.2](https://github.com/LiteracyBridge/amplio-backend/compare/v0.2.1...v0.2.2) (2024-09-11)
 
 
@@ -121,15 +125,6 @@
 
 
 ## [0.1.5](https://github.com/LiteracyBridge/amplio-backend/compare/v0.1.4...v0.1.5) (2024-09-03)
-
-
-
-## [0.1.4](https://github.com/LiteracyBridge/amplio-backend/compare/v0.1.3...v0.1.4) (2024-08-29)
-
-
-### Bug Fixes
-
-* patch user email query error ([5f3e3e0](https://github.com/LiteracyBridge/amplio-backend/commit/5f3e3e009329f6598a6bf249411c8159d8240245))
 
 
 
