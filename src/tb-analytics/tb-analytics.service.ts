@@ -59,7 +59,7 @@ SELECT * FROM status_by_tb WHERE programid=$1
 `
 
 @Injectable()
-export class DashboardQueriesService {
+export class TalkingBookAnalyticsService {
   async status_by_deployment(programid: string) {
     return Deployment.query(STATUS_BY_DEPLOYMENT, [programid]);
   }

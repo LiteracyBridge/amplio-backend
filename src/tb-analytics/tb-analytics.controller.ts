@@ -1,13 +1,13 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiResponse } from 'src/utilities/api_response';
-import { DashboardQueriesService } from './dashboard-queries.service';
+import { TalkingBookAnalyticsService } from './tb-analytics.service';
 import { Recipient } from 'src/entities/recipient.entity';
 import { TalkingBookDeployed } from 'src/entities/tb_deployed.entity';
 import { Deployment } from 'src/entities/deployment.entity';
 
 @Controller('dashboard-queries')
-export class DashboardQueriesController {
-  constructor(protected service: DashboardQueriesService) { }
+export class TalkingBookAnalyticsController {
+  constructor(protected service: TalkingBookAnalyticsService) { }
 
   @Get(":program_id/status")
   async status(

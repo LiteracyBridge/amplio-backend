@@ -36,7 +36,6 @@ import { AnalysisChoice } from "./entities/analysis_choice.entity";
 import { UserFeedbackMessage } from "./entities/uf_message.entity";
 import { Role } from "./entities/role.entity";
 import { TableauController } from "./tableau.controller";
-import { DashboardQueriesModule } from "./dashboard-queries/dashboard-queries.module";
 import { UserfeedbackModule } from "./userfeedback/userfeedback.module";
 import { CategoriesController } from "./categories.controller";
 import { ProgramsModule } from "./programs/programs.module";
@@ -46,6 +45,7 @@ import { Log } from "./entities/log.entity";
 import { AcmCheckoutModule } from './acm-checkout/acm-checkout.module';
 import { TalkingBookLoaderId } from "./entities/tbloader-ids.entity";
 import { TbLoaderModule } from './tb-loader/tb-loader.module';
+import { TalkingBookAnalyticsModule } from "./tb-analytics/tb-analytics.module";
 
 config();
 
@@ -109,12 +109,12 @@ const routes: Routes = [
     }),
 
     UsersModule,
-    DashboardQueriesModule,
     UserfeedbackModule,
     ProgramsModule,
     Log,
     AcmCheckoutModule,
-    TbLoaderModule
+    TbLoaderModule,
+    TalkingBookAnalyticsModule
   ],
   controllers: [AppController, TableauController, CategoriesController],
   providers: [
