@@ -45,9 +45,12 @@ from typing import Any, Dict
 import boto3
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.datastructures import QueryParams
+from sqlalchemy.orm import Session, subqueryload
 
 from config import ACM_PREFIX, AWS_REGION
-from models.user_model import User
+from database import get_db
+from models.checkout_model import ACMCheckout
+from models.user_model import User, current_user
 from schema import ApiResponse
 from utilities import cannonical_program_name, now
 
@@ -75,8 +78,125 @@ dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table(TABLE_NAME)
 
 
+def find_checkout(
+    program_id: str,
+    db: Session = Depends(get_db),
+):
+    return (
+        db.query(ACMCheckout)
+        .filter(
+            ACMCheckout.project_id == program_id, ACMCheckout.acm_state == CHECKED_OUT
+        )
+        .first()
+    )
+
+
+@router.get("/list")
+async def list_checkouts(
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    admin_targets = [k.program.project_id for k in user.programs]
+
+    return {
+        "data": db.query(ACMCheckout)
+        .filter(ACMCheckout.project_id.in_(admin_targets))
+        .options(subqueryload(ACMCheckout.project))
+        .all(),
+        STATUS: STATUS_OK,
+        "response": "Success",
+    }
+
+
+@router.get("/revoke")
+async def revoke(
+    program_id: str,
+    db: Session = Depends(get_db),
+):
+    checkout = find_checkout(db=db, program_id=program_id)
+    if checkout is None:
+        return ApiResponse(data=[])
+
+    checkout.acm_state = CHECKED_OUT
+    checkout.now_out_comment = None
+    checkout.now_out_contact = None
+    checkout.now_out_date = None
+    checkout.now_out_key = None
+    checkout.now_out_version = None
+
+    db.commit()
+
+    return {
+        "state": checkout,
+        STATUS: STATUS_OK,
+    }
+
+
+def statuscheck(program_id: str, db: Session = Depends(get_db)):
+    record = find_checkout(db=db, program_id=program_id)
+
+    if record is None:
+        return {STATUS: "nodb", "state": {"acm_name": program_id}}
+
+    return {STATUS: STATUS_OK, "state": record}
+
+
+def checkout(program_id: str, db: Session = Depends(get_db)):
+    record = find_checkout(db=db, program_id=program_id)
+    if record is None:
+        return {STATUS: STATUS_DENIED, "state": {"acm_name": program_id}}
+
+    status = "checkedout" if record.acm_state == CHECKED_OUT else "available"
+
+    return {STATUS: STATUS_OK, "state": checkout}
+
+
 @router.get("")
-async def handle_request(request: Request):
+async def handle_request(
+    request: Request, db: Session = Depends(get_db), user: User = Depends(current_user)
+):
+    body = await request.json()
+    query = request.query_params
+
+    if query:
+        action = query.get("action").lower()
+        program = query.get("program")
+        print(f"path parameters: {action}, {program}")
+    else:
+        action = (query.get("action") or body.get("action", "")).lower()
+        program = body.get("db") or body.get("program")
+
+    name = query.get("name") or user.email or body.get("name")
+    contact = query.get("phone_number") or body.get("contact")
+    version = query.get("version") or body.get("version")
+    computername = query.get("computername") or body.get("computername")
+    key = query.get("key") or body.get("key")
+    filename = query.get("filename")
+    comment = query.get("comment") or body.get("comment")
+
+    print(
+        f"Arguments: action:{action}, program:{program}, name:{name}, contact:{contact}"
+    )
+
+    if action == "list":
+        return list_checkouts(user=user, db=db)
+
+    results = list(filter(lambda x: x.program.program_id == program, user.programs))
+
+    if len(results) != 1:
+        return {
+            "data": [],
+            STATUS: STATUS_DENIED,
+            "response": "Program not found",
+        }
+
+    program = results[0].program.project_id
+
+    if action == "revokecheckout":
+        return revoke(program_id=program, db=db)
+    elif action == "statuscheck":
+        return statuscheck(program_id=program)
+
     """
     :param event: dict -- POST request passed in through API Gateway
     :param context: object -- can be used to get runtime data (unused but required by AWS lambda)
@@ -85,7 +205,6 @@ async def handle_request(request: Request):
 
     body: Dict[str, Any] = {}
     user: User = request.state.current_user
-    query = request.query_params
 
     try:
         body = await request.json()
@@ -185,9 +304,9 @@ class V1Handler:
 
     def handle_event(self):
         action = self._action.lower()  # type: ignore
-        if action == "list":
-            return self.list_checkouts()
-        elif action == "report":
+        # if action == "list":
+        #     return self.list_checkouts()
+        if action == "report":
             return self.report()
 
         # Every action after this has a db associated with it. Get the db record from dynamo.
@@ -202,8 +321,8 @@ class V1Handler:
             return self.checkin()
         elif action == "discard":
             return self.discard()
-        elif action == "revokecheckout":
-            return self.revoke()
+        # elif action == "revokecheckout":
+        #     return self.revoke()
         elif action == "create":
             return self.create()
         elif action == "reset":
@@ -304,25 +423,26 @@ class V1Handler:
         status = self.db_state
         return self.make_return(STATUS_OK if status == "available" else status)
 
-    def list_checkouts(self):
-        admin_targets = [k.program.program_id for k in self.user.programs]
+    # def list_checkouts(self):
+    #     return ApiResponse
+    #     admin_targets = [k.program.project_id for k in self.user.programs]
 
-        def has_access(program: str):
-            if program in admin_targets:
-                return True
-            for uf in uf_targets:
-                if program.startswith(uf):
-                    return True
-            return False
+    #     def has_access(program: str):
+    #         if program in admin_targets:
+    #             return True
+    #         for uf in uf_targets:
+    #             if program.startswith(uf):
+    #                 return True
+    #         return False
 
-        uf_targets = [x + "-FB-" for x in admin_targets]
-        acms = []
-        checkouts = table.scan()["Items"]
-        for checkout in checkouts:
-            if has_access(cannonical_program_name(checkout.get("acm_name"))):
-                acms.append(checkout)
+    #     uf_targets = [x + "-FB-" for x in admin_targets]
+    #     acms = []
+    #     checkouts = table.scan()["Items"]
+    #     for checkout in checkouts:
+    #         if has_access(cannonical_program_name(checkout.get("acm_name"))):
+    #             acms.append(checkout)
 
-        return acms
+    #     return acms
 
     def checkout(self):
         """
@@ -447,27 +567,27 @@ class V1Handler:
             update_expr, condition_expr, expr_values, condition_handler
         )
 
-    def revoke(self):
-        # noinspection PyUnusedLocal
-        def condition_handler(err):
-            """Handler for conditonal update failure. It's fine if the failure is because the acm is no longer
-            checked out.
-            :param err: ignored.
-            :return: a result structure if the exception is really OK, None otherwise, for default error handling.
-            """
-            if self._checkout_record.get("acm_state") == CHECKED_IN:
-                # Someone else released the record from under us. Count it as success.
-                return self.make_return(STATUS_OK)
+    # def revoke(self):
+    #     # noinspection PyUnusedLocal
+    #     def condition_handler(err):
+    #         """Handler for conditonal update failure. It's fine if the failure is because the acm is no longer
+    #         checked out.
+    #         :param err: ignored.
+    #         :return: a result structure if the exception is really OK, None otherwise, for default error handling.
+    #         """
+    #         if self._checkout_record.get("acm_state") == CHECKED_IN:
+    #             # Someone else released the record from under us. Count it as success.
+    #             return self.make_return(STATUS_OK)
 
-        update_expr = "SET acm_state = :s " + build_remove_now_out(
-            self._checkout_record
-        )
-        condition_expr = "acm_state = :o"  # revoke check-out should always execute
-        expr_values = {":s": CHECKED_IN, ":o": CHECKED_OUT}
+    #     update_expr = "SET acm_state = :s " + build_remove_now_out(
+    #         self._checkout_record
+    #     )
+    #     condition_expr = "acm_state = :o"  # revoke check-out should always execute
+    #     expr_values = {":s": CHECKED_IN, ":o": CHECKED_OUT}
 
-        return self.update_db(
-            update_expr, condition_expr, expr_values, condition_handler
-        )
+    #     return self.update_db(
+    #         update_expr, condition_expr, expr_values, condition_handler
+    #     )
 
     def create(self):
         if self.db_state != "nodb":

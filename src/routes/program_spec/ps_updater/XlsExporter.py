@@ -1,20 +1,20 @@
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
-from models import ProjectLanguage
 
-import routes.program_spec.ps_updater.spec as Spec
 import routes.program_spec.ps_updater.ExportProcessor as ExportProcessor
+import routes.program_spec.ps_updater.spec as Spec
+from models import ProjectLanguage
 
 PUBLISHED_PREFIX: str = "pub_"
 UNPUBLISHED_PREFIX: str = "unpub_"
 
-CSV_ARTIFACTS = ["general", "deployments", "content", "recipients",  "languages"]
+CSV_ARTIFACTS = ["general", "deployments", "content", "recipients", "languages"]
 
 
 class Exporter:
@@ -175,7 +175,14 @@ class Exporter:
             metadata = {"submission-date": datetime.now().isoformat()}
 
         if artifacts is None:
-            artifacts = ["published", "general", "deployments", "content", "recipients", "languages"]
+            artifacts = [
+                "published",
+                "general",
+                "deployments",
+                "content",
+                "recipients",
+                "languages",
+            ]
         if names is None:
             names = {
                 "published": f"{PUBLISHED_PREFIX}progspec.xlsx",

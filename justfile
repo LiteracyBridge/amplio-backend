@@ -34,26 +34,53 @@ prod: venv
     APP_ENV=production {{ PYTHONPATH }} {{ uvicorn }} src.app:app --reload
 
 new-acm *args='': venv
-	{{ PYTHONPATH }} {{ python }} scripts/new_acm/new_acm.py "$@"
+	npm run console new-acm -- "$@"
 
 tableau-geo *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/tableau/tableau_geo_importer.py "$@"
 
-logs-reader *args='': venv
-    {{ PYTHONPATH }} {{ python }} scripts/v2LogReader/main.py "$@"
 
 # START: Statistics related commands
 [doc("Inserts processed stats 'tbsdeployed.csv' and 'tbscollected.csv' files into the database")]
+[group("statistics")]
 csv-insert *args='': venv
-    {{ PYTHONPATH }} {{ python }} scripts/csv_insert.py "$@"
+    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/csv_insert.py "$@"
 
+[group("statistics")]
 move-android-collected-data *args='': venv
-    @echo "Moving collected stats data by the Android TB Loader from amplio-program-content to acm-stats bucket"
-    {{ PYTHONPATH }} {{ python }} scripts/acm-stats/move_android_collected_data.py
+    @echo "Moving collected stats data by the Android TB Loader from amplio-program-content to acm_stats bucket"
+    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/move_android_collected_data.py
 
 [doc("Updates the usage info of the program(s) in the database")]
+[group("statistics")]
 update-usage-info *args='': venv
-    {{ PYTHONPATH }} {{ python }} scripts/acm-stats/usage_info_updater.py "$@"
+    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/usage_info_updater.py "$@"
+
+[group("statistics")]
+kv2csv *args='': venv
+    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/kv2csv.py "$@"
+
+[doc("Converts user feedback audio files from a18 to wav/mp3")]
+[group("statistics")]
+uf-utility *args='': venv
+    {{ PYTHONPATH }} {{ python }} scripts/userfeedback_utility/ufUtility.py "$@"
+
+[doc("Import Talking Books v1 statistics into db")]
+[group("statistics")]
+import-v1-stats *args='': venv
+    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/import_stats.py "$@"
+    # {{ PYTHONPATH }} {{ python }} scripts/acm_stats/initial_sql.py "$@"
+    # just update-usage-info
+
+[doc("Re-imports Talking Books v1 statistics into db")]
+[group("statistics")]
+re-import-v1-stats *args='': venv
+    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/re_import_stats.py "$@"
+
+[doc("Import Talking Book v2 statistics into db")]
+[group("statistics")]
+import-v2-stats *args='': venv
+    {{ PYTHONPATH }} {{ python }} scripts/v2_log_reader/main.py "$@"
 
 # END: Statistics related commands
 
@@ -83,4 +110,11 @@ migration-create *args='': venv
 run-script *args='': venv
     {{ PYTHONPATH }} {{ python }} "$@"
 
+disable-ipv6:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+
+    sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+    sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
 # TODO: Add a build step to compile acm & copy jars to AWS-LB/bin dir

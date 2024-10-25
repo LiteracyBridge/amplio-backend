@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "target": "es2017",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "alwaysStrict": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": false,
+    "resolveJsonModule": true,
+    "exactOptionalPropertyTypes": false,
+    "strictFunctionTypes": true,
+    "moduleResolution": "node",
+    "paths": {},
+  },
+  "ts-node": {
+    "transpileOnly": true,
+  },
+  "include": [
+    "src",
+    "public",
+    "views"
+  ],
+  "exclude": [
+    "migrations/*",
+  ]
+}
