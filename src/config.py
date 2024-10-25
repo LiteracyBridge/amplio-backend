@@ -1,5 +1,5 @@
 import json
-from os import getenv
+from os import getenv, path
 from pathlib import Path
 from typing import Any, Optional
 
@@ -27,6 +27,7 @@ MAIL_SOURCE_ADDR = "ictnotifications@amplio.org"
 
 class Config:
     is_local: bool = False
+    statistics_data_dir = path.expanduser("~/acm-stats")
 
     db_name: str
     db_host: str
@@ -52,6 +53,10 @@ class Config:
             load_dotenv()
 
             self.is_local = True
+            self.statistics_data_dir = path.expanduser(
+                getenv("STATISTICS_DATA_DIR", "~/acm-stats")
+            )
+
             self.db_name = getenv("DB_NAME", "amplio_dev")
             self.db_host = getenv("DB_HOST", "localhost")
             self.db_password = getenv("DB_PASSWORD", "")

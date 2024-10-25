@@ -13,7 +13,6 @@ from models.deployment_model import Deployment
 from models.playlist_model import Playlist
 from models.program_model import Project
 from models.user_model import current_user
-
 # from amplio.utils import (
 #     LambdaRouter,
 #     handler,
@@ -22,17 +21,10 @@ from models.user_model import current_user
 #     BinBody,
 #     JsonBody,
 # )
-from routes.program_spec import (
-    compare_program_specs,
-    export_to_db,
-    publish_to_s3,
-    read_from_db,
-    read_from_json,
-    read_from_s3,
-    read_from_xlsx,
-    write_to_json,
-    write_to_s3,
-)
+from routes.program_spec import (compare_program_specs, export_to_db,
+                                 publish_to_s3, read_from_db, read_from_json,
+                                 read_from_s3, read_from_xlsx, write_to_json,
+                                 write_to_s3)
 from routes.program_spec.db import _ensure_content_view
 from schema import ApiResponse
 
@@ -193,7 +185,6 @@ def download(
     :param email: The user's email
     :return: {'status': status, 'data': bytes-or-link, 'object': metadata-about-object}
     """
-
     artifact = artifact.lower()
     key = _make_s3_key(programid, artifact)
     # If this is a request for the un-published program specification, we need to extract it from the database first.

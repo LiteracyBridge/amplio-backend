@@ -2,8 +2,9 @@ import dataclasses
 import json
 import re
 from dataclasses import dataclass, field, fields
-from datetime import datetime, date
-from typing import List, Dict, Any, Optional, Union
+from datetime import date, datetime
+from typing import Any, Dict, List, Optional, Union
+
 from models import ProjectLanguage
 from routes.program_spec.spec import Language
 
@@ -256,7 +257,9 @@ class General:
     feedback_frequency: str = "one-quarter"
     # sustainable_development_goals: List[str] = field(default_factory=list)
     sustainable_development_goals: str = "[]"
-    direct_beneficiaries_map: str = '{"male": "Number of Male", "female": "Number of Female", "youth": "Number of Youth"}'
+    direct_beneficiaries_map: str = (
+        '{"male": "Number of Male", "female": "Number of Female", "youth": "Number of Youth"}'
+    )
     direct_beneficiaries_additional_map: str = "{}"
     affiliate: str = "Amplio"
     partner: str = "Amplio Partner"

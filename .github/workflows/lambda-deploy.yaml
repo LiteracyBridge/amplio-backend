@@ -12,11 +12,20 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Generate requirement.text from Pipfile.lock
-        working-directory: ./
-        run: jq -r '.default | to_entries[] | .key + .value.version' Pipfile.lock > src/requirements.txt
+      - name: Using Node.js
+        uses: actions/setup-node@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          cache: "npm"
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm clean-install --no-audit --no-fund
+
+      - name: Build app
+        run: npm run build:lambda
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2

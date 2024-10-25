@@ -1,5 +1,25 @@
+Rewrite:
+    ✔ models @done(24-09-20 07:09)
+    ✔ users route @done(24-09-20 17:40)
+    ✔ surveys route @done(24-09-24 06:58)
+    ✔ programs spec route @done(24-10-08 06:00)
+    ✔ tabluea route @done(24-09-24 07:09)
+    ✔ tb route @done(24-09-24 14:40)
+    ✔ categories route @done(24-09-24 14:40)
+    ✔ program route @done(24-09-24 16:47)
+    ✔ acm checkout route @done(24-10-18 07:52)
+    ☐ rewrite new acm script
+    ✔ analysis route @done(24-09-24 09:56)
+    ✔ uf messages route @done(24-09-24 08:57)
+    ✔ dasboard queries @done(24-09-24 08:01)
+    ☐ save latest s3 revision to psql (ACM)
+
+Pending Integration Updates:
+    ✔ update ACM login/program fetch to use api @done(24-10-18 08:07)
+
 Bugs:
-    ☐ refetch user info on page refresh
+    ☐ update IAM role to create new user: amplio-suite-api-production-lambda
+    ✔ refetch user info on page refresh @done(24-09-24 14:23)
 
 Settings:
     User roles:
