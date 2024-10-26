@@ -456,6 +456,12 @@ export class ProgramSpecService {
 							["program_id", "playlist_id", "position"],
 						)
 						.getQueryAndParameters();
+
+					// delete existing message record, to prevent insert conflict
+					await manager.query(
+						"DELETE FROM messages WHERE program_id = $1 AND title = $2 AND playlist_id = $3",
+						[program.program_id, row.message_title, pId],
+					);
 					await manager.query(msgQuery[0], msgQuery[1]);
 				}
 
@@ -509,6 +515,7 @@ export class ProgramSpecService {
 					const row = recipients[index];
 					row.program_id = program.program_id;
 					row.numhouseholds ??= 0;
+					row.support_entity ??= "";
 					row.numtbs ??= 0;
 					row.group_size ??= 0;
 					row.direct_beneficiaries_additional ??= {};
