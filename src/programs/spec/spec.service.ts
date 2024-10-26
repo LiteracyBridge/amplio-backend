@@ -706,7 +706,7 @@ export class ProgramSpecService {
 						playlist_title: p.title,
 						message_title: m.title,
 						key_points: m.key_points,
-						languagecode: m.languages.map((l) => l.language_code),
+						languagecode: m.languages.map((l) => l.language_code).join(','),
 						variant: m.variant,
 						format: m.format,
 						audience: p.audience,
