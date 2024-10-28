@@ -214,9 +214,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "program",
-        action="store",
         type=str,
-        nargs="?",
         default=None,
         help="ID of the program to update usage info. eg. 'SF-9RDMSAAG'. If not provided, updates usage info for all programs.",
     )
