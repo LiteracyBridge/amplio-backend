@@ -35,7 +35,7 @@ export class Message extends BaseEntity {
 	@Column({ type: "int" })
 	playlist_id: number;
 
-	@Column()
+	@Column({ type: "int" })
 	position: number;
 
 	@Column({ name: "title", type: "varchar" })
@@ -47,7 +47,7 @@ export class Message extends BaseEntity {
 	@Column({ nullable: true })
 	default_category_code: string;
 
-	@Column({ type: 'varchar', nullable: true })
+	@Column({ type: "varchar", nullable: true })
 	variant: string;
 
 	@Column({ nullable: true })
@@ -136,6 +136,8 @@ export class MessageSubscriber implements EntitySubscriberInterface<Message> {
 	 * Called before post insertion.
 	 */
 	async beforeInsert(event: InsertEvent<Message>) {
+		if (Number.isInteger(event.entity.position)) return;
+
 		const maxPosition = await Message.createQueryBuilder("message")
 			.select("COALESCE(MAX(message.position), 0)", "max")
 			.where("message.program_id = :programId", {
@@ -147,6 +149,5 @@ export class MessageSubscriber implements EntitySubscriberInterface<Message> {
 			.getRawOne();
 
 		event.entity.position = (maxPosition.max || 0) + 1;
-		event.entity.title = `Message ${event.entity.position}`;
 	}
 }
