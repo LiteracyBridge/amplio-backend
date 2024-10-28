@@ -288,15 +288,15 @@ export class ProgramSpecService {
 				row.num_households ??= 0;
 				row.direct_beneficiaries_additional ??= {};
 
-				if (row.id == null || row.id === "") {
-					delete row.id;
-				}
-
 				if (!languages.has(row.language as string)) {
 					const index = dto.recipients.findIndex((r) => r.id === row.id);
 					throw new BadRequestException(
 						`Language code '${row.language}' of recipient on row '${index + 1}' not found in the 'Languages' sheet`,
 					);
+				}
+
+				if (row.id == null || row.id === "") {
+					row.id = Recipient.generateId(row as any);
 				}
 
 				// Save recipients
