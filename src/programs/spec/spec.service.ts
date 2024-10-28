@@ -119,17 +119,26 @@ export class ProgramSpecService {
 			const playlists = dto.deployments.flatMap((d) => d.playlists);
 
 			// 1. save new playlists
-			await manager.query(
-				playlists
-					.map((row, index) => {
-						const values = `('${project.code}', '${project.deployments.find((i) => i._id === row.deployment_id || i.id === row.deployment_id)?.id}', '${index + 1}', '${row.title}', '${row.audience}', '${row._id}')`;
-						return `
+			for (let i = 0; i < playlists.length; i++) {
+				const row = playlists[i];
+
+				await manager.query(
+					`
       INSERT INTO "playlists"("program_id", "deployment_id", "position", "title", "audience", "_id")
-      VALUES ${values}
-      ON CONFLICT DO NOTHING;`;
-					})
-					.join("\n"),
-			);
+      VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT DO NOTHING;`,
+					[
+						project.code,
+						project.deployments.find(
+							(i) => i._id === row.deployment_id || i.id === row.deployment_id,
+						)?.id,
+						i + 1,
+						row.title,
+						row.audience,
+						row._id,
+					],
+				);
+			}
 
 			// 2. delete removed playlists
 			await manager.getRepository(Playlist).delete({
@@ -706,7 +715,7 @@ export class ProgramSpecService {
 						playlist_title: p.title,
 						message_title: m.title,
 						key_points: m.key_points,
-						languagecode: m.languages.map((l) => l.language_code).join(','),
+						languagecode: m.languages.map((l) => l.language_code).join(","),
 						variant: m.variant,
 						format: m.format,
 						audience: p.audience,
