@@ -178,13 +178,16 @@ export class ProgramSpecService {
 			]);
 			const messages: Record<string, any>[] = [];
 			for (const m of playlists.flatMap((p) => p.messages)) {
-				if (!playlistIds.has(m.playlist_id)) {
+				if (m.playlist_id != null && !playlistIds.has(m.playlist_id)) {
 					// playlist has been deleted
 					continue;
 				}
 
 				const _found = updatedPlaylists.find(
-					(p) => p.id === m.playlist_id || p._id === m.playlist_id,
+					(p) =>
+						p.id === m.playlist_id ||
+						p._id === m.playlist_id ||
+						p.title === m.playlist_title,
 				);
 				if (_found == null) {
 					throw new BadRequestException(
@@ -233,6 +236,7 @@ export class ProgramSpecService {
 						)
 						.execute();
 				}
+
 				messages.push(m);
 			}
 
@@ -260,9 +264,25 @@ export class ProgramSpecService {
 					);
 				}
 
-				const newLanguages = new Set<string>(
-					(row.languages?.split(",") ?? []).map((l) => l.trim()),
-				);
+				const newLanguages = new Set<string>();
+				if (Array.isArray(row.languages)) {
+					for (const m of row.languages) {
+						// type is like MessageLanguage object, retrieve only the
+						if (typeof m === "object") {
+							newLanguages.add(m.language_code);
+						} else {
+							// string
+							newLanguages.add(m);
+						}
+					}
+				} else {
+					// string
+					// biome-ignore lint/complexity/noForEach: <explanation>
+					(row.languages?.split(",") ?? []).forEach((l) =>
+						newLanguages.add(l.trim()),
+					);
+				}
+
 				for (const code of newLanguages) {
 					if (code === "") continue;
 
