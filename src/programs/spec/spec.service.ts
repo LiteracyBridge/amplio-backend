@@ -187,6 +187,9 @@ export class ProgramSpecService {
 				m.default_category_code =
 					m.default_category_code === "" ? null : m.default_category_code;
 
+				// Remove unnecessary fields
+				delete m.audience;
+
 				if (existingMessageIds.has(m._id)) {
 					const _m = { ...m };
 
