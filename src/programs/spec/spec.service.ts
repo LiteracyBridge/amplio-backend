@@ -22,6 +22,7 @@ import { join } from "node:path";
 import { PublishedProgramSpecs } from "src/entities/published_spec.entity";
 import { instanceToPlain } from "class-transformer";
 import { diff } from "json-diff-ts";
+import { Request } from "express";
 
 @Injectable()
 export class ProgramSpecService {
@@ -340,8 +341,9 @@ export class ProgramSpecService {
 		return await this.findByCode(project.code);
 	}
 
-	async import(file: Express.Multer.File, code: string) {
-		console.log(file.buffer);
+	async import(file: Express.Multer.File, code: string, req: Request) {
+		console.log(req.file);
+		console.log(req.files);
 
 		// readSheetNames(file.buffer).then((sheetNames) => {
 		//   // sheetNames === ['Sheet1', 'Sheet2']
