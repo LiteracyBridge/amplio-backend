@@ -315,7 +315,17 @@ export class ProgramSpecService {
 							"numtbs",
 							"numhouseholds",
 							"direct_beneficiaries_additional",
+							"indirect_beneficiaries",
+							"agent_gender",
+							"group_size",
+							"region",
+							"country",
+							"district",
+							"partner",
+							"community_name",
+							"agent",
 							"variant",
+							"support_entity",
 						],
 						"recipients_pkey",
 					)
@@ -558,7 +568,26 @@ export class ProgramSpecService {
 						.insert()
 						.into(Recipient)
 						.values(row as unknown as Recipient)
-						.orIgnore()
+						.orUpdate(
+							[
+								"language",
+								"numtbs",
+								"numhouseholds",
+								"direct_beneficiaries_additional",
+								"indirect_beneficiaries",
+								"agent_gender",
+								"group_size",
+								"region",
+								"country",
+								"district",
+								"partner",
+								"community_name",
+								"agent",
+								"variant",
+								"support_entity",
+							],
+							"recipients_pkey",
+						)
 						.execute();
 				}
 			},
