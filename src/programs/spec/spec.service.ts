@@ -339,10 +339,11 @@ export class ProgramSpecService {
 	}
 
 	async import(file: Express.Multer.File, code: string) {
+    console.log(file)
 		const {
 			rows: [general],
 			errors: errors1,
-		} = await readXlsxFile(file as any, {
+		} = await readXlsxFile(file.stream, {
 			// @ts-ignore
 			schema: GENERAL_SCHEMA,
 			sheet: "General",
