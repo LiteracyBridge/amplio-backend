@@ -322,7 +322,7 @@ export class ProgramSpecService {
 		const {
 			rows: [general],
 			errors: errors1,
-		} = await readXlsxFile(file.path, {
+		} = await readXlsxFile(file as any, {
 			// @ts-ignore
 			schema: GENERAL_SCHEMA,
 			sheet: "General",
