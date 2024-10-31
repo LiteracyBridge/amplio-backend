@@ -340,7 +340,7 @@ export class ProgramSpecService {
 	}
 
 	async import(file: Express.Multer.File, code: string) {
-    console.log(file.destination)
+    console.log(file.buffer)
 
     // readSheetNames(file.buffer).then((sheetNames) => {
     //   // sheetNames === ['Sheet1', 'Sheet2']
@@ -349,7 +349,7 @@ export class ProgramSpecService {
 		const {
 			rows: [general],
 			errors: errors1,
-		} = await readXlsxFile(file.destination, {
+		} = await readXlsxFile(file.buffer, {
 			// @ts-ignore
 			schema: GENERAL_SCHEMA,
 			sheet: "General",
