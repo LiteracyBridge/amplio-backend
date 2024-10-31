@@ -132,9 +132,9 @@ export class AcmCheckoutService {
 
 	private async discard(acm: ACMCheckout | null, dto: AcmCheckoutDto) {
 		if (
-			acm == null ||
-			acm.acm_state === ACMState.CHECKED_IN ||
-			acm.now_out_key !== dto.key
+			acm == null
+			// acm.acm_state === ACMState.CHECKED_IN ||
+			// acm.now_out_key !== dto.key
 		) {
 			// # Someone else released the record from under us. Count it as success.
 			return {
