@@ -143,7 +143,7 @@ export class AcmCheckoutService {
 			};
 		}
 
-		if (acm.acm_state !== ACMState.CHECKED_OUT || acm.now_out_key !== dto.key) {
+		if (acm.acm_state !== ACMState.CHECKED_OUT) {
 			// # Someone else released the record from under us. Count it as success.
 			return {
 				data: STATUS_OK,
