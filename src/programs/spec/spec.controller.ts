@@ -54,7 +54,7 @@ export class SpecController {
 
 	@Post("upload")
 	@UseInterceptors(
-		FileInterceptor("file", { dest: tmpdir() }),
+		FileInterceptor("file", { dest: tmpdir(), preservePath: true }),
 	)
 	async uploadSpec(
 		@UploadedFile() file: Express.Multer.File,

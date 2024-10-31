@@ -362,7 +362,7 @@ export class ProgramSpecService {
 		}
 
 		const { rows: deployments, errors: errors2 } = await readXlsxFile(
-			file.buffer,
+			req.file?.path!,
 			{ schema: DEPLOYMENTS_SCHEMA, sheet: "Deployments" },
 		);
 		if (errors2.length > 0) {
