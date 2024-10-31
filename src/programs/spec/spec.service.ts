@@ -315,10 +315,11 @@ export class ProgramSpecService {
 							"numtbs",
 							"numhouseholds",
 							"direct_beneficiaries_additional",
-							"indirect_beneficiaries",
 							"listening_model",
+							"indirect_beneficiaries",
 							"agent_gender",
 							"group_size",
+							"groupname",
 							"region",
 							"country",
 							"district",
@@ -326,7 +327,7 @@ export class ProgramSpecService {
 							"communityname",
 							"agent",
 							"variant",
-							"support_entity",
+							"supportentity",
 						],
 						"recipients_pkey",
 					)
@@ -340,11 +341,11 @@ export class ProgramSpecService {
 	}
 
 	async import(file: Express.Multer.File, code: string) {
-    console.log(file.buffer)
+		console.log(file.buffer);
 
-    // readSheetNames(file.buffer).then((sheetNames) => {
-    //   // sheetNames === ['Sheet1', 'Sheet2']
-    // })
+		// readSheetNames(file.buffer).then((sheetNames) => {
+		//   // sheetNames === ['Sheet1', 'Sheet2']
+		// })
 
 		const {
 			rows: [general],
@@ -585,6 +586,7 @@ export class ProgramSpecService {
 								"indirect_beneficiaries",
 								"agent_gender",
 								"group_size",
+								"groupname",
 								"region",
 								"country",
 								"district",
@@ -592,7 +594,7 @@ export class ProgramSpecService {
 								"communityname",
 								"agent",
 								"variant",
-								"support_entity",
+								"supportentity",
 							],
 							"recipients_pkey",
 						)
