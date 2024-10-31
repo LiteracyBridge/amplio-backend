@@ -4,7 +4,7 @@ import {
 	NotFoundException,
 	InternalServerErrorException,
 } from "@nestjs/common";
-import readXlsxFile from "read-excel-file/node";
+import readXlsxFile, { readSheetNames } from "read-excel-file/node";
 import { Deployment } from "src/entities/deployment.entity";
 import { Language, ProjectLanguage } from "src/entities/language.entity";
 import { Message, MessageLanguages } from "src/entities/message.entity";
@@ -340,11 +340,16 @@ export class ProgramSpecService {
 	}
 
 	async import(file: Express.Multer.File, code: string) {
-    console.log(file)
+    console.log(file.destination)
+
+    // readSheetNames(file.buffer).then((sheetNames) => {
+    //   // sheetNames === ['Sheet1', 'Sheet2']
+    // })
+
 		const {
 			rows: [general],
 			errors: errors1,
-		} = await readXlsxFile(file.stream, {
+		} = await readXlsxFile(file.destination, {
 			// @ts-ignore
 			schema: GENERAL_SCHEMA,
 			sheet: "General",
