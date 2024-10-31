@@ -288,7 +288,8 @@ export class ProgramSpecService {
 			for (const row of dto.recipients) {
 				row.id = row.id ?? row.recipientid ?? row.recipient_id;
 				row.program_id = project.code;
-				row.num_households ??= 0;
+				row.numtbs = Number(row.numtbs ?? 0);
+				row.numhouseholds = Number(row.numhouseholds ?? 0);
 				row.direct_beneficiaries_additional ??= {};
 
 				if (!languages.has(row.language as string)) {
@@ -308,7 +309,16 @@ export class ProgramSpecService {
 					.insert()
 					.into(Recipient)
 					.values(row as unknown as Recipient)
-					.orUpdate(["language"], "recipients_pkey")
+					.orUpdate(
+						[
+							"language",
+							"numtbs",
+							"numhouseholds",
+							"direct_beneficiaries_additional",
+							"variant",
+						],
+						"recipients_pkey",
+					)
 					.getQueryAndParameters();
 
 				await manager.query(query, params);
