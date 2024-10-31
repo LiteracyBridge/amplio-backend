@@ -343,7 +343,7 @@ export class ProgramSpecService {
 
 	async import(file: Express.Multer.File, code: string, req: Request) {
 		console.log(req.file);
-		console.log(req.files);
+		// console.log(req.files);
 
 		// readSheetNames(file.buffer).then((sheetNames) => {
 		//   // sheetNames === ['Sheet1', 'Sheet2']
@@ -352,7 +352,7 @@ export class ProgramSpecService {
 		const {
 			rows: [general],
 			errors: errors1,
-		} = await readXlsxFile(file.buffer, {
+		} = await readXlsxFile(req.file?.path!, {
 			// @ts-ignore
 			schema: GENERAL_SCHEMA,
 			sheet: "General",
@@ -369,7 +369,7 @@ export class ProgramSpecService {
 			throw new BadRequestException(this.formatParsingError(errors2[0]));
 		}
 
-		const { rows: contents, errors: err3 } = await readXlsxFile(file.buffer, {
+		const { rows: contents, errors: err3 } = await readXlsxFile(file.path, {
 			schema: CONTENT_SCHEMA,
 			sheet: "Content",
 		});
@@ -377,7 +377,7 @@ export class ProgramSpecService {
 			throw new BadRequestException(this.formatParsingError(err3[0]));
 		}
 
-		const { rows: recipients, errors: err4 } = await readXlsxFile(file.buffer, {
+		const { rows: recipients, errors: err4 } = await readXlsxFile(file.path, {
 			schema: RECIPIENT_SCHEMA,
 			sheet: "Recipients",
 		});
@@ -385,7 +385,7 @@ export class ProgramSpecService {
 			throw new BadRequestException(this.formatParsingError(err4[0]));
 		}
 
-		const { rows: languages, errors: err5 } = await readXlsxFile(file.buffer, {
+		const { rows: languages, errors: err5 } = await readXlsxFile(file.path, {
 			schema: LANGUAGE_SCHEMA,
 			sheet: "Languages",
 		});
