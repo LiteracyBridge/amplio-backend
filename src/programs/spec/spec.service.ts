@@ -141,7 +141,7 @@ export class ProgramSpecService {
 					...row,
 					program_id: project.code,
 					deployment_id: deployment?.id,
-					position: i + 1,
+					position: row.position,
 					_id: row?._id ?? randomUUID(),
 				};
 				delete _row.messages;
