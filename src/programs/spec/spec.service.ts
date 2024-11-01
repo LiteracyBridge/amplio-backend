@@ -143,7 +143,9 @@ export class ProgramSpecService {
 				delete _row.messages;
 				if (row.id != null) {
 					// existing playlist, update
-					await manager.upsert(Playlist, _row, ["title", "position"]);
+          delete _row.id
+          delete _row._id
+					await manager.getRepository(Playlist).update({ id: row.id }, _row);
 				} else {
 					const [query, params] = await manager
 						.createQueryBuilder()
