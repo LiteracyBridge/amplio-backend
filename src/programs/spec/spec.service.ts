@@ -124,6 +124,10 @@ export class ProgramSpecService {
 			const playlists = dto.deployments.flatMap((d) => d.playlists);
 
 			// 1. save playlists
+			await manager.query("DELETE FROM playlists WHERE program_id=$1", [
+				project.code,
+			]);
+
 			for (let i = 0; i < playlists.length; i++) {
 				const row = playlists[i];
 				const deployment = allDeployments.find(
@@ -141,34 +145,23 @@ export class ProgramSpecService {
 					_id: row?._id ?? randomUUID(),
 				};
 				delete _row.messages;
-				if (row.id != null) {
-					// existing playlist, update
-					// delete _row.id;
-					// delete _row._id;
-					await manager
-						.getRepository(Playlist)
-						.update(
-							{ id: row.id },
-							{ title: _row.title, position: _row.position },
-						);
-				} else {
-					const [query, params] = await manager
-						.createQueryBuilder()
-						.insert()
-						.into(Playlist)
-						.values(_row)
-						.orUpdate(["title", "position"], "playlist_uniqueness_key")
-						.getQueryAndParameters();
 
-					await manager.query(query, params);
-				}
+				const [query, params] = await manager
+					.createQueryBuilder()
+					.insert()
+					.into(Playlist)
+					.values(_row)
+					.orUpdate(["title", "position"], "playlist_uniqueness_key")
+					.getQueryAndParameters();
+
+				await manager.query(query, params);
 			}
 
 			// 2. delete removed playlists
-			await manager.getRepository(Playlist).delete({
-				_id: Not(In(Array.from(new Set<string>(playlists.map((i) => i._id))))),
-				program_id: project.code,
-			});
+			// await manager.getRepository(Playlist).delete({
+			// 	_id: Not(In(Array.from(new Set<string>(playlists.map((i) => i._id))))),
+			// 	program_id: project.code,
+			// });
 
 			//
 			// Save messages
@@ -254,11 +247,11 @@ export class ProgramSpecService {
 				messages.push(m);
 			}
 
-			// -- delete removed messages
-			await manager.getRepository(Message).delete({
-				_id: Not(In(messages.map((m) => m._id))),
-				program_id: project.code,
-			});
+			// // -- delete removed messages
+			// await manager.getRepository(Message).delete({
+			// 	_id: Not(In(messages.map((m) => m._id))),
+			// 	program_id: project.code,
+			// });
 
 			// Save Message languages
 			const updatedMessages = await manager.getRepository(Message).find({
