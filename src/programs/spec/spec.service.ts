@@ -143,8 +143,8 @@ export class ProgramSpecService {
 				delete _row.messages;
 				if (row.id != null) {
 					// existing playlist, update
-					delete _row.id;
-					delete _row._id;
+					// delete _row.id;
+					// delete _row._id;
 					await manager
 						.getRepository(Playlist)
 						.update(
