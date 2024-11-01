@@ -133,39 +133,28 @@ export class ProgramSpecService {
 						d.deploymentnumber === +row.deployment_number,
 				);
 
-				row = {
+				const _row = {
 					...row,
 					program_id: project.code,
 					deployment_id: deployment?.id,
 					position: i + 1,
 					_id: deployment?._id ?? randomUUID(),
 				};
+				delete _row.messages;
 				if (row.id != null) {
 					// existing playlist, update
 					await manager
 						.createQueryBuilder()
 						.update(Playlist)
-						.set({
-							...row,
-							program_id: project.code,
-							deployment_id: deployment?.id,
-							position: row.position ?? i + 1,
-							_id: deployment?._id ?? randomUUID(),
-						})
-						.where("id = :id", { id: row.id })
+						.set(_row)
+						.where("id = :id", { id: _row.id })
 						.execute();
 				} else {
 					const [query, params] = await manager
 						.createQueryBuilder()
 						.insert()
 						.into(Playlist)
-						.values({
-							...row,
-							program_id: project.code,
-							deployment_id: deployment?.id,
-							position: i + 1,
-							_id: deployment?._id ?? randomUUID(),
-						})
+						.values(_row)
 						.orUpdate(["title", "position"], "playlist_title_uniqueness_key")
 						.getQueryAndParameters();
 
