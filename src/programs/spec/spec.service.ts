@@ -144,7 +144,7 @@ export class ProgramSpecService {
 					position: row.position,
 					_id: row?._id ?? randomUUID(),
 				};
-				delete _row.messages;
+				// delete _row.messages;
 
 				const [query, params] = await manager
 					.createQueryBuilder()
