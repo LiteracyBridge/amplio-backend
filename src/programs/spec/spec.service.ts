@@ -125,7 +125,7 @@ export class ProgramSpecService {
 
 			// 1. save playlists
 			for (let i = 0; i < playlists.length; i++) {
-				let row = playlists[i];
+				const row = playlists[i];
 				const deployment = allDeployments.find(
 					(d) =>
 						d._id === row.deployment_id ||
@@ -138,7 +138,7 @@ export class ProgramSpecService {
 					program_id: project.code,
 					deployment_id: deployment?.id,
 					position: i + 1,
-					_id: deployment?._id ?? randomUUID(),
+					_id: row?._id ?? randomUUID(),
 				};
 				delete _row.messages;
 				if (row.id != null) {
