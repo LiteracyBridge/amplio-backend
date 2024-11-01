@@ -123,9 +123,9 @@ export class ProgramSpecService {
 			//
 			const playlists = dto.deployments.flatMap((d) => d.playlists);
 
-			// 1. save new playlists
+			// 1. save playlists
 			for (let i = 0; i < playlists.length; i++) {
-				const row = playlists[i];
+				let row = playlists[i];
 				const deployment = allDeployments.find(
 					(d) =>
 						d._id === row.deployment_id ||
@@ -133,21 +133,44 @@ export class ProgramSpecService {
 						d.deploymentnumber === +row.deployment_number,
 				);
 
-				const [query, params] = await manager
-					.createQueryBuilder()
-					.insert()
-					.into(Playlist)
-					.values({
-						...row,
-						program_id: project.code,
-						deployment_id: deployment?.id,
-						position: i + 1,
-						_id: deployment?._id ?? randomUUID(),
-					})
-					.orUpdate(["title", "position"], "playlist_title_uniqueness_key")
-					.getQueryAndParameters();
+				row = {
+					...row,
+					program_id: project.code,
+					deployment_id: deployment?.id,
+					position: i + 1,
+					_id: deployment?._id ?? randomUUID(),
+				};
+				if (row.id != null) {
+					// existing playlist, update
+					await manager
+						.createQueryBuilder()
+						.update(Playlist)
+						.set({
+							...row,
+							program_id: project.code,
+							deployment_id: deployment?.id,
+							position: row.position ?? i + 1,
+							_id: deployment?._id ?? randomUUID(),
+						})
+						.where("id = :id", { id: row.id })
+						.execute();
+				} else {
+					const [query, params] = await manager
+						.createQueryBuilder()
+						.insert()
+						.into(Playlist)
+						.values({
+							...row,
+							program_id: project.code,
+							deployment_id: deployment?.id,
+							position: i + 1,
+							_id: deployment?._id ?? randomUUID(),
+						})
+						.orUpdate(["title", "position"], "playlist_title_uniqueness_key")
+						.getQueryAndParameters();
 
-				await manager.query(query, params);
+					await manager.query(query, params);
+				}
 			}
 
 			// 2. delete removed playlists
@@ -371,271 +394,6 @@ export class ProgramSpecService {
 		});
 
 		return await this.findByCode(project.code);
-	}
-
-	async import(file: Express.Multer.File, code: string, req: Request) {
-		console.log(req.file);
-		// console.log(req.files);
-
-		// readSheetNames(file.buffer).then((sheetNames) => {
-		//   // sheetNames === ['Sheet1', 'Sheet2']
-		// })
-
-		// const {
-		// 	rows: [general],
-		// 	errors: errors1,
-		// } = await readXlsxFile(req.file?.path!, {
-		// 	// @ts-ignore
-		// 	schema: GENERAL_SCHEMA,
-		// 	sheet: "General",
-		// });
-		// if (errors1.length > 0) {
-		// 	throw new BadRequestException(this.formatParsingError(errors1[0]));
-		// }
-
-		// const { rows: deployments, errors: errors2 } = await readXlsxFile(
-		// 	req.file?.path!,
-		// 	{ schema: DEPLOYMENTS_SCHEMA, sheet: "Deployments" },
-		// );
-		// if (errors2.length > 0) {
-		// 	throw new BadRequestException(this.formatParsingError(errors2[0]));
-		// }
-
-		// const { rows: contents, errors: err3 } = await readXlsxFile(file.path, {
-		// 	schema: CONTENT_SCHEMA,
-		// 	sheet: "Content",
-		// });
-		// if (err3.length > 0) {
-		// 	throw new BadRequestException(this.formatParsingError(err3[0]));
-		// }
-
-		// const { rows: recipients, errors: err4 } = await readXlsxFile(file.path, {
-		// 	schema: RECIPIENT_SCHEMA,
-		// 	sheet: "Recipients",
-		// });
-		// if (err4.length > 0) {
-		// 	throw new BadRequestException(this.formatParsingError(err4[0]));
-		// }
-
-		// const { rows: languages, errors: err5 } = await readXlsxFile(file.path, {
-		// 	schema: LANGUAGE_SCHEMA,
-		// 	sheet: "Languages",
-		// });
-		// if (err5.length > 0) {
-		// 	throw new BadRequestException(this.formatParsingError(err5[0]));
-		// }
-
-		// // Save to db
-		// const project = await this.findByCode(code);
-		// await this.dataSource.manager.transaction(
-		// 	"READ UNCOMMITTED",
-		// 	async (manager) => {
-		// 		const program = project.general ?? project.program;
-		// 		let allDeployments = project.deployments;
-
-		// 		// Save languages
-		// 		await manager.upsert(
-		// 			ProjectLanguage,
-		// 			languages.map((l) => {
-		// 				l.projectcode = program.program_id;
-		// 				return l;
-		// 			}) as unknown as ProjectLanguage[],
-		// 			["code", "name", "projectcode"],
-		// 		);
-
-		// 		// Save program info
-		// 		await this.saveGeneralInfo(
-		// 			general,
-		// 			languages.flatMap((i) => i.code as string),
-		// 			program,
-		// 			manager,
-		// 		);
-
-		// 		// Save deployments
-		// 		for (const d of deployments) {
-		// 			if (
-		// 				allDeployments.find((i) => i.deploymentname === d.deployment) ==
-		// 				null
-		// 			) {
-		// 				await this.saveDeployments(manager, [d], program);
-		// 			}
-		// 		}
-		// 		allDeployments = await manager
-		// 			.getRepository(Deployment)
-		// 			.find({ where: { project_id: program.program_id } });
-
-		// 		//
-		// 		// Save content
-		// 		//
-		// 		// Playlists
-		// 		const _contentQuery = contents.map((row, index) => {
-		// 			const values = `('${program.program_id}', '${allDeployments.find((i) => i.deploymentnumber === row.deployment_number)?.id}', '${index + 1}', '${row.playlist_title}', '${row.audience}')`;
-		// 			return `
-		//     INSERT INTO "playlists"("program_id", "deployment_id", "position", "title", "audience")
-		//     VALUES ${values}
-		//     ON CONFLICT DO NOTHING;`;
-		// 		});
-
-		// 		await manager.query(_contentQuery.join("\n"));
-
-		// 		// Messages
-		// 		const playlists = await manager.getRepository(Playlist).find({
-		// 			where: { program_id: program.program_id },
-		// 			relations: { deployment: true },
-		// 			select: {
-		// 				deployment: { deploymentnumber: true },
-		// 			},
-		// 		});
-
-		// 		for (let index = 0; index < contents.length; index++) {
-		// 			const row = contents[index];
-
-		// 			const pId = playlists.find(
-		// 				(i) =>
-		// 					i.title === row.playlist_title &&
-		// 					i.deployment.deploymentnumber === row.deployment_number,
-		// 			)!.id;
-
-		// 			if (row.sdg_goals != null) {
-		// 				row.sdg_goal_id = (row.sdg_goals as string).split(
-		// 					",",
-		// 				)[0] as unknown as number; // pick the first goal if multiple
-		// 			}
-
-		// 			const msgQuery = await manager
-		// 				.createQueryBuilder(manager.queryRunner)
-		// 				.insert()
-		// 				.into(Message)
-		// 				.values({
-		// 					...row,
-		// 					default_category_code: row.default_category as string,
-		// 					title: row.message_title as string,
-		// 					playlist_id: pId,
-		// 					position: index + 1,
-		// 					// sdg_goal_id: sdgId,
-		// 					sdg_target_id: row.sdg_targets as string,
-		// 					program_id: program.program_id,
-		// 				})
-		// 				.orUpdate(
-		// 					[
-		// 						"position",
-		// 						"title",
-		// 						"format",
-		// 						"default_category_code",
-		// 						"variant",
-		// 						"key_points",
-		// 						"sdg_goal_id",
-		// 						"sdg_target_id",
-		// 					],
-		// 					["program_id", "playlist_id", "position"],
-		// 				)
-		// 				.getQueryAndParameters();
-
-		// 			// delete existing message record, to prevent insert conflict
-		// 			await manager.query(
-		// 				"DELETE FROM messages WHERE program_id = $1 AND title = $2 AND playlist_id = $3",
-		// 				[program.program_id, row.message_title, pId],
-		// 			);
-		// 			await manager.query(msgQuery[0], msgQuery[1]);
-		// 		}
-
-		// 		// Message languages
-
-		// 		// First, we need to make sure that all message languages are captured on the "Languages" sheet
-		// 		const specLanguages: Record<string, string> = {}; // {code: code, name: code}
-		// 		for (const row of languages) {
-		// 			// @ts-ignore
-		// 			specLanguages[row.code] = row.code;
-		// 			// @ts-ignore
-		// 			specLanguages[row.name] = row.code;
-		// 		}
-
-		// 		const messages = await manager.getRepository(Message).find({
-		// 			where: { program_id: program.program_id },
-		// 			relations: { playlist: { deployment: true } },
-		// 			select: {
-		// 				playlist: { title: true, deployment: { deploymentnumber: true } },
-		// 			},
-		// 		});
-		// 		const _langQuery = contents.flatMap((row, index) => {
-		// 			const msg = messages.find(
-		// 				(m) =>
-		// 					m.title === row.message_title &&
-		// 					m.playlist.title === row.playlist_title &&
-		// 					m.playlist.deployment.deploymentnumber === row.deployment_number,
-		// 			);
-
-		// 			if (msg == null) {
-		// 				throw new BadRequestException(
-		// 					`Message '${row.message_title}' differ from what is already in the spec`,
-		// 				);
-		// 			}
-
-		// 			return (row.languages as string[]).map((code) => {
-		// 				if (specLanguages[code] == null) {
-		// 					throw new BadRequestException(
-		// 						`Language code '${code}' of '${msg?.title}' message not found in the 'Languages' sheet`,
-		// 					);
-		// 				}
-
-		// 				return `INSERT INTO "message_languages"("language_code", "message_id") VALUES ('${specLanguages[code]}', ${msg.id}) ON CONFLICT DO NOTHING;`;
-		// 			});
-		// 		});
-
-		// 		await manager.query(_langQuery.join("\n"));
-
-		// 		// Save recipients
-		// 		for (let index = 0; index < recipients.length; index++) {
-		// 			const row = recipients[index];
-		// 			row.program_id = program.program_id;
-		// 			row.numhouseholds ??= 0;
-		// 			row.support_entity ??= "";
-		// 			row.numtbs ??= 0;
-		// 			row.group_size ??= 0;
-		// 			row.direct_beneficiaries_additional ??= {};
-
-		// 			if (row.recipient_id == null || row.recipient_id === "") {
-		// 				delete row.recipient_id;
-		// 			}
-
-		// 			if (specLanguages[row.language as string] == null) {
-		// 				throw new BadRequestException(
-		// 					`Language code '${row.language}' of recipient on row '${index + 1}' not found in the 'Languages' sheet`,
-		// 				);
-		// 			}
-
-		// 			row.language = specLanguages[row.language as string];
-		// 			await manager
-		// 				.createQueryBuilder()
-		// 				.insert()
-		// 				.into(Recipient)
-		// 				.values(row as unknown as Recipient)
-		// 				.orUpdate(
-		// 					[
-		// 						"language",
-		// 						"numtbs",
-		// 						"numhouseholds",
-		// 						"direct_beneficiaries_additional",
-		// 						"listening_model",
-		// 						"indirect_beneficiaries",
-		// 						"agent_gender",
-		// 						"group_size",
-		// 						"groupname",
-		// 						"region",
-		// 						"country",
-		// 						"district",
-		// 						"partner",
-		// 						"communityname",
-		// 						"agent",
-		// 						"variant",
-		// 						"supportentity",
-		// 					],
-		// 					"recipients_pkey",
-		// 				)
-		// 				.execute();
-		// 		}
-		// 	},
-		// );
 	}
 
 	async publish(opts: { code: string; email: string }) {
@@ -938,198 +696,4 @@ export class ProgramSpecService {
 		general.languages = languages;
 		await manager.upsert(Program, general, ["program_id"]);
 	}
-
-	// private formatParsingError(opts: {
-	// 	error: string;
-	// 	row: number;
-	// 	column: string;
-	// 	value?: any;
-	// }) {
-	// 	return `${opts.error} at row ${opts.row}, column ${opts.column} with value '${opts.value}'`;
-	// }
 }
-
-// const errorMessageSuffix = "Please correct all errors and re-upload the sheet";
-// const parseJson = (value: string, error: string) => {
-// 	try {
-// 		return JSON.parse(value.replace(/'/g, '"'));
-// 	} catch (err) {
-// 		throw new BadRequestException(`${error}. ${errorMessageSuffix}`);
-// 	}
-// };
-
-// const LANGUAGE_SCHEMA = {
-// 	name: { prop: "name", type: String, required: true },
-// 	code: { prop: "code", type: String, required: true },
-// };
-
-// const RECIPIENT_SCHEMA = {
-// 	Country: { prop: "country", type: String, required: true },
-// 	Region: { prop: "region", type: String, required: true },
-// 	District: { prop: "district", type: String, required: true },
-// 	Community: { prop: "community_name", type: String, required: false },
-// 	Agent: { prop: "agent", type: String, required: true },
-// 	"Language Code": { prop: "language", type: String, required: true },
-// 	"Group Name": { prop: "group_name", type: String, required: false },
-// 	"Group Size": { prop: "group_size", type: Number, required: false },
-// 	"# HH": { prop: "numhouseholds", type: Number, required: false },
-// 	"# TBs": { prop: "numtbs", type: Number, required: false },
-// 	"Direct Beneficiaries": {
-// 		prop: "direct_beneficiaries",
-// 		type: Number,
-// 		required: false,
-// 	},
-// 	"Indirect Beneficiaries": {
-// 		prop: "indirect_beneficiaries",
-// 		type: Number,
-// 		required: false,
-// 	},
-// 	Variant: { prop: "variant", type: String, required: false },
-// 	"Support Entity": { prop: "support_entity", type: String, required: false },
-// 	"Agent Gender": { prop: "agent_gender", type: String, required: false },
-// 	"Listening Model": { prop: "listening_model", type: String, required: false },
-// 	"Direct Beneficiaries Additional": {
-// 		prop: "direct_beneficiaries_additional",
-// 		required: false,
-// 		type: (value) =>
-// 			parseJson(
-// 				value,
-// 				"The format of 'Direct Beneficiaries Additional' column in 'Recipients' workbook is wrong",
-// 			),
-// 	},
-// 	Affiliate: { prop: "affiliate", type: String, required: false },
-// 	Partner: { prop: "partner", type: String, required: false },
-// 	Components: { prop: "component", type: String, required: false },
-// 	RecipientID: { prop: "recipient_id", type: String, required: false },
-// 	Deployments: {
-// 		prop: "deployments",
-// 		type: (value) => {
-// 			if (Number.isInteger(value)) {
-// 				return [+value];
-// 			}
-// 			return parseJson(
-// 				value,
-// 				"The format of 'Deployment' column in 'Recipient' workbook is wrong",
-// 			);
-// 		},
-// 		required: false,
-// 	},
-// };
-
-// const CONTENT_SCHEMA = {
-// 	"Deployment #": { prop: "deployment_number", type: Number, required: true },
-// 	"Playlist Title": { prop: "playlist_title", type: String, required: true },
-// 	"Message Title": { prop: "message_title", type: String, required: true },
-// 	"Key Points": { prop: "key_points", type: String, required: false },
-// 	"Language Code": {
-// 		required: true,
-// 		prop: "languages",
-// 		type: (value) => {
-// 			try {
-// 				return parseJson(
-// 					value,
-// 					`The format of '${value}' in 'Language Code' column of 'Content' workbook is wrong`,
-// 				); // value in brackets; eg. ["eng", "fr"]
-// 			} catch (error) {
-// 				try {
-// 					return value.split(",").map((v) => v.trim()); // raw strings; eg. en, fr
-// 				} catch {
-// 					throw new BadRequestException(`${error}. ${errorMessageSuffix}`);
-// 				}
-// 			}
-// 		},
-// 	},
-// 	Variant: { prop: "variant", type: String, required: false },
-// 	Format: { prop: "format", type: String, required: false },
-// 	Audience: { prop: "audience", type: String, required: false },
-// 	"Default Category": {
-// 		prop: "default_category",
-// 		type: String,
-// 		required: false,
-// 	},
-// 	"SDG Goals": { prop: "sdg_goals", type: String, required: false },
-// 	"SDG Targets": { prop: "sdg_targets", type: String, required: false },
-// };
-
-// const DEPLOYMENTS_SCHEMA = {
-// 	"Deployment #": { prop: "deploymentnumber", type: Number, required: true },
-// 	"Start Date": { prop: "start_date", type: Date, required: true },
-// 	"End Date": { prop: "end_date", type: Date, required: true },
-// 	"Deployment Name": { prop: "deployment", type: String, required: true },
-// };
-
-// const GENERAL_SCHEMA = {
-// 	"Program ID": { prop: "program_id", type: String, required: true },
-// 	Country: { prop: "country", type: String, required: true },
-// 	Affiliate: { prop: "affiliate", type: String, required: false },
-// 	Partner: { prop: "partner", type: String, required: false },
-// 	Regions: {
-// 		prop: "region",
-// 		type: (value: string) =>
-// 			parseJson(
-// 				value,
-// 				"The format of 'Regions' column in 'General' workbook is wrong",
-// 			),
-// 		required: true,
-// 	},
-// 	// "Languages": {
-// 	//   prop: 'languages',
-// 	//   type: (value) => parseJson(value, "The format of 'Languages' column in 'General' workbook is wrong"),
-// 	//   required: true
-// 	// },
-// 	"Deployments Count": {
-// 		prop: "deployments_count",
-// 		type: Number,
-// 		required: true,
-// 	},
-// 	"Deployments Length": {
-// 		prop: "deployments_length",
-// 		type: String,
-// 		required: true,
-// 	},
-// 	"Deployments First": {
-// 		prop: "deployments_first",
-// 		type: Date,
-// 		required: true,
-// 	},
-// 	"Feedback Frequency": {
-// 		prop: "feedback_frequency",
-// 		type: String,
-// 		required: false,
-// 	},
-// 	"Listening Models": {
-// 		prop: "listening_models",
-// 		type: (value) =>
-// 			parseJson(
-// 				value,
-// 				"The format of 'Listening Models' column in 'General' workbook is wrong",
-// 			),
-// 		required: false,
-// 	},
-// 	"Sustainable Development Goals": {
-// 		prop: "sustainable_development_goals",
-// 		type: (value) =>
-// 			parseJson(
-// 				value,
-// 				"The format of 'Sustainable Development Goals' column in 'General' workbook is wrong",
-// 			),
-// 	},
-// 	"Direct Beneficiaries Map": {
-// 		prop: "direct_beneficiaries_map",
-// 		required: false,
-// 		type: (value) =>
-// 			parseJson(
-// 				value,
-// 				"The format of 'Direct Beneficiaries Map' column in 'General' workbook is wrong",
-// 			),
-// 	},
-// 	"Direct Beneficiaries Additional Map": {
-// 		prop: "direct_beneficiaries_additional_map",
-// 		required: false,
-// 		type: (value) =>
-// 			parseJson(
-// 				value,
-// 				"The format of 'Direct Beneficiaries Additional Map' column in 'General' workbook is wrong",
-// 			),
-// 	},
-// };

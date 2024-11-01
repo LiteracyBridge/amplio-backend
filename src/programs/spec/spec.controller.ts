@@ -52,19 +52,19 @@ export class SpecController {
 		});
 	}
 
-	@Post("upload")
-	@UseInterceptors(
-		FileInterceptor("file", { dest: tmpdir(), preservePath: true }),
-	)
-	async uploadSpec(
-		@UploadedFile() file: Express.Multer.File,
-		@Query("programid") code: string,
-		@CurrentUser() user: User,
-		@Req() req: Request,
-	) {
-		await this.service.import(file, code, req);
-		return ApiResponse.Success({
-			data: await this.service.findByCode(code, user),
-		});
-	}
+	// @Post("upload")
+	// @UseInterceptors(
+	// 	FileInterceptor("file", { dest: tmpdir(), preservePath: true }),
+	// )
+	// async uploadSpec(
+	// 	@UploadedFile() file: Express.Multer.File,
+	// 	@Query("programid") code: string,
+	// 	@CurrentUser() user: User,
+	// 	@Req() req: Request,
+	// ) {
+	// 	await this.service.import(file, code, req);
+	// 	return ApiResponse.Success({
+	// 		data: await this.service.findByCode(code, user),
+	// 	});
+	// }
 }
