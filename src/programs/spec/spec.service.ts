@@ -143,19 +143,14 @@ export class ProgramSpecService {
 				delete _row.messages;
 				if (row.id != null) {
 					// existing playlist, update
-					await manager
-						.createQueryBuilder()
-						.update(Playlist)
-						.set(_row)
-						.where("id = :id", { id: _row.id })
-						.execute();
+					await manager.upsert(Playlist, _row, ["title", "position"]);
 				} else {
 					const [query, params] = await manager
 						.createQueryBuilder()
 						.insert()
 						.into(Playlist)
 						.values(_row)
-						.orUpdate(["title", "position"], "playlist_title_uniqueness_key")
+						.orUpdate(["title", "position"], "playlist_uniqueness_key")
 						.getQueryAndParameters();
 
 					await manager.query(query, params);
