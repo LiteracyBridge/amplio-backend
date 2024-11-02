@@ -118,134 +118,184 @@ export class ProgramSpecService {
 				.getRepository(Deployment)
 				.find({ where: { project_id: project.code } });
 
-			//
-			// Save Playlists
-			//
-			const playlists = dto.deployments.flatMap((d) => d.playlists);
-
 			// 1. save playlists
 			await manager.query("DELETE FROM playlists WHERE program_id=$1", [
 				project.code,
 			]);
 
-			for (let i = 0; i < playlists.length; i++) {
-				const row = playlists[i];
-				const deployment = allDeployments.find(
-					(d) =>
-						d._id === row.deployment_id ||
-						d.id === row.deployment_id ||
-						d.deploymentnumber === +row.deployment_number,
-				);
-
-				const _row = {
-					...row,
-					program_id: project.code,
-					deployment_id: deployment?.id,
-					position: row.position,
-					_id: row?._id ?? randomUUID(),
-				};
-				// delete _row.messages;
-
-				const [query, params] = await manager
-					.createQueryBuilder()
-					.insert()
-					.into(Playlist)
-					.values(_row)
-					.orUpdate(["title", "position"], "playlist_uniqueness_key")
-					.getQueryAndParameters();
-
-				await manager.query(query, params);
-			}
-
-			// 2. delete removed playlists
-			// await manager.getRepository(Playlist).delete({
-			// 	_id: Not(In(Array.from(new Set<string>(playlists.map((i) => i._id))))),
-			// 	program_id: project.code,
-			// });
-
-			//
-			// Save messages
-			//
-			// -- get updated playlist data
-			// -- save all messages submitted by the user
-			// -- compare uuids (_id) of submitted messages against existing messages in db;
-			//     delete db records not found in submitted request
-
-			const updatedPlaylists = await manager.getRepository(Playlist).find({
-				where: { program_id: code },
-				relations: { messages: true },
-			}); // fetch updated playlists
-			const existingMessageIds = new Set(
-				updatedPlaylists.flatMap((p) => p.messages.flatMap((m) => m._id)),
-			);
-
-			const playlistIds = new Set<string | number>([
-				...updatedPlaylists.map((i) => i._id),
-				...updatedPlaylists.map((i) => i.id),
-			]);
-			const messages: Record<string, any>[] = [];
-			for (const m of playlists.flatMap((p) => p.messages)) {
-				if (m.playlist_id != null && !playlistIds.has(m.playlist_id)) {
-					// playlist has been deleted
-					continue;
-				}
-
-				const _found = updatedPlaylists.find(
-					(p) =>
-						p.id === m.playlist_id ||
-						p._id === m.playlist_id ||
-						p.title === m.playlist_title,
-				);
-				if (_found == null) {
-					throw new BadRequestException(
-						`Playlist id cannot be found for '${m.title}' message`,
+			for (const d of dto.deployments) {
+				// Handle playlists data
+				for (const pl of d.playlists) {
+					const deployment = allDeployments.find(
+						(d) =>
+							d._id === pl.deployment_id ||
+							d.id === pl.deployment_id ||
+							d.deploymentnumber === +pl.deployment_number,
 					);
-				}
 
-				m.playlist_id = _found.id;
-				m.program_id = project.code;
-				m.default_category_code =
-					m.default_category_code === "" ? null : m.default_category_code;
-
-				// Remove unnecessary fields
-				delete m.audience;
-
-				if (existingMessageIds.has(m._id)) {
-					const _m = { ...m };
-
-					// biome-ignore lint/performance/noDelete: <explanation>
-					delete _m.languages;
-
-					await manager
-						.createQueryBuilder()
-						.update(Message)
-						.set(_m)
-						.where("_id = :id", { id: m._id })
-						.execute();
-				} else {
-					await manager
+					const [query, params] = await manager
 						.createQueryBuilder()
 						.insert()
-						.into(Message)
-						.values(m)
-						.orUpdate(
-							[
-								"position",
-								"title",
-								"format",
-								"default_category_code",
-								"variant",
-								"key_points",
-								"sdg_goal_id",
-								"sdg_target_id",
-							],
-							["program_id", "playlist_id", "position"],
-						)
-						.execute();
-				}
+						.into(Playlist)
+						.values({
+							...pl,
+							id: pl.id,
+							program_id: project.code,
+							deployment_id: deployment?.id,
+							position: pl.position,
+							_id: pl?._id ?? randomUUID(),
+						})
+						.orUpdate(["title", "position"], "playlist_uniqueness_key")
+						.returning("id")
+						.getQueryAndParameters();
 
-				messages.push(m);
+					const [resp] = await manager.query(query, params);
+
+					// handle playlist messages
+					// const existingMessageIds = new Set(pl.messages.flatMap((m) => m._id));
+					for (const m of pl.messages) {
+						m.playlist_id = resp.id;
+						m.program_id = project.code;
+						m.default_category_code =
+							m.default_category_code === "" ? null : m.default_category_code;
+
+						// Remove unnecessary fields
+						delete m.audience;
+
+						const insertedMsg = await manager
+							.createQueryBuilder()
+							.insert()
+							.into(Message)
+							.values(m)
+							.orUpdate(
+								[
+									"position",
+									"title",
+									"format",
+									"default_category_code",
+									"variant",
+									"key_points",
+									"sdg_goal_id",
+									"sdg_target_id",
+								],
+								["program_id", "playlist_id", "position"],
+							)
+							.returning("id")
+							.execute();
+
+						const newLanguages = new Set<string>();
+						if (Array.isArray(m.languages)) {
+							for (const l of m.languages) {
+								// type is like MessageLanguage object, retrieve only the
+								if (typeof l === "object") {
+									newLanguages.add(l.language_code);
+								} else {
+									// string
+									newLanguages.add(l);
+								}
+							}
+						} else {
+							// string
+							// biome-ignore lint/complexity/noForEach: <explanation>
+							(m.languages?.split(",") ?? []).forEach((l) =>
+								newLanguages.add(l.trim()),
+							);
+						}
+
+						for (const code of newLanguages) {
+							if (code === "") continue;
+
+							await manager
+								.createQueryBuilder()
+								.insert()
+								.into(MessageLanguages)
+								.values({
+									language_code: code as string,
+									message_id: insertedMsg.raw[0].id,
+								})
+								.orIgnore()
+								.execute();
+						}
+					}
+				}
 			}
+
+			// const updatedPlaylists = await manager.getRepository(Playlist).find({
+			// 	where: { program_id: code },
+			// 	relations: { messages: true },
+			// }); // fetch updated playlists
+			// const existingMessageIds = new Set(
+			// 	updatedPlaylists.flatMap((p) => p.messages.flatMap((m) => m._id)),
+			// );
+
+			// const playlistIds = new Set<string | number>([
+			// 	...updatedPlaylists.map((i) => i._id),
+			// 	...updatedPlaylists.map((i) => i.id),
+			// ]);
+			// const messages: Record<string, any>[] = [];
+			// for (const m of playlists.flatMap((p) => p.messages)) {
+			// 	console.log(m);
+			// 	if (m.playlist_id != null && !playlistIds.has(m.playlist_id)) {
+			// 		// playlist has been deleted
+			// 		continue;
+			// 	}
+
+			// 	const _found = updatedPlaylists.find(
+			// 		(p) =>
+			// 			p.id === m.playlist_id ||
+			// 			p._id === m.playlist_id ||
+			// 			p.title === m.playlist_title,
+			// 	);
+			// 	if (_found == null) {
+			// 		throw new BadRequestException(
+			// 			`Playlist id cannot be found for '${m.title}' message`,
+			// 		);
+			// 	}
+
+			// 	m.playlist_id = _found.id;
+			// 	m.program_id = project.code;
+			// 	m.default_category_code =
+			// 		m.default_category_code === "" ? null : m.default_category_code;
+
+			// 	// Remove unnecessary fields
+			// 	delete m.audience;
+
+			// 	if (existingMessageIds.has(m._id)) {
+			// 		const _m = { ...m };
+
+			// 		// biome-ignore lint/performance/noDelete: <explanation>
+			// 		delete _m.languages;
+
+			// 		await manager
+			// 			.createQueryBuilder()
+			// 			.update(Message)
+			// 			.set(_m)
+			// 			.where("_id = :id", { id: m._id })
+			// 			.execute();
+			// 	} else {
+			// 		await manager
+			// 			.createQueryBuilder()
+			// 			.insert()
+			// 			.into(Message)
+			// 			.values(m)
+			// 			.orUpdate(
+			// 				[
+			// 					"position",
+			// 					"title",
+			// 					"format",
+			// 					"default_category_code",
+			// 					"variant",
+			// 					"key_points",
+			// 					"sdg_goal_id",
+			// 					"sdg_target_id",
+			// 				],
+			// 				["program_id", "playlist_id", "position"],
+			// 			)
+			// 			.execute();
+			// 	}
+
+			// 	messages.push(m);
+			// }
 
 			// // -- delete removed messages
 			// await manager.getRepository(Message).delete({
@@ -254,73 +304,73 @@ export class ProgramSpecService {
 			// });
 
 			// Save Message languages
-			const updatedMessages = await manager.getRepository(Message).find({
-				where: { program_id: code },
-				relations: { languages: true },
-			});
+			// const updatedMessages = await manager.getRepository(Message).find({
+			// 	where: { program_id: code },
+			// 	relations: { languages: true },
+			// });
 
 			// Save message languages
-			for (const row of messages) {
-				const msg = updatedMessages.find(
-					(m) => row._id === m._id || m.id === row.id,
-				);
+			// for (const row of messages) {
+			// 	const msg = updatedMessages.find(
+			// 		(m) => row._id === m._id || m.id === row.id,
+			// 	);
 
-				if (msg == null) {
-					throw new BadRequestException(
-						`Message '${row.title}' differ from what is already in the spec`,
-					);
-				}
+			// 	if (msg == null) {
+			// 		throw new BadRequestException(
+			// 			`Message '${row.title}' differ from what is already in the spec`,
+			// 		);
+			// 	}
 
-				const newLanguages = new Set<string>();
-				if (Array.isArray(row.languages)) {
-					for (const m of row.languages) {
-						// type is like MessageLanguage object, retrieve only the
-						if (typeof m === "object") {
-							newLanguages.add(m.language_code);
-						} else {
-							// string
-							newLanguages.add(m);
-						}
-					}
-				} else {
-					// string
-					// biome-ignore lint/complexity/noForEach: <explanation>
-					(row.languages?.split(",") ?? []).forEach((l) =>
-						newLanguages.add(l.trim()),
-					);
-				}
+			// 	const newLanguages = new Set<string>();
+			// 	if (Array.isArray(row.languages)) {
+			// 		for (const m of row.languages) {
+			// 			// type is like MessageLanguage object, retrieve only the
+			// 			if (typeof m === "object") {
+			// 				newLanguages.add(m.language_code);
+			// 			} else {
+			// 				// string
+			// 				newLanguages.add(m);
+			// 			}
+			// 		}
+			// 	} else {
+			// 		// string
+			// 		// biome-ignore lint/complexity/noForEach: <explanation>
+			// 		(row.languages?.split(",") ?? []).forEach((l) =>
+			// 			newLanguages.add(l.trim()),
+			// 		);
+			// 	}
 
-				for (const code of newLanguages) {
-					if (code === "") continue;
+			// 	for (const code of newLanguages) {
+			// 		if (code === "") continue;
 
-					const count = msg.languages.filter(
-						(l) => l.language_code === code,
-					).length;
+			// 		const count = msg.languages.filter(
+			// 			(l) => l.language_code === code,
+			// 		).length;
 
-					if (count === 1) continue; // skip, language already in db
+			// 		if (count === 1) continue; // skip, language already in db
 
-					if (count > 1) {
-						// Database have duplicate languages for this message, so we need to do cleanup
-						await manager
-							.getRepository(MessageLanguages)
-							.delete({ language_code: code, message_id: msg.id });
-					}
+			// 		if (count > 1) {
+			// 			// Database have duplicate languages for this message, so we need to do cleanup
+			// 			await manager
+			// 				.getRepository(MessageLanguages)
+			// 				.delete({ language_code: code, message_id: msg.id });
+			// 		}
 
-					await manager
-						.createQueryBuilder()
-						.insert()
-						.into(MessageLanguages)
-						.values({ language_code: code as string, message_id: msg.id })
-						.orIgnore()
-						.execute();
-				}
+			// 		await manager
+			// 			.createQueryBuilder()
+			// 			.insert()
+			// 			.into(MessageLanguages)
+			// 			.values({ language_code: code as string, message_id: msg.id })
+			// 			.orIgnore()
+			// 			.execute();
+			// 	}
 
-				// Also remove languages deleted by the from db
-				const deletedLang = msg.languages.filter(
-					(l) => !newLanguages.has(l.language_code),
-				);
-				await manager.getRepository(MessageLanguages).remove(deletedLang);
-			}
+			// 	// Also remove languages deleted by the from db
+			// 	const deletedLang = msg.languages.filter(
+			// 		(l) => !newLanguages.has(l.language_code),
+			// 	);
+			// 	await manager.getRepository(MessageLanguages).remove(deletedLang);
+			// }
 
 			for (const row of dto.recipients) {
 				row.id = row.id ?? row.recipientid ?? row.recipient_id;
