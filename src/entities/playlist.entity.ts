@@ -76,6 +76,8 @@ export class PlaylistSubscriber implements EntitySubscriberInterface<Playlist> {
    * Called before post insertion.
    */
   async beforeInsert(event: InsertEvent<Playlist>) {
+    if (Number.isInteger(event.entity.position)) return;
+
     const result = await Playlist.createQueryBuilder()
       .select("COALESCE(MAX(playlist.position), 0)", "max")
       .from(Playlist, "playlist")
@@ -87,8 +89,6 @@ export class PlaylistSubscriber implements EntitySubscriberInterface<Playlist> {
       })
       .getRawOne();
 
-    const position = result ? result.max + 1 : 0;
-    event.entity.position = position;
-    event.entity.title = `Playlist ${position}`;
+    event.entity.position = (result.max ?? 0) + 1;
   }
 }

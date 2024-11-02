@@ -132,9 +132,9 @@ export class AcmCheckoutService {
 
 	private async discard(acm: ACMCheckout | null, dto: AcmCheckoutDto) {
 		if (
-			acm == null ||
-			acm.acm_state === ACMState.CHECKED_IN ||
-			acm.now_out_key !== dto.key
+			acm == null
+			// acm.acm_state === ACMState.CHECKED_IN ||
+			// acm.now_out_key !== dto.key
 		) {
 			// # Someone else released the record from under us. Count it as success.
 			return {
@@ -143,11 +143,19 @@ export class AcmCheckoutService {
 			};
 		}
 
-		if (acm.acm_state !== ACMState.CHECKED_OUT || acm.now_out_key !== dto.key) {
+		if (acm.acm_state !== ACMState.CHECKED_OUT) {
 			// # Someone else released the record from under us. Count it as success.
 			return {
 				data: STATUS_OK,
 				status: STATUS_OK,
+			};
+		}
+
+		if (acm.acm_state === ACMState.CHECKED_OUT && acm.now_out_computername !== dto.computername && acm.last_in_name !== dto.name) {
+			// # Someone else released the record from under us. Count it as success.
+			return {
+				data: STATUS_DENIED,
+				status: STATUS_DENIED,
 			};
 		}
 

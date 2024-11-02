@@ -9,6 +9,7 @@ export class ProgramsService {
 	async programsForACM(user: User) {
 		const results = await Project.find({
 			where: {
+				active: true,
 				program: {
 					organisations: user.organisation.isParent
 						? {
@@ -34,12 +35,13 @@ export class ProgramsService {
 			};
 		}
 
-    return data
+		return data;
 	}
 
 	async getAll(user: User) {
 		return await Program.find({
 			where: {
+				project: { active: true },
 				organisations: user.organisation.isParent
 					? {
 							organisation: [

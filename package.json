@@ -45,6 +45,7 @@
     "class-validator": "^0.14.1",
     "dotenv": "^16.4.5",
     "exceljs": "^4.4.0",
+    "json-diff-ts": "^4.1.0",
     "jws": "^4.0.0",
     "luxon": "^3.5.0",
     "nestjs-console": "^9.0.0",

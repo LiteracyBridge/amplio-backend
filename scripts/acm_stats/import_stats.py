@@ -10,7 +10,6 @@ from sqlalchemy import select, text
 
 from config import STATISTICS_BUCKET, config
 from database import get_db
-from models.recipient_model import Recipient
 from utilities.aws_ses import send_email
 
 STATS_ROOT = config.statistics_data_dir
@@ -31,6 +30,8 @@ gatheredAny = False
 needcss = True
 verbose = True
 execute = True
+
+db = next(get_db())
 
 
 def find_zips(directory):
@@ -268,7 +269,7 @@ def import_alt_statistics(daily_dir: str):
 
     if execute:
         with open(REPORT_FILE, "a") as f:
-            f.write(open("importStats.css", "r").readall())
+            f.write(open("importStats.css", "r").read())
 
     print(
         "-------- importAltStatistics: Importing playstatistics to database. --------"
@@ -351,7 +352,7 @@ def import_alt_statistics(daily_dir: str):
             csv_writer.writerows(results)
 
     # Write HTML section to the report
-    with open(report, "a") as f:
+    with open(temp_report, "a") as f:
         f.write('<div class="reportline">\n')
         f.write(open(temp_report, "r").read())
         f.write("</div>\n")
@@ -386,7 +387,7 @@ def extract_tbloader_artifacts(directory):
             print("found existing", filename)
 
 
-def import_deployments(daily_dir):
+def import_deployments(daily_dir: str):
     print(
         "-------- importDeployments: Importing Deployment installations to database. --------"
     )
@@ -402,14 +403,14 @@ def import_deployments(daily_dir):
     print("get tb-loader artifacts")
 
     # Iterate timestamp directories
-    for statdir in os.listdir(dailyDir):
-        statdir_path = os.path.join(dailyDir, statdir)
+    for statdir in os.listdir(daily_dir):
+        statdir_path = os.path.join(daily_dir, statdir)
         if os.path.isdir(statdir_path):
             if verbose:
                 print("extractTbLoaderArtifacts", statdir_path)
 
             if execute:
-                extract_tb_loader_artifacts(statdir_path)
+                extract_tbloader_artifacts(statdir_path)
 
     # Import into db and update tbsdeployed
     csv_insert_command = [
