@@ -5,6 +5,7 @@ import {
 	Post,
 	Put,
 	Query,
+	Req,
 	Res,
 	UploadedFile,
 	UseInterceptors,
@@ -15,7 +16,7 @@ import { CurrentUser } from "src/decorators/user.decorator";
 import { User } from "src/entities/user.entity";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { SkipJwtAuth } from "src/decorators/skip-jwt-auth.decorator";
-import { Response } from "express";
+import { Request, Response } from "express";
 import { createReadStream } from "node:fs";
 import { tmpdir } from "node:os";
 
@@ -51,16 +52,19 @@ export class SpecController {
 		});
 	}
 
-	@Post("upload")
-	@UseInterceptors(FileInterceptor("file"))
-	async uploadSpec(
-		@UploadedFile() file: Express.Multer.File,
-		@Query("programid") code: string,
-		@CurrentUser() user: User,
-	) {
-		await this.service.import(file, code);
-		return ApiResponse.Success({
-			data: await this.service.findByCode(code, user),
-		});
-	}
+	// @Post("upload")
+	// @UseInterceptors(
+	// 	FileInterceptor("file", { dest: tmpdir(), preservePath: true }),
+	// )
+	// async uploadSpec(
+	// 	@UploadedFile() file: Express.Multer.File,
+	// 	@Query("programid") code: string,
+	// 	@CurrentUser() user: User,
+	// 	@Req() req: Request,
+	// ) {
+	// 	await this.service.import(file, code, req);
+	// 	return ApiResponse.Success({
+	// 		data: await this.service.findByCode(code, user),
+	// 	});
+	// }
 }

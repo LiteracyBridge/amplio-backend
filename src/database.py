@@ -45,7 +45,7 @@ def get_table_metadata(table: str) -> TableClause:
 
     try:
         engine = get_db_engine()
-        table_meta = MetaData(engine)  # type:ignore
+        table_meta = MetaData()  # type:ignore
         table_def: TableClause = Table(table, table_meta, autoload=True)
     except Exception as ex:
         print(ex)

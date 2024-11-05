@@ -16,9 +16,9 @@ import { ContentMetadata } from "./entities/content_metadata.entity";
 import { Deployment } from "./entities/deployment.entity";
 import { Language, ProjectLanguage } from "./entities/language.entity";
 import {
-  Message,
-  MessageLanguages,
-  MessageSubscriber,
+	Message,
+	MessageLanguages,
+	MessageSubscriber,
 } from "./entities/message.entity";
 import { OrganisationProgram } from "./entities/org_program.entity";
 import { Playlist, PlaylistSubscriber } from "./entities/playlist.entity";
@@ -27,7 +27,7 @@ import { Program } from "./entities/program.entity";
 import { Project } from "./entities/project.entity";
 import { Recipient, RecipientSubscriber } from "./entities/recipient.entity";
 import { Survey } from "./entities/survey.entity";
-import { SurveySection } from './entities/survey_section.entity';
+import { SurveySection } from "./entities/survey_section.entity";
 import { TalkingBookDeployed } from "./entities/tb_deployed.entity";
 import { Choice } from "./entities/uf_choice.entity";
 import { Question } from "./entities/uf_question.entity";
@@ -42,71 +42,71 @@ import { ProgramsModule } from "./programs/programs.module";
 import { HttpExceptionFilter } from "./filters/http-exception.filter";
 import { SentryGlobalFilter, SentryModule } from "@sentry/nestjs/setup";
 import { Log } from "./entities/log.entity";
-import { AcmCheckoutModule } from './acm-checkout/acm-checkout.module';
+import { AcmCheckoutModule } from "./acm-checkout/acm-checkout.module";
 import { TalkingBookLoaderId } from "./entities/tbloader-ids.entity";
 import { TbLoaderModule } from './tb-loader/tb-loader.module';
 import { TalkingBookAnalyticsModule } from "./tb-analytics/tb-analytics.module";
+import { PublishedProgramSpecs } from "./entities/published_spec.entity";
 
 config();
 
-const routes: Routes = [
-  { path: "/user-feedback", module: UserfeedbackModule }
-]
+const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 
 @Module({
-  imports: [
-    SentryModule.forRoot(),
+	imports: [
+		SentryModule.forRoot(),
 
-    RouterModule.register(routes),
+		RouterModule.register(routes),
 
-    TypeOrmModule.forRoot({
-      host: process.env.DB_HOST,
-      port: 5432,
-      username: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      type: "postgres",
-      maxQueryExecutionTime: 50,
-      autoLoadEntities: true,
-      logNotifications: false,
-      logging: false,
-      entities: [
-        User,
-        UserRole,
-        Role,
-        Invitation,
-        Organisation,
-        Analysis,
-        SupportedCategory,
-        ContentMetadata,
-        ACMCheckout,
-        AnalysisChoice,
-        Deployment,
-        Language,
-        Message,
-        MessageLanguages,
-        OrganisationProgram,
-        ProjectLanguage,
-        Playlist,
-        ProgramUser,
-        Program,
-        Project,
-        Recipient,
-        Survey,
-        SurveySection,
-        TalkingBookDeployed,
-        Choice,
-        Question,
-        UserFeedbackMessage,
-        TalkingBookLoaderId
-      ],
-      subscribers: [
-        PlaylistSubscriber,
-        UserSubscriber,
-        MessageSubscriber,
-        RecipientSubscriber,
-      ],
-    }),
+		TypeOrmModule.forRoot({
+			host: process.env.DB_HOST,
+			port: 5432,
+			username: process.env.DB_USER,
+			password: process.env.DB_PASSWORD,
+			database: process.env.DB_NAME,
+			type: "postgres",
+			maxQueryExecutionTime: 50,
+			autoLoadEntities: true,
+			logNotifications: false,
+			logging: false,
+			entities: [
+				User,
+				UserRole,
+				Role,
+				Invitation,
+				Organisation,
+				Analysis,
+				SupportedCategory,
+				ContentMetadata,
+				ACMCheckout,
+				AnalysisChoice,
+				Deployment,
+				Language,
+				Message,
+				MessageLanguages,
+				OrganisationProgram,
+				ProjectLanguage,
+				Playlist,
+				ProgramUser,
+				Program,
+				Project,
+				Recipient,
+				Survey,
+				SurveySection,
+				TalkingBookDeployed,
+				Choice,
+				Question,
+				UserFeedbackMessage,
+				TalkingBookLoaderId,
+				PublishedProgramSpecs,
+			],
+			subscribers: [
+				PlaylistSubscriber,
+				UserSubscriber,
+				MessageSubscriber,
+				RecipientSubscriber,
+			],
+		}),
 
     UsersModule,
     UserfeedbackModule,
@@ -120,18 +120,18 @@ const routes: Routes = [
   providers: [
     AppService,
 
-    {
-      provide: APP_FILTER,
-      useClass: SentryGlobalFilter,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: AuthGuard,
-    },
-    {
-      provide: APP_FILTER,
-      useClass: HttpExceptionFilter,
-    },
-  ],
+		{
+			provide: APP_FILTER,
+			useClass: SentryGlobalFilter,
+		},
+		{
+			provide: APP_GUARD,
+			useClass: AuthGuard,
+		},
+		{
+			provide: APP_FILTER,
+			useClass: HttpExceptionFilter,
+		},
+	],
 })
-export class AppModule { }
+export class AppModule {}
