@@ -22,7 +22,6 @@ from sqlalchemy import text
 from tbstats import TbCollectedData
 
 from database import get_db_connection, get_table_metadata
-from models.deployment_model import Deployment as DeploymentModel
 from utilities import csv_as_str, parse_as_csv
 
 UF_MESSAGES_TABLE = "uf_messages"
@@ -438,17 +437,15 @@ class S3Importer:
             )
 
             if deployment_number is None:
-                deployment_number = (
-                    get_db_connection()
-                    .query(DeploymentModel.deploymentnumber)
-                    .filter(
-                        DeploymentModel.program_id
-                        == collection_props["deployment_PROJECT"],
-                        DeploymentModel.deploymentname
-                        == collection_props["deployment_DEPLOYMENT"],
-                    )
-                    .first()[0]  # type: ignore
-                )
+                deployment_number = get_db_connection().execute(
+                    text(
+                        "SELECT deploymentnumber FROM deployments WHERE program_id = :id AND deploymentname = :name LIMIT 1"
+                    ),
+                    {
+                        "id": collection_props["deployment_PROJECT"],
+                        "name": collection_props["deployment_DEPLOYMENT"],
+                    },  # type: ignore
+                )[0][0]
 
             uf_prefix = f'{UF_PREFIX}/{collection_props["deployment_PROJECT"]}/{deployment_number}'
             print(uf_prefix)
