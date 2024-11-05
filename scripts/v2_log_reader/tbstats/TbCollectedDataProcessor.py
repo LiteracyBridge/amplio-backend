@@ -197,7 +197,7 @@ _db_connection = None
 _db_recipientinfo = {}
 
 
-def _query_recipient_language(recipientid: str) -> str | None:
+def _query_recipient_language(recipientid: str):
     """
     Given a recipientid, look up the language in the recipients table. Cache the value, since it'll probably
     be needed again.
@@ -205,9 +205,7 @@ def _query_recipient_language(recipientid: str) -> str | None:
     :return: The language for that recipient.
     """
     global _db_recipientinfo
-    language = _db_recipientinfo.get(recipientid, None)
-
-    if language is not None:
+    if language := _db_recipientinfo.get(recipientid):
         return language
 
     result = get_db_connection().execute(
