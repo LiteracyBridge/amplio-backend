@@ -303,12 +303,7 @@ export class NewAcmService {
 			}),
 		);
 
-		const objs: any = [];
-		for (const obj of resp?.Contents ?? []) {
-			objs.push(obj);
-		}
-
-		if (objs.length > 0) {
+		if ((resp?.Contents ?? []).length > 0) {
 			console.log();
 			console.log(`\n  Found program content objects for  '${programCode}'.`);
 			return true;
