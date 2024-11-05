@@ -17,7 +17,6 @@ from sqlalchemy import select, text
 from tbstats import TbCollectedData, decode_properties
 
 from database import get_db_connection
-from models.deployment_model import Deployment as DeploymentModel
 from utilities import escape_csv
 
 # Recognize a userrecording filename, and extract the parts.
