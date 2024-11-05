@@ -13,7 +13,7 @@ class StorePathAction(argparse.Action):
     """
 
     @staticmethod
-    def _expand(v: str) -> Path | Literal[""]:
+    def _expand(v: str):
         """
         Does the work of expanding.
         :param v: A string, possibly with a leading ~ to be expanded ot user's home directory.
