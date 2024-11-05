@@ -1,7 +1,6 @@
 from sqlalchemy.sql import text
 
 from database import get_db
-from models.program_model import Project
 
 
 # noinspection SqlResolve,SqlNoDataSourceInspection
@@ -40,13 +39,13 @@ def populate_postgresql(program_id: str, comment: str) -> bool:
     rows = [x[0] for x in resp]
     new_id = max(rows) + 1
 
-    project = Project()
-    project.id = new_id
-    project.active = True
-    project.code = program_id
-    project.name = comment
+    cur.execute(
+        text(
+            "INSERT INTO projects (id, active, code, name) VALUES (:id, :active, :code, :name)"
+        ),
+        {"id": new_id, "active": True, "code": program_id, "name": comment},
+    )
 
-    cur.add(project)
     cur.commit()
 
     # The programs table looks like this:

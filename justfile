@@ -34,7 +34,7 @@ prod: venv
     APP_ENV=production {{ PYTHONPATH }} {{ uvicorn }} src.app:app --reload
 
 new-acm *args='': venv
-	{{ PYTHONPATH }} {{ python }} scripts/new_acm/new_acm.py "$@"
+	npm run console new-acm -- "$@"
 
 tableau-geo *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/tableau/tableau_geo_importer.py "$@"
@@ -118,4 +118,11 @@ backup-db *args='':
 run-script *args='': venv
     {{ PYTHONPATH }} {{ python }} "$@"
 
+disable-ipv6:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+
+    sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+    sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
 # TODO: Add a build step to compile acm & copy jars to AWS-LB/bin dir

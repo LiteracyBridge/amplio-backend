@@ -12,7 +12,7 @@ from models import User, get_db
 from models.deployment_model import Deployment
 from models.playlist_model import Playlist
 from models.program_model import Project
-
+from models.user_model import current_user
 # from amplio.utils import (
 #     LambdaRouter,
 #     handler,
@@ -21,20 +21,12 @@ from models.program_model import Project
 #     BinBody,
 #     JsonBody,
 # )
-from routes.program_spec import (
-    compare_program_specs,
-    export_to_db,
-    publish_to_s3,
-    read_from_db,
-    read_from_json,
-    read_from_s3,
-    read_from_xlsx,
-    write_to_json,
-    write_to_s3,
-)
+from routes.program_spec import (compare_program_specs, export_to_db,
+                                 publish_to_s3, read_from_db, read_from_json,
+                                 read_from_s3, read_from_xlsx, write_to_json,
+                                 write_to_s3)
 from routes.program_spec.db import _ensure_content_view
 from schema import ApiResponse
-from utilities.rolemanager.role_checker import current_user
 
 router = APIRouter()
 
@@ -137,7 +129,7 @@ def _delete_versions(prefix: str, versions_to_keep=None):
 @router.post("/publish")
 def publish(
     programid: str,
-    email: str = Depends(current_user),
+    user: User = Depends(current_user),
     comment: str = "No comment provided",
     db: Session = Depends(get_db),
 ):
@@ -150,10 +142,10 @@ def publish(
     :return: Any detected errors (These would be access errors; the data in the database is, by definition,
             good data).
     """
-    print(f"Publish for program {programid} by {email}")
+    print(f"Publish for program {programid} by {user.email}")
     comment = comment or "No comment provided"
     metadata = {
-        "submitter-email": email,
+        "submitter-email": user.email,
         "submitter-comment": comment,
         "submission-date": datetime.datetime.now().isoformat(),
     }

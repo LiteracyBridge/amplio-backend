@@ -1,7 +1,15 @@
-FROM public.ecr.aws/lambda/python:3.11
+FROM public.ecr.aws/lambda/nodejs:20
 
-COPY ./src ${LAMBDA_TASK_ROOT}
+# Copy final outputs after build to the lambda task root
+COPY ./dist/index.js ${LAMBDA_TASK_ROOT}
+COPY ./dist/template.xlsx ${LAMBDA_TASK_ROOT}
+COPY ./package.json ${LAMBDA_TASK_ROOT}
+COPY ./package-lock.json ${LAMBDA_TASK_ROOT}
 
-RUN pip install -r ${LAMBDA_TASK_ROOT}/requirements.txt --target "${LAMBDA_TASK_ROOT}"
+RUN npm clean-install --no-audit --no-fund --progress=false --omit dev
+# COPY ./node_modules ${LAMBDA_TASK_ROOT}
 
-CMD ["app.handler"]
+
+# CMD ["node", "lambda.js"]
+# ENTRYPOINT ["/lambda-entrypoint.sh", "lambda.handler"]
+CMD [ "index.handler" ]

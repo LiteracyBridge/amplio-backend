@@ -23,6 +23,7 @@ sqlalchemy-easy-softdelete = "*"
 pydantic-settings = "*"
 psycopg2-binary = "*"
 jinja2 = "*"
+cryptography = "*"
 
 [dev-packages]
 black = "*"

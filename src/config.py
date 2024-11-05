@@ -104,14 +104,14 @@ class Config:
             self.user_pool_client_id = secrets["aws_user_pool_client_id"].split(",")
 
             # Load tableau secrets
-            secret_string = client.get_secret_value(
-                SecretId=getenv("TABLEAU_SECRET_ID", "tableau_embedding")
-            )["SecretString"]
-            secrets = json.loads(secret_string)
+            # secret_string = client.get_secret_value(
+            #     SecretId=getenv("TABLEAU_SECRET_ID", "tableau_embedding")
+            # )["SecretString"]
+            # secrets = json.loads(secret_string)
 
-            self.tableau_client_id = secrets["client"]
-            self.tableau_secret_id = secrets["secret_id"]
-            self.tableau_secret_value = secrets["secret_value"]
+            self.tableau_client_id = getenv("TABLEAU_CLIENT_ID", None)
+            self.tableau_secret_id = getenv("TABLEAU_SECRET_ID", None)
+            self.tableau_secret_value = getenv("TABLEAU_SECRET_VALUE", None)
 
         except Exception as err:
             raise err

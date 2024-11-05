@@ -12,11 +12,11 @@ from cryptography.hazmat.primitives import serialization as crypto_serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from sqlalchemy import select
+from sentry_sdk import capture_exception
+from sqlalchemy import select, text
 from tbstats import TbCollectedData, decode_properties
 
 from database import get_db_connection
-from models.deployment_model import Deployment as DeploymentModel
 from utilities import escape_csv
 
 # Recognize a userrecording filename, and extract the parts.
@@ -131,9 +131,15 @@ class S3UfImporter:
                 if m.group("suffix").lower() == ".properties":
                     # remember as { stem : {uf_properties} }
                     data = zipfile.read(zipinfo.filename)
-                    self._userrecordings_properties[m.group("stem")] = (
-                        decode_properties(data.decode("utf-8"), sep="[:=]")
-                    )
+
+                    try:
+                        self._userrecordings_properties[m.group("stem")] = (
+                            decode_properties(data.decode("utf-8"), sep="[:=]")
+                        )
+                    except UnicodeDecodeError as e:
+                        print(f"Error decoding {zipinfo.filename}")
+                        capture_exception(e)
+
                 elif m.group("suffix").lower() == ".survey":
                     # remember as { name : {survey_answers} }
                     data = zipfile.read(zipinfo.filename)
@@ -322,15 +328,26 @@ class S3UfImporter:
 
                 # Db lookup for missing values
                 if collection_props.get("deployment_DEPLOYMENT_NUMBER", None) is None:
-                    properties["DEPLOYMENT_NUMBER"] = (
-                        db.query(DeploymentModel.deploymentnumber)
-                        .filter(
-                            DeploymentModel.program_id
-                            == collection_props["deployment_PROJECT"],
-                            DeploymentModel.deploymentname
-                            == collection_props["deployment_DEPLOYMENT"],
+                    result = db.execute(
+                        text(
+                            "SELECT deploymentnumber FROM deployments WHERE program_id = :id AND deploymentname = :name LIMIT 1"
+                        ),
+                        {
+                            "id": collection_props["deployment_PROJECT"],
+                            "name": collection_props["deployment_DEPLOYMENT"],
+                        },  # type: ignore
+                    )[0][0]
+                    properties["DEPLOYMENT_NUMBER"] = result
+                    print(
+                        db.execute(
+                            text(
+                                "SELECT deploymentnumber FROM deployments WHERE program_id = :id AND deploymentname = :name LIMIT 1"
+                            ),
+                            {
+                                "id": collection_props["deployment_PROJECT"],
+                                "name": collection_props["deployment_DEPLOYMENT"],
+                            },
                         )
-                        .first()[0]  # type: ignore
                     )
 
                 properties["PROJECT"] = collection_props["deployment_PROJECT"]
