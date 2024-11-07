@@ -23,62 +23,52 @@ export class TalkingBookAnalyticsController {
 		});
 	}
 
-	@Get(":program_id/recipients/:deployment")
-	async recipients(
-		@Param("program_id") programId: string,
-		@Param("deployment") deployment: string,
-	) {
+	@Get(":program_id/installations")
+	async deployedByRecipients(@Param("program_id") programId: string) {
 		return ApiResponse.Success({
-			data: await Recipient.createQueryBuilder("recipients")
-				.where("recipients.project = :programId", { programId: programId })
-				.andWhereExists(
-					TalkingBookDeployed.createQueryBuilder("tbsdeployed")
-						.where("tbsdeployed.recipientid = recipients.id")
-						.andWhere("tbsdeployed.deployment = :deployment", {
-							deployment: deployment,
-						}),
-				)
-				.leftJoinAndMapMany(
-					"recipients.talkingbooks_deployed",
-					TalkingBookDeployed,
-					"talkingbooks_deployed",
-					'recipients.recipientid = "talkingbooks_deployed".recipientid',
-				)
-				// .leftJoinAndMapMany(
-				//   "uf_messages.analysis",
-				//   Analysis,
-				//   "analysis",
-				//   "uf_messages.message_uuid = analysis.message_uuid",
-				// )
-				// .leftJoinAndMapOne("recipients.talkingbooksDeployed.deployment", Deployment, "deployment")
-				.getMany(),
+			data: await Recipient.find({
+				where: { program_id: programId },
+				relations: { talkingbooks_deployed: true },
+			}),
 		});
 	}
 
-	@Get(":program_id/installations/:deployment")
-	async tbsdeployed(
-		@Param("program_id") programId: string,
-		@Param("deployment") deployment: string,
-		@Param("testing") testing: boolean,
-	) {
-		const data = {
-			recipients: await Recipient.find({
-				where: { program_id: programId},
-				relations: { talkingbooks_deployed: true },
-			}),
-			// tbs_deployed: await TalkingBookDeployed.find({
-			// 	where: {
-			// 		project: programId,
-			// 		deployment_name: deployment,
-			// 		testing: testing || false,
-			// 	},
-			// }),
-			deployment: await Deployment.findOne({
-				where: { project_id: programId, deployment: deployment },
-			}),
-		};
+	@Get(":program_id/inventory")
+	async inventory(@Param("program_id") programId: string) {
 		return ApiResponse.Success({
-			data: data,
+			data: await TalkingBookDeployed.query(
+				`
+          SELECT DISTINCT
+          td.deployment,
+          d.deploymentnumber as "deployment_number",
+          r.communityname as "community_name",
+        COUNT(DISTINCT td.talkingbookid) AS deployed_tbs
+      FROM tbsdeployed td
+      JOIN recipients r
+        ON td.recipientid = r.recipientid
+      LEFT OUTER JOIN deployments d
+        ON d.project=td.project AND d.deployment = td.deployment
+      WHERE td.project = $1
+      GROUP BY td.deployment,
+          d.deploymentnumber,
+          r.communityname
+        `,
+				[programId],
+			),
 		});
 	}
+
+	// @Get(":program_id/tbs-deployed")
+	// async tbsdeployed(@Param("program_id") programId: string) {
+	// 	const data = {
+	// 		recipients: await Recipient.find({
+	// 			where: { program_id: programId },
+	// 			relations: { talkingbooks_deployed: true },
+	// 		}),
+	// 	};
+
+	// 	return ApiResponse.Success({
+	// 		data: data,
+	// 	});
+	// }
 }
