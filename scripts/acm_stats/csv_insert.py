@@ -11,7 +11,7 @@ import boto3 as boto3
 from sqlalchemy import MetaData, Table, text
 from sqlalchemy.sql import TableClause
 
-from database import get_db
+from database import get_db, get_table_metadata
 from utilities.argparse_utils import StorePathAction
 
 # noinspection PyTypeChecker
@@ -50,12 +50,14 @@ class CsvInsert:
         self.db = next(get_db())
 
     def get_table_metadata(self, table: str):
-        # noinspection PyTypeChecker
-        table_meta = MetaData()
-        table_def: TableClause = Table(table, table_meta, autoload=True)
+        return get_table_metadata(table)
 
-        #     "tbdeployments_pkey" PRIMARY KEY, btree (talkingbookid, deployedtimestamp)
-        return table_def
+        # # noinspection PyTypeChecker
+        # table_meta = MetaData()
+        # table_def: TableClause = Table(table, table_meta, autoload=True)
+
+        # #     "tbdeployments_pkey" PRIMARY KEY, btree (talkingbookid, deployedtimestamp)
+        # return table_def
 
     # noinspection SqlDialectInspection
     def make_insert(self, metadata):

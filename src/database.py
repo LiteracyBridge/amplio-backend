@@ -4,6 +4,7 @@ from typing import Any, Dict, Generic, List, Optional
 import sqlalchemy.types as types
 from psycopg2.extensions import AsIs
 from pydantic import BaseModel as PydanticBaseModel
+from sentry_sdk import capture_exception
 from sqlalchemy import Engine, MetaData, Table, create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
@@ -40,9 +41,10 @@ def get_table_metadata(table: str) -> TableClause:
 
     try:
         engine = get_db_engine()
-        table_meta = MetaData()  # type:ignore
+        table_meta = MetaData(engine)  # type:ignore
         table_def: TableClause = Table(table, table_meta, autoload=True)
     except Exception as ex:
+        capture_exception(ex)
         print(ex)
 
     #     "tbdeployments_pkey" PRIMARY KEY, btree (talkingbookid, deployedtimestamp)
