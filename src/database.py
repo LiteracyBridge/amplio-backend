@@ -32,12 +32,7 @@ def get_db():
 
 
 def get_db_engine() -> Engine:
-    """Returns the underling sqlalchemy database engine.
-
-    Used for backwards compatibility with migrated scripts
-    """
-
-    return next(get_db()).connection().engine
+    return engine
 
 
 def get_table_metadata(table: str) -> TableClause:

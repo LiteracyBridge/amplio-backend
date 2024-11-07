@@ -29,6 +29,9 @@ export class TalkingBookDeployed extends BaseEntity {
   @Column({ type: 'varchar', name: "deployment_uuid", nullable: true })
   deployment_uuid: string;
 
+  @Column({ type: 'boolean', name: "testing", nullable: true })
+  testing: boolean;
+
   @Column({ name: 'contentpackage', type: 'varchar', nullable: true })
   content_package: string;
 
