@@ -25,7 +25,7 @@ def move_files():
 
     # List objects within a bucket and a specific prefix
     source_prefix = "staging-android-collected-data/"
-    target_prefix = "collected-data/"
+    target_prefix = "collected-data.v2/"
     page_iterator = paginator.paginate(
         Bucket=PROGRAM_CONTENT_BUCKET, Prefix=source_prefix
     )
