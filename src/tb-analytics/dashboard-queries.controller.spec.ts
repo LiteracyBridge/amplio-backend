@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { DashboardQueriesController } from './dashboard-queries.controller';
+import { TalkingBookAnalyticsController } from './tb-analytics.controller';
 
 describe('DashboardQueriesController', () => {
-  let controller: DashboardQueriesController;
+  let controller: TalkingBookAnalyticsController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [DashboardQueriesController],
+      controllers: [TalkingBookAnalyticsController],
     }).compile();
 
-    controller = module.get<DashboardQueriesController>(DashboardQueriesController);
+    controller = module.get<TalkingBookAnalyticsController>(TalkingBookAnalyticsController);
   });
 
   it('should be defined', () => {

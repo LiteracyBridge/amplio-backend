@@ -36,7 +36,6 @@ import { AnalysisChoice } from "./entities/analysis_choice.entity";
 import { UserFeedbackMessage } from "./entities/uf_message.entity";
 import { Role } from "./entities/role.entity";
 import { TableauController } from "./tableau.controller";
-import { DashboardQueriesModule } from "./dashboard-queries/dashboard-queries.module";
 import { UserfeedbackModule } from "./userfeedback/userfeedback.module";
 import { CategoriesController } from "./categories.controller";
 import { ProgramsModule } from "./programs/programs.module";
@@ -45,7 +44,8 @@ import { SentryGlobalFilter, SentryModule } from "@sentry/nestjs/setup";
 import { Log } from "./entities/log.entity";
 import { AcmCheckoutModule } from "./acm-checkout/acm-checkout.module";
 import { TalkingBookLoaderId } from "./entities/tbloader-ids.entity";
-import { TbLoaderModule } from "./tb-loader/tb-loader.module";
+import { TbLoaderModule } from './tb-loader/tb-loader.module';
+import { TalkingBookAnalyticsModule } from "./tb-analytics/tb-analytics.module";
 import { PublishedProgramSpecs } from "./entities/published_spec.entity";
 
 config();
@@ -108,17 +108,17 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 			],
 		}),
 
-		UsersModule,
-		DashboardQueriesModule,
-		UserfeedbackModule,
-		ProgramsModule,
-		Log,
-		AcmCheckoutModule,
-		TbLoaderModule,
-	],
-	controllers: [AppController, TableauController, CategoriesController],
-	providers: [
-		AppService,
+    UsersModule,
+    UserfeedbackModule,
+    ProgramsModule,
+    Log,
+    AcmCheckoutModule,
+    TbLoaderModule,
+    TalkingBookAnalyticsModule
+  ],
+  controllers: [AppController, TableauController, CategoriesController],
+  providers: [
+    AppService,
 
 		{
 			provide: APP_FILTER,
