@@ -1,3 +1,7 @@
+## [0.0.5](https://github.com/LiteracyBridge/amplio-backend/compare/v0.0.4...v0.0.5) (2024-11-02)
+
+
+
 ## [0.0.4](https://github.com/LiteracyBridge/amplio-backend/compare/v0.0.3...v0.0.4) (2024-10-25)
 
 
@@ -24,15 +28,6 @@
 
 * program spec error ([e1e6f39](https://github.com/LiteracyBridge/amplio-backend/commit/e1e6f39229045946b08fc3ed62e799cc6d99d990))
 * tableau jwt generation error ([74aade3](https://github.com/LiteracyBridge/amplio-backend/commit/74aade305a5d8045b54044fbf34bee78ba4abec5))
-
-
-
-## [0.2.1](https://github.com/LiteracyBridge/amplio-backend/compare/v0.2.0...v0.2.1) (2024-09-09)
-
-
-### Bug Fixes
-
-* **spec:** return program spec data after upload ([0ef6d07](https://github.com/LiteracyBridge/amplio-backend/commit/0ef6d07ed4de4060675e77ae5eafaccec91526ba))
 
 
 
