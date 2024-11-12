@@ -327,6 +327,8 @@ class S3UfImporter:
             ).exists():
 
                 # Db lookup for missing values
+                print(collection_props["deployment_DEPLOYMENT_NUMBER"])
+                print(properties["DEPLOYMENT_NUMBER"])
                 if collection_props.get("deployment_DEPLOYMENT_NUMBER", None) is None:
                     result = db.execute(
                         text(
@@ -334,10 +336,11 @@ class S3UfImporter:
                         ),
                         {
                             "id": collection_props["deployment_PROJECT"],
-                            "name": collection_props["deployment_DEPLOYMENT"],
+                            "name": collection_props["DEPLOYMENT_NUMBER"],
                         },  # type: ignore
                     )[0][0]
                     properties["DEPLOYMENT_NUMBER"] = result
+                    properties["deployment_DEPLOYMENT_NUMBER"] = result
                     print(
                         db.execute(
                             text(
@@ -345,7 +348,7 @@ class S3UfImporter:
                             ),
                             {
                                 "id": collection_props["deployment_PROJECT"],
-                                "name": collection_props["deployment_DEPLOYMENT"],
+                                "name": collection_props["DEPLOYMENT_NUMBER"],
                             },
                         )
                     )

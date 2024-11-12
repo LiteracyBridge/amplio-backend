@@ -9,15 +9,8 @@ from typing import List, Optional
 from zipfile import ZipFile
 
 from S3Data.S3UfImporter import S3UfImporter
-from S3Data.S3Utils import (
-    ARCHIVE_BUCKET,
-    ARCHIVE_PREFIX,
-    PROCESSED_BUCKET,
-    PROCESSED_PREFIX,
-    UF_BUCKET,
-    UF_PREFIX,
-    s3,
-)
+from S3Data.S3Utils import (ARCHIVE_BUCKET, ARCHIVE_PREFIX, PROCESSED_BUCKET,
+                            PROCESSED_PREFIX, UF_BUCKET, UF_PREFIX, s3)
 from sqlalchemy import text
 from tbstats import TbCollectedData
 
@@ -436,6 +429,9 @@ class S3Importer:
                 "deployment_DEPLOYMENT_NUMBER", None
             )
 
+            print("deployment number: ", end="")
+            print(collection_props["deployment_DEPLOYMENT"])
+            print(collection_props["deployment_PROJECT"])
             if deployment_number is None:
                 deployment_number = get_db_connection().execute(
                     text(
