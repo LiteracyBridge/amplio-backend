@@ -340,7 +340,7 @@ class S3UfImporter:
                             "name": collection_props["deployment_DEPLOYMENT"],
                         },  # type: ignore
                     ).all()[0][0]
-                    print(result)
+
                     properties["DEPLOYMENT_NUMBER"] = result
                     collection_props["deployment_DEPLOYMENT_NUMBER"] = result
 

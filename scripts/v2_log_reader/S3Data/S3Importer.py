@@ -9,8 +9,15 @@ from typing import List, Optional
 from zipfile import ZipFile
 
 from S3Data.S3UfImporter import S3UfImporter
-from S3Data.S3Utils import (ARCHIVE_BUCKET, ARCHIVE_PREFIX, PROCESSED_BUCKET,
-                            PROCESSED_PREFIX, UF_BUCKET, UF_PREFIX, s3)
+from S3Data.S3Utils import (
+    ARCHIVE_BUCKET,
+    ARCHIVE_PREFIX,
+    PROCESSED_BUCKET,
+    PROCESSED_PREFIX,
+    UF_BUCKET,
+    UF_PREFIX,
+    s3,
+)
 from sqlalchemy import text
 from tbstats import TbCollectedData
 
@@ -425,26 +432,26 @@ class S3Importer:
         if self._uf_importer.have_uf and (self._save_s3 or self._save_uf):
             # copy userrecordings
             collection_props = self._tb_collected_data.stats_collected_properties
-            deployment_number = collection_props.get(
-                "deployment_DEPLOYMENT_NUMBER", None
-            )
+            print(collection_props)
+            # deployment_number = collection_props.get(
+            #     "deployment_DEPLOYMENT_NUMBER", None
+            # )
 
-            print("deployment number: ", end="")
-            print(collection_props["deployment_DEPLOYMENT"])
-            print(collection_props["deployment_PROJECT"])
-            if deployment_number is None:
-                deployment_number = get_db_connection().execute(
-                    text(
-                        "SELECT deploymentnumber FROM deployments WHERE program_id = :id AND deploymentname = :name LIMIT 1"
-                    ),
-                    {
-                        "id": collection_props["deployment_PROJECT"],
-                        "name": collection_props["deployment_DEPLOYMENT"],
-                    },  # type: ignore
-                )[0][0]
+            # print("deployment number: ", end="")
+            # print(collection_props["deployment_DEPLOYMENT"])
+            # print(collection_props["deployment_PROJECT"])
+            # if deployment_number is None:
+            #     deployment_number = get_db_connection().execute(
+            #         text(
+            #             "SELECT deploymentnumber FROM deployments WHERE program_id = :id AND deploymentname = :name LIMIT 1"
+            #         ),
+            #         {
+            #             "id": collection_props["deployment_PROJECT"],
+            #             "name": collection_props["deployment_DEPLOYMENT"],
+            #         },  # type: ignore
+            #     )[0][0]
 
-            uf_prefix = f'{UF_PREFIX}/{collection_props["deployment_PROJECT"]}/{deployment_number}'
-            print(uf_prefix)
+            uf_prefix = f'{UF_PREFIX}/{collection_props["deployment_PROJECT"]}/{collection_props["deployment_DEPLOYMENT_NUMBER"]}'
             for fn, properties in self._uf_importer.userrecordings_properties.items():
                 if (uuid := properties.get("metadata.MESSAGE_UUID")) and (
                     (
