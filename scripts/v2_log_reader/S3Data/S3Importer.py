@@ -21,7 +21,8 @@ from S3Data.S3Utils import (
 from sqlalchemy import text
 from tbstats import TbCollectedData
 
-from database import get_db_connection, get_table_metadata
+from database import get_db_connection as db
+from database import get_table_metadata
 from utilities import csv_as_str, parse_as_csv
 
 UF_MESSAGES_TABLE = "uf_messages"
@@ -433,23 +434,25 @@ class S3Importer:
             # copy userrecordings
             collection_props = self._tb_collected_data.stats_collected_properties
             print(collection_props)
-            # deployment_number = collection_props.get(
-            #     "deployment_DEPLOYMENT_NUMBER", None
-            # )
-
-            # print("deployment number: ", end="")
-            # print(collection_props["deployment_DEPLOYMENT"])
-            # print(collection_props["deployment_PROJECT"])
-            # if deployment_number is None:
-            #     deployment_number = get_db_connection().execute(
-            #         text(
-            #             "SELECT deploymentnumber FROM deployments WHERE program_id = :id AND deploymentname = :name LIMIT 1"
-            #         ),
-            #         {
-            #             "id": collection_props["deployment_PROJECT"],
-            #             "name": collection_props["deployment_DEPLOYMENT"],
-            #         },  # type: ignore
-            #     )[0][0]
+            # Db lookup for missing values
+            deployment_number = collection_props.get(
+                "deployment_DEPLOYMENT_NUMBER", None
+            )
+            if deployment_number is None:
+                result = (
+                    db()
+                    .execute(
+                        text(
+                            "SELECT deploymentnumber FROM deployments WHERE project = :id AND deploymentname = :name LIMIT 1"
+                        ),
+                        {
+                            "id": collection_props["deployment_PROJECT"],
+                            "name": collection_props["deployment_DEPLOYMENT"],
+                        },  # type: ignore
+                    )
+                    .all()[0][0]
+                )
+                collection_props["deployment_DEPLOYMENT_NUMBER"] = result
 
             uf_prefix = f'{UF_PREFIX}/{collection_props["deployment_PROJECT"]}/{collection_props["deployment_DEPLOYMENT_NUMBER"]}'
             for fn, properties in self._uf_importer.userrecordings_properties.items():
