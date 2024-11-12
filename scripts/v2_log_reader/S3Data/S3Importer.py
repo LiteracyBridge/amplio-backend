@@ -496,6 +496,8 @@ class S3Importer:
                             )
 
     def update_database(self):
+        conn = db()
+
         # noinspection SqlDialectInspection
         def make_insert(metadata):
             columns = [x.name for x in metadata.columns]
@@ -567,7 +569,6 @@ class S3Importer:
                 survey_data.extend(rows)
             insert_rows(survey_data, SURVEY_RESPONSES_TABLE)
 
-        conn = get_db_connection()
         if self.have_collection and self._save_db:
             insert_rows(self._tbscollected_rows, TBS_COLLECTED_TABLE)
         if self.have_deployment and self._save_db:
