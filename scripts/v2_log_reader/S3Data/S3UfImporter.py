@@ -342,7 +342,7 @@ class S3UfImporter:
                         ),
                         {
                             "id": collection_props["deployment_PROJECT"],
-                            "name": collection_props["DEPLOYMENT_NUMBER"],
+                            "name": collection_props["deployment_DEPLOYMENT"],
                         },  # type: ignore
                     )[0][0]
                     properties["DEPLOYMENT_NUMBER"] = result
@@ -354,7 +354,7 @@ class S3UfImporter:
                             ),
                             {
                                 "id": collection_props["deployment_PROJECT"],
-                                "name": collection_props["DEPLOYMENT_NUMBER"],
+                                "name": collection_props["deployment_DEPLOYMENT"],
                             },
                         )
                     )
