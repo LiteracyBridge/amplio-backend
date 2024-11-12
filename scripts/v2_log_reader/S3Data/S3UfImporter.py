@@ -331,7 +331,7 @@ class S3UfImporter:
                     "deployment_DEPLOYMENT_NUMBER", None
                 )
                 print(collection_props["deployment_DEPLOYMENT_NUMBER"])
-                print(properties["DEPLOYMENT_NUMBER"])
+                print(properties.get("DEPLOYMENT_NUMBER", None))
                 if properties["DEPLOYMENT_NUMBER"] is None:
                     result = db.execute(
                         text(
