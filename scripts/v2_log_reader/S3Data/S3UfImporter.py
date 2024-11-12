@@ -327,9 +327,12 @@ class S3UfImporter:
             ).exists():
 
                 # Db lookup for missing values
+                properties["DEPLOYMENT_NUMBER"] = collection_props.get(
+                    "deployment_DEPLOYMENT_NUMBER", None
+                )
                 print(collection_props["deployment_DEPLOYMENT_NUMBER"])
                 print(properties["DEPLOYMENT_NUMBER"])
-                if collection_props.get("deployment_DEPLOYMENT_NUMBER", None) is None:
+                if properties["DEPLOYMENT_NUMBER"] is None:
                     result = db.execute(
                         text(
                             "SELECT deploymentnumber FROM deployments WHERE program_id = :id AND deploymentname = :name LIMIT 1"
