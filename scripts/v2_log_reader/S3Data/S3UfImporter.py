@@ -330,11 +330,6 @@ class S3UfImporter:
                 properties["DEPLOYMENT_NUMBER"] = collection_props.get(
                     "deployment_DEPLOYMENT_NUMBER", None
                 )
-                print(collection_props.get("deployment_DEPLOYMENT_NUMBER", None))
-                print(properties.get("DEPLOYMENT_NUMBER", None))
-                print(properties)
-                print("collection_props")
-                print(collection_props)
                 if properties["DEPLOYMENT_NUMBER"] is None:
                     result = db.execute(
                         text(
@@ -344,21 +339,10 @@ class S3UfImporter:
                             "id": collection_props["deployment_PROJECT"],
                             "name": collection_props["deployment_DEPLOYMENT"],
                         },  # type: ignore
-                    )
+                    ).all()[0][0]
                     print(result)
                     properties["DEPLOYMENT_NUMBER"] = result
-                    properties["deployment_DEPLOYMENT_NUMBER"] = result
-                    print(
-                        db.execute(
-                            text(
-                                "SELECT deploymentnumber FROM deployments WHERE project = :id AND deploymentname = :name LIMIT 1"
-                            ),
-                            {
-                                "id": collection_props["deployment_PROJECT"],
-                                "name": collection_props["deployment_DEPLOYMENT"],
-                            },
-                        )
-                    )
+                    collection_props["deployment_DEPLOYMENT_NUMBER"] = result
 
                 properties["PROJECT"] = collection_props["deployment_PROJECT"]
                 properties["RECIPIENTID"] = collection_props["deployment_RECIPIENTID"]
