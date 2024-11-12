@@ -330,8 +330,11 @@ class S3UfImporter:
                 properties["DEPLOYMENT_NUMBER"] = collection_props.get(
                     "deployment_DEPLOYMENT_NUMBER", None
                 )
-                print(collection_props["deployment_DEPLOYMENT_NUMBER"])
+                print(collection_props.get("deployment_DEPLOYMENT_NUMBER", None))
                 print(properties.get("DEPLOYMENT_NUMBER", None))
+                print(properties)
+                print("collection_props")
+                print(collection_props)
                 if properties["DEPLOYMENT_NUMBER"] is None:
                     result = db.execute(
                         text(
