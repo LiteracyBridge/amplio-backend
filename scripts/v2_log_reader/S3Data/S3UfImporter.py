@@ -338,7 +338,7 @@ class S3UfImporter:
                 if properties["DEPLOYMENT_NUMBER"] is None:
                     result = db.execute(
                         text(
-                            "SELECT deploymentnumber FROM deployments WHERE project_id = :id AND deploymentname = :name LIMIT 1"
+                            "SELECT deploymentnumber FROM deployments WHERE project = :id AND deploymentname = :name LIMIT 1"
                         ),
                         {
                             "id": collection_props["deployment_PROJECT"],
@@ -350,7 +350,7 @@ class S3UfImporter:
                     print(
                         db.execute(
                             text(
-                                "SELECT deploymentnumber FROM deployments WHERE project_id = :id AND deploymentname = :name LIMIT 1"
+                                "SELECT deploymentnumber FROM deployments WHERE project = :id AND deploymentname = :name LIMIT 1"
                             ),
                             {
                                 "id": collection_props["deployment_PROJECT"],
