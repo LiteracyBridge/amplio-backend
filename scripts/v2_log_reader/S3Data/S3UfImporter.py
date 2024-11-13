@@ -70,6 +70,8 @@ dynamodb = session.resource("dynamodb", region_name=REGION_NAME)
 KEY_TABLE_NAME = "uf_keys"
 uf_key_table = None
 
+db = get_db_connection()
+
 
 class S3UfImporter:
     def __init__(
@@ -317,7 +319,6 @@ class S3UfImporter:
             return
 
         collection_props = self._tb_collected_data.stats_collected_properties
-        db = get_db_connection()
 
         for fn, properties in self._userrecordings_properties.items():
             if (uuid := properties.get("metadata.MESSAGE_UUID")) and (

@@ -21,8 +21,7 @@ from S3Data.S3Utils import (
 from sqlalchemy import text
 from tbstats import TbCollectedData
 
-from database import get_db_connection as db
-from database import get_table_metadata
+from database import get_db_connection, get_table_metadata
 from utilities import csv_as_str, parse_as_csv
 
 UF_MESSAGES_TABLE = "uf_messages"
@@ -46,6 +45,8 @@ _OPDATA_FILE_PATTERN = re.compile(
     r"OperationalData/"
     r"(?P<name>(?P<stem>[a-z0-9_.-]+)(?P<suffix>\.[a-z0-9_]+))"
 )
+
+conn = get_db_connection()
 
 
 def aws_status_code(aws_result) -> int:
@@ -439,19 +440,15 @@ class S3Importer:
                 "deployment_DEPLOYMENT_NUMBER", None
             )
             if deployment_number is None:
-                result = (
-                    db()
-                    .execute(
-                        text(
-                            "SELECT deploymentnumber FROM deployments WHERE project = :id AND deploymentname = :name LIMIT 1"
-                        ),
-                        {
-                            "id": collection_props["deployment_PROJECT"],
-                            "name": collection_props["deployment_DEPLOYMENT"],
-                        },  # type: ignore
-                    )
-                    .all()[0][0]
-                )
+                result = conn.execute(
+                    text(
+                        "SELECT deploymentnumber FROM deployments WHERE project = :id AND deploymentname = :name LIMIT 1"
+                    ),
+                    {
+                        "id": collection_props["deployment_PROJECT"],
+                        "name": collection_props["deployment_DEPLOYMENT"],
+                    },  # type: ignore
+                ).all()[0][0]
                 collection_props["deployment_DEPLOYMENT_NUMBER"] = result
 
             uf_prefix = f'{UF_PREFIX}/{collection_props["deployment_PROJECT"]}/{collection_props["deployment_DEPLOYMENT_NUMBER"]}'
@@ -496,8 +493,6 @@ class S3Importer:
                             )
 
     def update_database(self):
-        conn = db()
-
         # noinspection SqlDialectInspection
         def make_insert(metadata):
             columns = [x.name for x in metadata.columns]
@@ -548,6 +543,7 @@ class S3Importer:
             ]  # inserts col:None for missing values
             command = make_insert(metadata)
             result = conn.execute(command, normalized)
+            conn.commit()
             print(
                 f'{result.rowcount} rows inserted{"/updated" if self._upsert else ""} into {table_name}.'
             )
