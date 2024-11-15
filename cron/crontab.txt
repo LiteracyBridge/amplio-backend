@@ -7,6 +7,9 @@
 # Missing UF report daily at 01:00.
 0 1 * * * /home/ubuntu/acm-stats/AWS-LB/bin/missing_uf.sh 2>&1 >>/home/ubuntu/work/missing_uf.log
 
+# Runs *every hour* to move android collected stats data to the correct stats bucket
+#*/1 * * * * just --justfile justfile move-android-collected-data 2>&1 >> /tmp/stats-results.log
+
 # Reboot daily at 00:45
 45 0 * * * /home/ubuntu/reboot.sh 2>&1 >>/home/ubuntu/reboot.log
 

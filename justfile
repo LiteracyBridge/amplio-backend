@@ -10,6 +10,10 @@ uvicorn := VIRTUAL_ENV / "bin/uvicorn"
 default:
     @just --choose
 
+[doc("Executes a python script. Usage: just run_script <script_name.py> <args>")]
+run-script *args='': venv
+    {{ PYTHONPATH }} {{ python }} "$@"
+
 venv:
     export PIPENV_IGNORE_VIRTUALENVS=1
     . {{ VIRTUAL_ENV }}/bin/activate
@@ -38,6 +42,10 @@ new-acm *args='': venv
 
 tableau-geo *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/tableau/tableau_geo_importer.py "$@"
+
+[doc("Sends an email using AWS SES")]
+email *args='':
+    just run_script scripts/send_ses.py "$@"
 
 # START: Statistics related commands
 [doc("Inserts processed stats 'tbsdeployed.csv' and 'tbscollected.csv' files into the database")]
@@ -118,9 +126,6 @@ backup-db *args='':
 
 # END: Migration commands
 
-[doc("Executes a python script. Usage: just run_script <script_name.py> <args>")]
-run-script *args='': venv
-    {{ PYTHONPATH }} {{ python }} "$@"
 
 disable-ipv6:
     #!/usr/bin/env bash
@@ -130,8 +135,8 @@ disable-ipv6:
     sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
     sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
 
-[group("deploy")]
-[doc("Deploy user feedback utility scripts")]
-deploy-uf-utilities:
+# [group("cron jobs")]
+# [doc("Deploy user feedback utility scripts")]
+# cron-on:
 
 # TODO: Add a build step to compile acm & copy jars to AWS-LB/bin dir
