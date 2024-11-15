@@ -39,7 +39,6 @@ new-acm *args='': venv
 tableau-geo *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/tableau/tableau_geo_importer.py "$@"
 
-
 # START: Statistics related commands
 [doc("Inserts processed stats 'tbsdeployed.csv' and 'tbscollected.csv' files into the database")]
 [group("statistics")]
@@ -68,19 +67,24 @@ uf-utility *args='': venv
 [doc("Import Talking Books v1 statistics into db")]
 [group("statistics")]
 import-v1-stats *args='': venv
-    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/import_stats.py "$@"
-    # {{ PYTHONPATH }} {{ python }} scripts/acm_stats/initial_sql.py "$@"
-    # just update-usage-info
+    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/import_v1_stats.py "$@"
+    just update-usage-info
 
 [doc("Re-imports Talking Books v1 statistics into db")]
 [group("statistics")]
 re-import-v1-stats *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/acm_stats/re_import_stats.py "$@"
+    just update-usage-info
 
 [doc("Import Talking Book v2 statistics into db")]
-[group("statistics")]
 import-v2-stats *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/v2_log_reader/main.py "$@"
+    just update-usage-info
+
+[group("docker")]
+[doc("Builds the audio converter docker image")]
+docker-build-audio-converter:
+    docker build --t audio-converter --file scripts/userfeedback_utility/docker_build/dockerfile
 
 # END: Statistics related commands
 
@@ -125,4 +129,9 @@ disable-ipv6:
     sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
     sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
     sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
+
+[group("deploy")]
+[doc("Deploy user feedback utility scripts")]
+deploy-uf-utilities:
+
 # TODO: Add a build step to compile acm & copy jars to AWS-LB/bin dir
