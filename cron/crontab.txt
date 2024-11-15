@@ -13,7 +13,7 @@ just = just --justfile $HOME/amplio-backend/justfile
 #*/1 * * * * ${just} move-android-collected-data 2>&1 >> /tmp/stats-results.log
 
 # Reboot daily at 00:45
-45 0 * * * ${just} reboot  2>&1 >> $HOME/reboot.log
+# 45 0 * * * ${just} reboot  2>&1 >> $HOME/reboot.log
 
 # Run cronjob every minute, for testing
 #* * * * * /home/ubuntu/Dropbox/AWS-LB/cron/cronjob.sh >>/home/ubuntu/test.log
