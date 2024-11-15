@@ -84,3 +84,6 @@ __pycache__
 .env.*.local
 .env.*
 .venv
+
+# python cache files
+.mypy_cache
