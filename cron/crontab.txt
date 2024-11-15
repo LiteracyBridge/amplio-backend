@@ -1,3 +1,5 @@
+just = just --justfile $HOME/amplio-backend/justfile
+
 # Run cronjob.sh every 6 hours at x:00. Import v1 stats.
 0 */6 * * * cron/cronjob.sh >cron/cronjob.log 2>&1
 
@@ -8,13 +10,11 @@
 0 1 * * * /home/ubuntu/acm-stats/AWS-LB/bin/missing_uf.sh 2>&1 >>/home/ubuntu/work/missing_uf.log
 
 # Runs *every hour* to move android collected stats data to the correct stats bucket
-#*/1 * * * * just --justfile justfile move-android-collected-data 2>&1 >> /tmp/stats-results.log
+#*/1 * * * * ${just} move-android-collected-data 2>&1 >> /tmp/stats-results.log
 
 # Reboot daily at 00:45
-45 0 * * * /home/ubuntu/reboot.sh 2>&1 >>/home/ubuntu/reboot.log
+45 0 * * * ${just} reboot  2>&1 >> $HOME/reboot.log
 
 # Run cronjob every minute, for testing
 #* * * * * /home/ubuntu/Dropbox/AWS-LB/cron/cronjob.sh >>/home/ubuntu/test.log
 #* * * * * /home/ubuntu/Dropbox/AWS-LB/cron/template.sh cron/cronvars.sh
-
-@reboot /home/ubuntu/bin/dropbox.py start
