@@ -1,10 +1,11 @@
 just = just --justfile $HOME/amplio-backend/justfile
+basePath = $HOME/amplio-backend/cron
 
 # Run cronjob.sh every 6 hours at x:00. Import v1 stats.
-0 */6 * * * cron/cronjob.sh > cron/logs/cronjob.log 2>&1
+0 */6 * * * ${basePath}/cronjob.sh > ${basePath}/logs/cronjob.log 2>&1
 
 # Run v2import every 4 hours at x:55. Import v2 stats.
-55 */4 * * * cron/tbv2cron.sh > cron/logs/cronjob.log 2>&1
+55 */4 * * * ${basePath}/tbv2cron.sh > ${basePath}/logs/cronjob.log 2>&1
 
 # Missing UF report daily at 01:00.
 #0 1 * * * /home/ubuntu/acm-stats/AWS-LB/bin/missing_uf.sh 2>&1 >>/home/ubuntu/work/missing_uf.log
