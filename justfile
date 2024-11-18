@@ -75,6 +75,8 @@ uf-utility *args='': venv
 [doc("Import Talking Books v1 statistics into db")]
 [group("statistics")]
 import-v1-stats *args='': venv
+    just move-android-collected-data
+
     {{ PYTHONPATH }} {{ python }} scripts/acm_stats/import_v1_stats.py "$@"
     just update-usage-info
 
@@ -86,6 +88,8 @@ re-import-v1-stats *args='': venv
 
 [doc("Import Talking Book v2 statistics into db")]
 import-v2-stats *args='': venv
+    just move-android-collected-data
+
     {{ PYTHONPATH }} {{ python }} scripts/v2_log_reader/main.py "$@"
     just update-usage-info
 
