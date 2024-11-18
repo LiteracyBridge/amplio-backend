@@ -5,7 +5,7 @@
 # Useful for jobs that need to run sequentially.
 
 basePath=$HOME/amplio-backend
-just=just --justfile $basePath
+just="just --justfile $basePath/justfile"
 crondir=$basePath/cron
 
 # create logs directory if it doesn't exist
