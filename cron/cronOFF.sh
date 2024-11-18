@@ -1,3 +1,3 @@
 #!/bin/bash
-crontab -r 
+crontab -r crontab.txt
 crontab -l
