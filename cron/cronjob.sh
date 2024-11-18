@@ -4,7 +4,7 @@
 #
 # Useful for jobs that need to run sequentially.
 
-crondir=/home/$USER/amplio-backend/cron
+crondir=$HOME/amplio-backend/cron
 
 # create logs directory if it doesn't exist
 logs_dir=$crondir/logs
@@ -16,9 +16,9 @@ cronlog=$logs_dir/cron.log
 jobtime=$(date +%Y%m%d-%H%M%S)
 
 echo "Running cron job at $(date) in $(pwd)" >$cronlog
-cd /home/$USER
+cd /$HOME
 source ./.profile
-export PATH=/home/$USER:/home/$USER/bin:${PATH}:/snap/bin
+export PATH=/$HOME/bin:$PATH:$HOME/snap/bin
 echo "PATH=${PATH}"
 
 function doTask() {
