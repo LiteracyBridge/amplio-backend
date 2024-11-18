@@ -4,7 +4,7 @@
 #
 # Useful for jobs that need to run sequentially.
 
-crondir=$(pwd)
+crondir=/home/$USER/amplio-backend/cron
 
 # create logs directory if it doesn't exist
 logs_dir=$crondir/logs
@@ -12,7 +12,7 @@ if [ ! -d $logs_dir ]; then
   mkdir $logs_dir
 fi
 
-cronlog=$logs_dir/logcron.log
+cronlog=$logs_dir/cron.log
 jobtime=$(date +%Y%m%d-%H%M%S)
 
 echo "Running cron job at $(date) in $(pwd)" >$cronlog
