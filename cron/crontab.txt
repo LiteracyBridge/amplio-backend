@@ -7,7 +7,7 @@ just = just --justfile $HOME/amplio-backend/justfile
 55 */4 * * * cron/tbv2cron.sh >cron/cronjob.log 2>&1
 
 # Missing UF report daily at 01:00.
-0 1 * * * /home/ubuntu/acm-stats/AWS-LB/bin/missing_uf.sh 2>&1 >>/home/ubuntu/work/missing_uf.log
+#0 1 * * * /home/ubuntu/acm-stats/AWS-LB/bin/missing_uf.sh 2>&1 >>/home/ubuntu/work/missing_uf.log
 
 # Runs *every hour* to move android collected stats data to the correct stats bucket
 #*/1 * * * * ${just} move-android-collected-data 2>&1 >> /tmp/stats-results.log
