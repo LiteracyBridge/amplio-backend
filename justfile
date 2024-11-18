@@ -96,7 +96,7 @@ import-v2-stats *args='': venv
 [group("docker")]
 [doc("Builds the audio converter docker image")]
 docker-build-audio-converter:
-    docker build --t audio-converter --file scripts/userfeedback_utility/docker_build/dockerfile
+    docker build --tag audio-converter --file scripts/userfeedback_utility/docker_build/dockerfile
 
 # END: Statistics related commands
 
