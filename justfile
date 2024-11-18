@@ -108,7 +108,7 @@ docker-disable-network-access:
 
 [doc("Allow docker to access the internet")]
 docker-allow-network-access:
-    sudo iptables --insert DOCKER-USER --in-interface eth0 ! -source 127.0.0.1 --jump ACCEPT
+    sudo iptables --insert DOCKER-USER --in-interface eth0 ! --source 127.0.0.1 --jump ACCEPT
 
 # END: Statistics related commands
 
