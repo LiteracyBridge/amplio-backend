@@ -104,7 +104,7 @@ docker-build-audio-converter:
 
 [doc("Drop docker packets in iptables")]
 docker-disable-network-access:
-    sudo iptables --inssert DOCKER-USER --in-interface eth0 ! --source 127.0.0.1 --jump DROP
+    sudo iptables --insert DOCKER-USER --in-interface eth0 ! --source 127.0.0.1 --jump DROP
 
 [doc("Allow docker to access the internet")]
 docker-allow-network-access:
