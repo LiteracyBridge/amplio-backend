@@ -96,7 +96,19 @@ import-v2-stats *args='': venv
 [group("docker")]
 [doc("Builds the audio converter docker image")]
 docker-build-audio-converter:
+    just docker-allow-network-access
+
     cd scripts/userfeedback_utility/docker_build && docker build --tag audio-converter:latest .
+
+    just docker-disable-network-access
+
+[doc("Drop docker packets in iptables")]
+docker-disable-network-access:
+    sudo iptables --inssert DOCKER-USER --in-interface eth0 ! --source 127.0.0.1 --jump DROP
+
+[doc("Allow docker to access the internet")]
+docker-allow-network-access:
+    sudo iptables --insert DOCKER-USER --in-interface eth0 ! -source 127.0.0.1 --jump ACCEPT
 
 # END: Statistics related commands
 
