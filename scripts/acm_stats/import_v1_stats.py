@@ -279,7 +279,8 @@ def import_alt_statistics(daily_dir: str):
     )
 
     # Remove temporary file
-    os.remove(temp_report)
+    if os.path.exists(temp_report):
+        os.remove(temp_report)
 
     playstatistics_csv = os.path.join(daily_dir, "playstatistics.csv")
 
