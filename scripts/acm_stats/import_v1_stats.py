@@ -24,7 +24,6 @@ S3_IMPORT = f"{S3_STATS_BUCKET}/collected-data"
 S3_USER_FEEDBACK = "s3://amplio-uf/collected"
 LOGS_DIR = os.path.join(STATS_ROOT, "logs")
 
-email = os.path.join(BIN, "sendses.py")
 
 gatheredAny = False
 needcss = True
@@ -145,6 +144,7 @@ def import_user_feedback(dailyDir):
     """Import user feedback to ACM-{project}-FB-{update}"""
 
     recordings_dir = os.path.join(dailyDir, "userrecordings")
+    os.makedirs(recordings_dir, exist_ok=True)
 
     print(
         "-------- importUserFeedback: Importing user feedback audio to s3, metadata to database. --------"
@@ -488,7 +488,6 @@ def import_stats():
     print(f"bin in {BIN}")
     print(f"core is {CORE_DIR}")
     print(f"acm is {ACM_DIR}")
-    print(f"email is {email}")
     print(f"processed_data in {PROCESSED_DATA_DIR}")
     print(f"s3import in {S3_IMPORT}")
     print(f"s3archive in {s3archive}")
