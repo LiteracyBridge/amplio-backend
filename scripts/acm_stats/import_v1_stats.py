@@ -161,10 +161,7 @@ def import_user_feedback(dailyDir):
         )
 
         # Create a temporary directory
-        tmpname = subprocess.run(
-            ["mktemp", "-d"], capture_output=True, text=True
-        ).stdout.strip()
-        tmpdir = tempfile.mkdtemp(f"importUserFeedback{tmpname}")
+        tmpdir = tempfile.mkdtemp(f"importUserFeedback")
         print("uf temp:", tmpdir)
 
         # Run the Python script
@@ -187,8 +184,8 @@ def import_user_feedback(dailyDir):
         subprocess.run(["find", tmpdir])
 
         # Remove files and directory
-        subprocess.run(["rm", "-rf", tmpdir, "*"])
-        subprocess.run(["rmdir", "-p", "--ignore-fail-on-non-empty", tmpdir])
+        subprocess.run(["rm", "--recursive", "--force", tmpdir, "*"])
+        subprocess.run(["rmdir", "--parents", "--ignore-fail-on-non-empty", tmpdir])
     else:
         print("No directory", recordings_dir)
 
@@ -415,7 +412,7 @@ def import_deployments(daily_dir: str):
     # Import into db and update tbsdeployed
     csv_insert_command = [
         "just",
-        "csv-insert.py",
+        "csv-insert",
         "--table",
         "tbscollected",
         "--files",
