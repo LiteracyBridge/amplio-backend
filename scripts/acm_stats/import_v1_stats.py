@@ -76,9 +76,6 @@ def gather_files(
         shell=True,
     )
 
-    if results.returncode != 0:
-        print(results)
-
     if results.returncode == 0:
         gatheredAny = True
         if os.path.exists("acm.log") and os.path.getsize("acm.log") > 0:
@@ -86,6 +83,7 @@ def gather_files(
     else:
         gatheredAny = False
         print("MoveStats failed")
+        print(results)
 
     # move s3 files from import to archive "folder".
     raw_report = f"{LOGS_DIR}/reports3.raw"
@@ -227,7 +225,7 @@ def import_statistics(daily_dir):
 
     # Append CSS file to report
     with open(REPORT_FILE, "a") as f:
-        f.write(open("importStats.css", "r").read())
+        f.write(open(f"{SCRIPT_DIR}/AWS-LB/importStats/importStats.css", "r").read())
 
     print("-------- importStatistics: Importing 'playstatistics' to database. --------")
     print("<h2>Importing TB Statistics to database.</h2>", file=open(REPORT_FILE, "a"))
@@ -482,8 +480,6 @@ def import_stats():
 
     if not os.path.exists(LOGS_DIR):
         os.mkdir(LOGS_DIR)
-
-    gatheredAny = False
 
     print(f"Stats root is {STATS_ROOT}")
     print(f"bin in {BIN}")
