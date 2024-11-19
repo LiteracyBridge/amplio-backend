@@ -98,7 +98,7 @@ import-v2-stats *args='': venv
 docker-build-audio-converter:
     just docker-allow-network-access
 
-    cd scripts/userfeedback_utility/docker_build && docker build --tag audio-converter:latest .
+    cd scripts/userfeedback_utility/docker_build && docker build --tag audio-converter:latest --platform linux/386 .
 
     just docker-disable-network-access
 

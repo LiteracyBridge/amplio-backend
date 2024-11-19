@@ -71,12 +71,13 @@ def gather_files(
     results = subprocess.run(
         f"java -cp \"{os.path.abspath(ACM_DIR)}/acm.jar:{os.path.abspath(ACM_DIR)}/lib/*\" org.literacybridge.acm.utils.MoveStats -b {os.path.join(SCRIPT_DIR, 'blacklist.txt')} {tmpdir} {os.path.abspath(daily_dir)} {timestamp}",
         # check=True,
-        stdout=open(LOGS_DIR + "/err.log", "a"),
-        stderr=open(LOGS_DIR + "/err.log", "a"),
+        stdout=open(LOGS_DIR + "/err.log", "w"),
+        stderr=open(LOGS_DIR + "/err.log", "w"),
         shell=True,
     )
 
-    print(results)
+    if results.returncode != 0:
+        print(results)
 
     if results.returncode == 0:
         gatheredAny = True
