@@ -506,7 +506,7 @@ class A18File:
                 if platform.system().lower() == "darwin"
                 else []
             )
-            container = "amplionetwork/ac:1.0"
+            container = "audio-converter:latest"
             ac_command = (
                 ["docker", "run", "--rm"]
                 + platform_args
