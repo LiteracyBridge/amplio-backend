@@ -20,6 +20,7 @@ CORE_DIR = os.path.join(BIN, "core-with-deps.jar")
 ACM_DIR = os.path.join(BIN, "acm")
 PROCESSED_DATA_DIR = os.path.join(STATS_ROOT, "processed-data")
 REPORT_FILE = ""  # path to file set in main
+STATS_CSS = f"{SCRIPT_DIR}/AWS-LB/importStats/importStats.css"
 
 S3_STATS_BUCKET = f"s3://{STATISTICS_BUCKET}"
 S3_IMPORT = f"{S3_STATS_BUCKET}/collected-data"
@@ -225,7 +226,7 @@ def import_statistics(daily_dir):
 
     # Append CSS file to report
     with open(REPORT_FILE, "a") as f:
-        f.write(open(f"{SCRIPT_DIR}/AWS-LB/importStats/importStats.css", "r").read())
+        f.write(open(STATS_CSS, "r").read())
 
     print("-------- importStatistics: Importing 'playstatistics' to database. --------")
     print("<h2>Importing TB Statistics to database.</h2>", file=open(REPORT_FILE, "a"))
@@ -268,7 +269,7 @@ def import_alt_statistics(daily_dir: str):
 
     if execute:
         with open(REPORT_FILE, "a") as f:
-            f.write(open("importStats.css", "r").read())
+            f.write(open(STATS_CSS, "r").read())
 
     print(
         "-------- importAltStatistics: Importing playstatistics to database. --------"
