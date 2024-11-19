@@ -4,16 +4,18 @@ import shutil
 import subprocess
 import tempfile
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
-from sqlalchemy import select, text
+from sqlalchemy import text
 
 from config import STATISTICS_BUCKET, config
 from database import get_db
 from utilities.aws_ses import send_email
 
 STATS_ROOT = config.statistics_data_dir
-BIN = os.path.join(STATS_ROOT, "AWS-LB/bin")
+SCRIPT_DIR = Path(__file__).resolve().parent
+BIN = os.path.join(SCRIPT_DIR, "AWS-LB", "bin")
 CORE_DIR = os.path.join(BIN, "core-with-deps.jar")
 ACM_DIR = os.path.join(BIN, "acm")
 PROCESSED_DATA_DIR = os.path.join(STATS_ROOT, "processed-data")
@@ -67,7 +69,7 @@ def gather_files(
     # process into collected-data
     print("Process into collected-data")
     results = subprocess.run(
-        f"java -cp \"{os.path.abspath(ACM_DIR)}/acm.jar:{os.path.abspath(ACM_DIR)}/lib/*\" org.literacybridge.acm.utils.MoveStats -b {os.path.abspath(os.path.join(STATS_ROOT, 'blacklist.txt'))} {tmpdir} {os.path.abspath(daily_dir)} {timestamp}",
+        f"java -cp \"{os.path.abspath(ACM_DIR)}/acm.jar:{os.path.abspath(ACM_DIR)}/lib/*\" org.literacybridge.acm.utils.MoveStats -b {os.path.join(SCRIPT_DIR, 'blacklist.txt')} {tmpdir} {os.path.abspath(daily_dir)} {timestamp}",
         # check=True,
         stdout=open(LOGS_DIR + "/err.log", "a"),
         stderr=open(LOGS_DIR + "/err.log", "a"),
@@ -456,7 +458,7 @@ def import_deployments(daily_dir: str):
 def import_stats():
     global REPORT_FILE
 
-    timestamp = datetime.now(timezone.utc).utcnow().strftime("%Yy%mm%dd%Hh%Mm%Ss")
+    timestamp = datetime.now(timezone.utc).strftime("%Yy%mm%dd%Hh%Mm%Ss")
     curYear = datetime.now(timezone.utc).strftime("%Y")
     curMonth = datetime.now(timezone.utc).strftime("%m")
     curDay = datetime.now(timezone.utc).strftime("%d")
