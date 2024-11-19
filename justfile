@@ -65,7 +65,7 @@ update-usage-info *args='': venv
 
 [group("statistics")]
 kv2csv *args='': venv
-    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/kv2csv.py "$@"
+    {{ PYTHONPATH }} {{ python }} scripts/kv2csv.py "$@"
 
 [doc("Converts user feedback audio files from a18 to wav/mp3")]
 [group("statistics")]

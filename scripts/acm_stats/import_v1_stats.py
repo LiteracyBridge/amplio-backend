@@ -20,7 +20,9 @@ CORE_DIR = os.path.join(BIN, "core-with-deps.jar")
 ACM_DIR = os.path.join(BIN, "acm")
 PROCESSED_DATA_DIR = os.path.join(STATS_ROOT, "processed-data")
 REPORT_FILE = ""  # path to file set in main
-STATS_CSS = f"{SCRIPT_DIR}/AWS-LB/importStats/importStats.css"
+
+IMPORT_STATS_DIR = f"{SCRIPT_DIR}/AWS-LB/importStats"
+STATS_CSS = f"{IMPORT_STATS_DIR}/importStats.css"
 
 S3_STATS_BUCKET = f"s3://{STATISTICS_BUCKET}"
 S3_IMPORT = f"{S3_STATS_BUCKET}/collected-data"
@@ -284,16 +286,18 @@ def import_alt_statistics(daily_dir: str):
 
     playstatistics_csv = os.path.join(daily_dir, "playstatistics.csv")
 
+    print("stats dir")
+    print(playstatistics_csv)
+    print(daily_dir)
+
     # Gather the playstatistics.kvp files from the daily directory
-    playstatistics_files = (
-        subprocess.run(
-            ["find", daily_dir, "-iname", "playstatistics.kvp"],
-            capture_output=True,
-            text=True,
-        )
-        .stdout.strip()
-        .splitlines()
-    )
+    playstatistics_files = subprocess.check_output(
+        f"find {daily_dir} -iname playstatistics.kvp", shell=True, text=True
+    ).splitlines()
+
+    print("files-->>")
+    print(playstatistics_files)
+    print(temp_report)
 
     # Create extract command
     extract_command = [
@@ -301,7 +305,7 @@ def import_alt_statistics(daily_dir: str):
         "kv2csv",
         "--2pass",
         "--columns",
-        "@columns.txt",
+        os.path.join(IMPORT_STATS_DIR, "columns.txt"),
         "--map",
         recipients_map_file,
         "--output",
@@ -318,6 +322,7 @@ def import_alt_statistics(daily_dir: str):
     # Import into db and update playstatistics
     with open(playstatistics_csv, "r") as file:
         csv_data = file.read()
+        print(csv_data)
         rows = csv_data.split("\n")
 
         # Remove the header row
