@@ -92,7 +92,7 @@ class DbUtils:
         self.db_connection.rollback()
 
         columns = list(uf_column_map.keys())
-        column_numbers = [f":{ix + 1}" for ix in range(0, len(columns))]
+        column_numbers = [f":i_{ix + 1}" for ix in range(0, len(columns))]
 
         command = (
             f"INSERT INTO uf_messages "
@@ -100,7 +100,12 @@ class DbUtils:
             f"ON CONFLICT(message_uuid) DO NOTHING;"
         )
         for uf_item in uf_items:
-            db.execute(text(command), uf_item)
+            # Translates the uf_item into a dictionary.
+            keys = {}
+            for ix, _ in enumerate(columns):
+                keys[f"i_{ix + 1}"] = uf_item[ix]
+
+            db.execute(text(command), keys)
 
         db.commit()
         if self._verbose >= 2:
