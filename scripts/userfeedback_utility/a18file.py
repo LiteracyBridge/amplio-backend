@@ -1,3 +1,4 @@
+import os
 import platform
 import struct
 import subprocess
@@ -465,10 +466,10 @@ class A18File:
                 "docker",
                 "run",
                 "--rm",
-                "--platform",
-                "linux/386",
+                # "--platform",
+                # "linux/386",
                 "--mount",
-                f"type=bind,source={audio_path}/.,target=/audio",
+                f"type=bind,source={audio_path.absolute()}/.,target=/audio",
                 "--mount",
                 f"type=bind,source={tmp_dir.name},target=/out",
                 container,
@@ -512,9 +513,9 @@ class A18File:
                 + platform_args
                 + [
                     "--mount",
-                    f"type=bind,source={audio_path}/.,target=/audio",
+                    f"type=bind,source={audio_path.absolute()}/.,target=/audio",
                     "--mount",
-                    f"type=bind,source={target_dir}/.,target=/out",
+                    f"type=bind,source={target_dir.absolute()}/.,target=/out",
                     container,
                     source_name,
                     "/out/" + target_name,

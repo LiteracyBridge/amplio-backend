@@ -187,7 +187,8 @@ def import_user_feedback(dailyDir):
 
         # Remove files and directory
         subprocess.run(["rm", "--recursive", "--force", tmpdir, "*"])
-        subprocess.run(["rmdir", "--parents", "--ignore-fail-on-non-empty", tmpdir])
+        if os.path.exists(tmpdir):
+            subprocess.run(["rmdir", "--parents", "--ignore-fail-on-non-empty", tmpdir])
     else:
         print("No directory", recordings_dir)
 
