@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 from sqlalchemy import text
+from sqlalchemy.engine import row
 
 from config import STATISTICS_BUCKET, config
 from database import get_db
@@ -305,7 +306,7 @@ def import_alt_statistics(daily_dir: str):
         "kv2csv",
         "--2pass",
         "--columns",
-        os.path.join(IMPORT_STATS_DIR, "columns.txt"),
+        f"@{os.path.join(IMPORT_STATS_DIR, 'columns.txt')}",
         "--map",
         recipients_map_file,
         "--output",
@@ -322,7 +323,6 @@ def import_alt_statistics(daily_dir: str):
     # Import into db and update playstatistics
     with open(playstatistics_csv, "r") as file:
         csv_data = file.read()
-        print(csv_data)
         rows = csv_data.split("\n")
 
         # Remove the header row
@@ -330,15 +330,25 @@ def import_alt_statistics(daily_dir: str):
         rows = rows[1:]
 
         # Prepare the SQL query
-        query = "INSERT INTO mstemp ({}) VALUES ".format(header)
+        values = {}
+        cols = ""
+        for idx, v in enumerate(rows):
+            key = f":{idx + 1}"
+            values[key] = v
+            cols += f"{key}, "
 
-        # Iterate over the rows and append them to the query
-        for row in rows:
-            if row:
-                query += "({}, {}), ".format(row, datetime.now())
+        cols.removesuffix(",")
+        query = f'INSERT INTO mstemp ({",".join(header)}) VALUES'
+        query += f"({values})"
 
-        # Remove the trailing comma and space
-        query = query[:-2]
+        print(query)
+        # # Iterate over the rows and append them to the query
+        # for row in rows:
+        #     if row:
+        #         query += "({}, {}), ".format(row, datetime.now())
+
+        # # Remove the trailing comma and space
+        # query = query[:-2]
 
         query = f"""
             CREATE TEMPORARY TABLE mstemp AS SELECT * FROM playstatistics WHERE false;
@@ -350,7 +360,7 @@ def import_alt_statistics(daily_dir: str):
 
             INSERT INTO playstatistics SELECT * FROM mstemp ON CONFLICT DO NOTHING;
         """
-        results = db.execute(text(query)).fetchall()
+        results = db.execute(text(query), values).fetchall()
 
         with open(temp_report, "a", newline="") as csvfile:
             csv_writer = csv.writer(csvfile)
