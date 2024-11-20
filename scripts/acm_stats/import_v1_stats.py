@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Optional
 
 from sqlalchemy import text
-from sqlalchemy.engine import row
 
 from config import STATISTICS_BUCKET, config
 from database import get_db
@@ -327,41 +326,12 @@ def import_alt_statistics(daily_dir: str):
 
         # Build the SQL insert statement dynamically
         columns = ", ".join(headers)
-        sql = f"INSERT INTO mstemp ({columns}) VALUES ("
+        sql = f"INSERT INTO mstemp ({columns}) VALUES "
         for row in csv_reader:
-            placeholders = ", ".join([f"{row[k]}" for k in headers])
+            placeholders = ", ".join([f"'{row[k]}'" for k in headers])
             sql += f"({placeholders}),"
 
-        sql.removesuffix(",")
-        sql += ")"
-
-        # csv_data = file.read()
-        # rows = csv_data.split("\n")
-
-        # # Remove the header row
-        # header = rows[0]
-        # rows = rows[1:]
-
-        # # Prepare the SQL query
-        # values = {}
-        # cols = ""
-        # for idx, v in enumerate(rows):
-        #     key = f":{idx + 1}"
-        #     values[key] = v
-        #     cols += f"{key}, "
-
-        # cols.removesuffix(",")
-        # query = f'INSERT INTO mstemp ({",".join(header)}) VALUES'
-        # query += f"({values})"
-
-        # print(query)
-        # # Iterate over the rows and append them to the query
-        # for row in rows:
-        #     if row:
-        #         query += "({}, {}), ".format(row, datetime.now())
-
-        # # Remove the trailing comma and space
-        # query = query[:-2]
+        sql = sql.removesuffix(",")
 
         query = f"""
             CREATE TEMPORARY TABLE mstemp AS SELECT * FROM playstatistics WHERE false;
@@ -373,12 +343,8 @@ def import_alt_statistics(daily_dir: str):
 
             INSERT INTO playstatistics SELECT * FROM mstemp ON CONFLICT DO NOTHING;
         """
-        results = db.execute(text(query)).fetchall()
-
-        with open(temp_report, "a", newline="") as csvfile:
-            csv_writer = csv.writer(csvfile)
-            csv_writer.writerow([col for col in results.keys()])
-            csv_writer.writerows(results)
+        db.execute(text(query))
+        db.commit()
 
     # Write HTML section to the report
     with open(temp_report, "a") as f:
@@ -427,7 +393,6 @@ def import_deployments(daily_dir: str):
 
     # Remove temporary file
     temp_report = f"{REPORT_FILE}.tmp"
-    os.remove(temp_report)
 
     print("get tb-loader artifacts")
 
@@ -462,7 +427,7 @@ def import_deployments(daily_dir: str):
 
     csv_insert_command = [
         "just",
-        "csv-insert.py",
+        "csv-insert",
         "--table",
         "tbsdeployed",
         "--files",
@@ -484,6 +449,8 @@ def import_deployments(daily_dir: str):
         f.write(open(temp_report, "r").read())
         f.write("</div>\n")
 
+    # os.remove(temp_report)
+
 
 def import_stats():
     global REPORT_FILE
@@ -504,7 +471,7 @@ def import_stats():
 
     recipientsfile = os.path.join(dailyDir, "recipients.csv")
 
-    REPORT_FILE = os.path.join(dailyDir, "importStats.html")
+    REPORT_FILE = os.path.abspath(os.path.join(dailyDir, "importStats.html"))
     if os.path.exists(REPORT_FILE):
         os.remove(REPORT_FILE)
 
@@ -532,7 +499,7 @@ def import_stats():
 
         send_email(
             subject="Statistics & User Feedback imported",
-            body=open(REPORT_FILE, "r").readall(),
+            body=open(REPORT_FILE, "r").read(),
             recipients=["ictnotifications@amplio.org"],
             html=True,
         )
@@ -542,7 +509,8 @@ def import_stats():
     subprocess.run(["aws", "s3", "sync", dailyDir, s3DailyDir])
 
     # If the timestampedDir is empty, we don't want it. Same for the dailyDir. If can't remove, ignore error.
-    os.rmdir(timestampedDir)
+    if os.path.exists(timestampedDir):
+        os.rmdir(timestampedDir)
 
 
 if __name__ == "__main__":
