@@ -143,6 +143,7 @@ backup-db *args='':
 # END: Migration commands
 
 
+[doc("Disables IPv6 in other for aws congnito verification to work. NB: Run this command with caution!")]
 disable-ipv6:
     #!/usr/bin/env bash
     set -euxo pipefail
@@ -156,6 +157,10 @@ reboot:
     #!/usr/bin/env bash
     date
     sudo reboot now
+
+[doc("Backup the database")]
+backup-db:
+    just run-script scripts/backup_db.py
 
 # [group("cron jobs")]
 # [doc("Deploy user feedback utility scripts")]
