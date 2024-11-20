@@ -322,26 +322,39 @@ def import_alt_statistics(daily_dir: str):
 
     # Import into db and update playstatistics
     with open(playstatistics_csv, "r") as file:
-        csv_data = file.read()
-        rows = csv_data.split("\n")
+        csv_reader = csv.DictReader(file)
+        headers = csv_reader.fieldnames
 
-        # Remove the header row
-        header = rows[0]
-        rows = rows[1:]
+        # Build the SQL insert statement dynamically
+        columns = ", ".join(headers)
+        sql = f"INSERT INTO mstemp ({columns}) VALUES ("
+        for row in csv_reader:
+            placeholders = ", ".join([f"{row[k]}" for k in headers])
+            sql += f"({placeholders}),"
 
-        # Prepare the SQL query
-        values = {}
-        cols = ""
-        for idx, v in enumerate(rows):
-            key = f":{idx + 1}"
-            values[key] = v
-            cols += f"{key}, "
+        sql.removesuffix(",")
+        sql += ")"
 
-        cols.removesuffix(",")
-        query = f'INSERT INTO mstemp ({",".join(header)}) VALUES'
-        query += f"({values})"
+        # csv_data = file.read()
+        # rows = csv_data.split("\n")
 
-        print(query)
+        # # Remove the header row
+        # header = rows[0]
+        # rows = rows[1:]
+
+        # # Prepare the SQL query
+        # values = {}
+        # cols = ""
+        # for idx, v in enumerate(rows):
+        #     key = f":{idx + 1}"
+        #     values[key] = v
+        #     cols += f"{key}, "
+
+        # cols.removesuffix(",")
+        # query = f'INSERT INTO mstemp ({",".join(header)}) VALUES'
+        # query += f"({values})"
+
+        # print(query)
         # # Iterate over the rows and append them to the query
         # for row in rows:
         #     if row:
@@ -353,14 +366,14 @@ def import_alt_statistics(daily_dir: str):
         query = f"""
             CREATE TEMPORARY TABLE mstemp AS SELECT * FROM playstatistics WHERE false;
 
-            {query};
+            {sql};
 
             DELETE FROM playstatistics d USING mstemp t WHERE d.timestamp=t.timestamp
             AND d.tbcdid=t.tbcdid AND d.project=t.project AND d.deployment=t.deployment AND d.talkingbookid=t.talkingbookid AND d.contentid=t.contentid;
 
             INSERT INTO playstatistics SELECT * FROM mstemp ON CONFLICT DO NOTHING;
         """
-        results = db.execute(text(query), values).fetchall()
+        results = db.execute(text(query)).fetchall()
 
         with open(temp_report, "a", newline="") as csvfile:
             csv_writer = csv.writer(csvfile)
