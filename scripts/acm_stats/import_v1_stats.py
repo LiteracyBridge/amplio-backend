@@ -355,31 +355,28 @@ def import_alt_statistics(daily_dir: str):
 
 #  extractTbLoaderArtifacts "${dailyDir}/${statdir}">>"${report}.tmp"
 def extract_tbloader_artifacts(directory):
-    print("-------- extractTbLoaderArtifacts: in directory", directory, "--------")
-
+    print(f"-------- extractTbLoaderArtifacts: in directory {directory} --------")
+    wd = os.getcwd()
     os.chdir(directory)
-    for filename in [
-        "tbsdeployed.csv",
-        "tbscollected.csv",
-        "stats_collected.properties",
-    ]:
-        if not os.path.exists(filename):
-            print("no existing", filename)
+    print(os.getcwd())
 
-            try:
-                with open("tmp", "w") as f:
-                    subprocess.run(
-                        ["unzip", "-p", "tbcd*.zip", "*{}".format(filename)],
-                        stdout=f,
-                        check=True,
-                    )
-                    print("extracted", filename, "from zip")
-
-                os.rename("tmp", filename)
-            except subprocess.CalledProcessError:
-                print("could not extract", filename, "from zip: $?")
+    for f in ["tbsdeployed.csv", "tbscollected.csv", "stats_collected.properties"]:
+        if not os.path.exists(f):
+            print(f"no existing {f}")
+            if (
+                subprocess.run(
+                    ["unzip", "-p", "tbcd*.zip", f"*{f}"], stdout=open("tmp", "w")
+                ).returncode
+                == 0
+            ):
+                print(f"extracted {f} from zip")
+                os.rename("tmp", f)
+            else:
+                print(f"could not extract {f} from zip")
         else:
-            print("found existing", filename)
+            print(f"found existing {f}")
+
+    os.chdir(wd)
 
 
 def import_deployments(daily_dir: str):
@@ -407,13 +404,14 @@ def import_deployments(daily_dir: str):
                 extract_tbloader_artifacts(statdir_path)
 
     # Import into db and update tbsdeployed
+    print(daily_dir)
     csv_insert_command = [
         "just",
         "csv-insert",
         "--table",
         "tbscollected",
         "--files",
-        "*Z/tbscollected.csv",
+        f"{daily_dir}/*Z/tbscollected.csv",
         "--verbose",
         "--c2ll",
         "--upsert",
@@ -431,7 +429,7 @@ def import_deployments(daily_dir: str):
         "--table",
         "tbsdeployed",
         "--files",
-        "*Z/tbsdeployed.csv",
+        f"{daily_dir}/*Z/tbsdeployed.csv",
         "--verbose",
         "--c2ll",
         "--upsert",
@@ -461,9 +459,11 @@ def import_stats():
     curDay = datetime.now(timezone.utc).strftime("%d")
 
     s3DailyDir = f"{S3_STATS_BUCKET}/processed-data/{curYear}/{curMonth}/{curDay}"
-    dailyDir = f"{PROCESSED_DATA_DIR}/{curYear}/{curMonth}/{curDay}"
 
+    dailyDir = f"{PROCESSED_DATA_DIR}/{curYear}/{curMonth}/{curDay}"
     os.makedirs(dailyDir, exist_ok=True)
+    dailyDir = os.path.abspath(dailyDir)
+
     timestampedDir = os.path.join(dailyDir, timestamp)
     os.makedirs(timestampedDir, exist_ok=True)
 
@@ -509,8 +509,12 @@ def import_stats():
     subprocess.run(["aws", "s3", "sync", dailyDir, s3DailyDir])
 
     # If the timestampedDir is empty, we don't want it. Same for the dailyDir. If can't remove, ignore error.
+
+    subprocess.run(["rm", "--recursive", "--force", timestampedDir, "*"])
     if os.path.exists(timestampedDir):
-        os.rmdir(timestampedDir)
+        subprocess.run(
+            ["rmdir", "--parents", "--ignore-fail-on-non-empty", timestampedDir]
+        )
 
 
 if __name__ == "__main__":
