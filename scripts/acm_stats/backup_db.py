@@ -1,6 +1,7 @@
 import os
 import subprocess
 from datetime import datetime
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -8,12 +9,16 @@ from config import config
 
 
 def main():
-    load_dotenv()
-
     print(f"Running database backup at {datetime.now()}")
 
+    load_dotenv()
+
+    dest = os.path.expanduser("~") + "./db-backups"
+    if not os.path.exists(dest):
+        os.makedirs(dest)
+
     timestamp = datetime.now().strftime("%Y%m%d")
-    backup_file = f"/tmp/{config.db_name}_backup_{timestamp}.sql"
+    backup_file = f"{dest}/{config.db_name}_backup_{timestamp}.sql"
 
     # Create a backup of the database
     dump_command = f"pg_dump --host {config.db_host} --port {config.db_port} --username {config.db_user} --format c --blobs --verbose --f {backup_file} {config.db_name}"
