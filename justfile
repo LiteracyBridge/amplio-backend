@@ -132,15 +132,6 @@ migration-revert *args='': venv
 migration-create *args='': venv
     cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic revision --message "$@"
 
-[doc("Dumps psql database contents. Usage backup-db <username> <db-name> <output-name>")]
-backup-db *args='':
-    echo "NB: Don't forget to set \$PGHOST, \$PGPORT env variables!"
-
-    pg_dump --verbose --password --create --clean --schema-only --username "$1" --dbname "$2" --file "$3"_schema.sql
-    pg_dump --format=custom --data-only --verbose --password --username "$1" --dbname "$2" --file "$3".data
-    pg_dump --format=custom --verbose --password --username "$1" --dbname "$2" --file "$3".full
-
-# END: Migration commands
 
 
 [doc("Disables IPv6 in other for aws congnito verification to work. NB: Run this command with caution!")]

@@ -21,7 +21,7 @@ def main():
     backup_file = f"{dest}/{config.db_name}_backup_{timestamp}.sql"
 
     # Create a backup of the database
-    dump_command = f"pg_dump --host {config.db_host} --port {config.db_port} --username {config.db_user} --format c --blobs --verbose --f {backup_file} {config.db_name}"
+    dump_command = f"pg_dump --host {config.db_host} --port {config.db_port} --username {config.db_user} --format=custom --blobs --verbose --f {backup_file} {config.db_name}"
     os.environ["PGPASSWORD"] = config.db_password
     subprocess.run(dump_command, shell=True, check=True)
 
