@@ -13,7 +13,7 @@ def main():
 
     load_dotenv()
 
-    dest = os.path.expanduser("~") + "./db-backups"
+    dest = os.path.expanduser("~") + "/.db-backups"
     if not os.path.exists(dest):
         os.makedirs(dest)
 
