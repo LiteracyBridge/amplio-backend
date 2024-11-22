@@ -18,7 +18,7 @@ jobtime=$(date +%Y%m%d-%H%M%S)
 echo "Running cron job at $(date) in $(pwd)" >$cronlog
 cd /$HOME
 source ./.profile
-export PATH=/$HOME/bin:$PATH:$HOME/snap/bin
+export PATH=$HOME/bin:$PATH:$HOME/snap/bin
 echo "PATH=${PATH}"
 
 function doTask() {
