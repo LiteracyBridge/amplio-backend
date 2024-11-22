@@ -515,15 +515,6 @@ export class ProgramSpecService {
 			if (opts.format === "xlsx") {
 				await client.send(
 					new PutObjectCommand({
-						Bucket: appConfig().buckets.content,
-						Key: `${opts.projectCode}/programspec/pub_progspec.xlsx`,
-						Body: Buffer.from(await opts.xlsx.xlsx.writeBuffer()),
-						Metadata: metadata,
-					}),
-				);
-
-				await client.send(
-					new PutObjectCommand({
 						Bucket: appConfig().buckets.programSpec,
 						Key: `${opts.projectCode}/pub_progspec.xlsx`,
 						Body: Buffer.from(await opts.xlsx.xlsx.writeBuffer()),
@@ -539,16 +530,6 @@ export class ProgramSpecService {
 						new PutObjectCommand({
 							Bucket: appConfig().buckets.programSpec,
 							Key: `${opts.projectCode}/${names[k]}`,
-							Body: Buffer.from(
-								await opts.xlsx.csv.writeBuffer({ sheetName: k }),
-							),
-							Metadata: metadata,
-						}),
-					);
-					await client.send(
-						new PutObjectCommand({
-							Bucket: appConfig().buckets.content,
-							Key: `${opts.projectCode}/programspec/${names[k]}`,
 							Body: Buffer.from(
 								await opts.xlsx.csv.writeBuffer({ sheetName: k }),
 							),
