@@ -322,7 +322,11 @@ def import_alt_statistics(daily_dir: str):
     # Import into db and update playstatistics
     with open(playstatistics_csv, "r") as file:
         csv_reader = csv.DictReader(file)
-        headers = csv_reader.fieldnames
+        print("csv headers--")
+        print(csv_reader.fieldnames)
+        headers = (
+            list(csv_reader.fieldnames) if csv_reader.fieldnames is not None else []
+        )
 
         # Build the SQL insert statement dynamically
         columns = ", ".join(headers)
