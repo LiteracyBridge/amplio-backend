@@ -45,7 +45,7 @@ tableau-geo *args='': venv
 
 [doc("Sends an email using AWS SES")]
 email *args='':
-    just run-script scripts/send_ses.py "$@"
+    just run-script scripts/sendses.py "$@"
 
 # START: Statistics related commands
 [doc("Inserts processed stats 'tbsdeployed.csv' and 'tbscollected.csv' files into the database")]
