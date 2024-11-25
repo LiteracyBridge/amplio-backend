@@ -472,7 +472,7 @@ def import_stats():
     timestampedDir = os.path.join(dailyDir, timestamp)
     os.makedirs(timestampedDir, exist_ok=True)
 
-    s3archive = f"{S3_STATS_BUCKET}/archived-data-test/{curYear}/{curMonth}/{curDay}"
+    s3archive = f"{S3_STATS_BUCKET}/archived-data/{curYear}/{curMonth}/{curDay}"
 
     recipientsfile = os.path.join(dailyDir, "recipients.csv")
 
