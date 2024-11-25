@@ -322,6 +322,7 @@ def import_alt_statistics(daily_dir: str):
     # Import into db and update playstatistics
     with open(playstatistics_csv, "r") as file:
         csv_reader = csv.DictReader(file)
+        print(file.read())
         print("csv headers--")
         print(csv_reader.fieldnames)
         headers = (
