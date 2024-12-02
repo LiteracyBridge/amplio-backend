@@ -9,3 +9,10 @@ spec diff => tbs can be deployed more than specified in the program spec
 > create default roles -> for all orgs
 
  413,020
+
+
+# Required softwares
+* nodejs
+* docker
+* lame
+* ffmpeg
