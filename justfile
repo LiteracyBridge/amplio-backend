@@ -161,7 +161,7 @@ deploy:
     # Stop the server
     pid="server.pid"
     if [ -e $pid  ] && [ -s $pid ]; then # pid exists and is not empty
-        kill --pid $(cat $pid)
+        kill $(cat $pid)
     fi
 
     # Run build
