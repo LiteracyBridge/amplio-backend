@@ -194,11 +194,11 @@ deploy:
 [group("cron jobs")]
 [doc("Reload cron jobs")]
 cron-on:
-    sh cron/cronON.sh
+    cd cron && sh cron/cronON.sh
 
 [group("cron jobs")]
 [doc("Stop cron jobs")]
 cron-off:
-    sh cron/cronOFF.sh
+    cd cron && sh cron/cronOFF.sh
 
 # TODO: Add a build step to compile acm & copy jars to AWS-LB/bin dir
