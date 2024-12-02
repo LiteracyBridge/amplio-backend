@@ -169,7 +169,8 @@ deploy:
 
     # Run build
     cd $tmpdir
-    git clone git@github:LiteracyBridge/amplio-backend.git api-server
+    git clone --branch stable git@github:LiteracyBridge/amplio-backend.git api-server
+    cd api-server
 
     npm clean-install --no-fund --no-audit
     npm run build
