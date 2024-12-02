@@ -180,6 +180,7 @@ deploy:
         sudo rm -rvf /var/www/api-server
     fi
 
+    cd ..
     sudo mv api-server /var/www/
 
     cd $currentDir
