@@ -155,6 +155,13 @@ def import_user_feedback(dailyDir):
     )
     print("Checking for user feedback recordings")
 
+    # Track the files that have been synced to S3
+    exclude_uf_file = f"{recordings_dir}/exclude_uf.txt"
+    synced_uf_files = []
+    if os.path.exists(exclude_uf_file):
+        with open(exclude_uf_file, "r") as f:
+            synced_uf_files = f.read().splitlines()
+
     # Check if recordings_dir is a directory
     if os.path.isdir(recordings_dir):
         print(
@@ -182,7 +189,17 @@ def import_user_feedback(dailyDir):
         )
 
         # Upload files to S3
-        subprocess.run(["aws", "s3", "mv", "--recursive", tmpdir, S3_USER_FEEDBACK])
+        cmd = f"aws s3 mv --recursive {tmpdir} {S3_USER_FEEDBACK}"
+        for f in synced_uf_files:
+            cmd += f" --exclude {f}"
+
+        subprocess.run(cmd, shell=True)
+
+        # Update exclude_uf.txt with the files that have been synced to S3
+        with open(exclude_uf_file, "a") as f:
+            for root, _dirs, files in os.walk(tmpdir):
+                for file in files:
+                    f.write(f"{os.path.relpath(os.path.join(root, file), tmpdir)}\n")
 
         # List files in the tmpdir directory
         subprocess.run(["find", tmpdir])
