@@ -198,8 +198,9 @@ def import_user_feedback(dailyDir):
         with open(exclude_uf_file, "a") as f:
             for root, _dirs, files in os.walk(tmpdir):
                 for file in files:
-                    print(file)
-                    f.write(f"{os.path.relpath(os.path.join(root, file), tmpdir)}\n")
+                    f.write(
+                        f"{os.path.relpath(os.path.join(root, file), tmpdir).replace(f'{tmpdir}/', '')}\n"
+                    )
 
         subprocess.run(cmd, shell=True)
 
