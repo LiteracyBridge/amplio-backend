@@ -165,9 +165,9 @@ deploy:
     fi
 
     # Run build
-    npm install --no-fund --no-audit
+    npm clean-install --no-fund --no-audit
     npm run build
-    npm install --omit dev
+    npm clean-install --omit dev
 
     # Start the server
     npm run start:prod &
