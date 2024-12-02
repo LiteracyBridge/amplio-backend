@@ -38,12 +38,12 @@ execute = True
 db = next(get_db())
 
 
-def find_zips(directory):
+def find_zips(tmpdir: str):
     zips = []
-    for root, dirs, files in os.walk(directory):
+    for root, dirs, files in os.walk(tmpdir):
         for file in files:
             if file.endswith(".zip"):
-                zips.append(os.path.join(root, file))
+                zips.append(os.path.join(root, file).replace(f"{tmpdir}/", ""))
     return zips
 
 
@@ -68,6 +68,7 @@ def gather_files(
         stdout=open(f"{LOGS_DIR}/reports3.raw", "w"),
         check=True,
     )
+    statslist = find_zips(tmpdir)
 
     # process into collected-data
     print("Process into collected-data")
@@ -93,11 +94,11 @@ def gather_files(
     if not re_import:
         # save a list of the zip file names. They'll be deleted locally, so get the list now. We'll use
         # the list later, to move the files in s3 to an archival location.
-        statslist = find_zips(tmpdir)
 
         print("Archive s3 objects")
         for statfile in statslist:
             with open(raw_report, "a") as f:
+                print(statfile)
                 subprocess.run(
                     [
                         "aws",
@@ -105,7 +106,6 @@ def gather_files(
                         "mv",
                         f"{s3_import}/{statfile}",
                         f"{s3_archive}/{statfile}",
-                        "--verbose",
                     ],
                     stdout=f,
                 )
