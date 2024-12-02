@@ -160,12 +160,6 @@ deploy:
 
     tmpdir=$(mktemp -d)
 
-    # Stop the server
-    pid=/tmp/api-server.pid
-    if [ -e $pid  ] && [ -s $pid ]; then # pid exists and is not empty
-        kill $(cat $pid) || true
-    fi
-
     # Run build
     cd $tmpdir
     git clone --branch stable git@github:LiteracyBridge/amplio-backend.git api-server
@@ -180,14 +174,22 @@ deploy:
     fi
 
     cd ..
-    sudo mv api-server /var/www/
 
+    # Stop the server
+    pid=/tmp/api-server.pid
+    if [ -e $pid  ] && [ -s $pid ]; then # pid exists and is not empty
+        kill $(cat $pid) || true
+    fi
+
+    sudo mv api-server /var/www/
     cd /var/www/api-server
-    rm -rf $tmpdir
 
     # Start the server
     npm run start:prod &
     echo $! > $pid
+
+    rm -rf $tmpdir
+
 
 # [group("cron jobs")]
 # [doc("Deploy user feedback utility scripts")]
