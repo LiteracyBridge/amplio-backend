@@ -153,6 +153,26 @@ reboot:
 backup-db:
     just run-script scripts/backup_db.py
 
+[doc("Deploy Nestjs app in production mode")]
+deploy:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+
+    # Stop the server
+    pid = "server.pid"
+    if [ -e $pid  ] && [ -s $pid ]; then # pid exists and is not empty
+        kill --pid $(cat $pid)
+    fi
+
+    # Run build
+    npm install --no-fund --no-audit
+    npm run build
+    npm install --omit dev
+
+    # Start the server
+    npm run start:prod &
+    echo $! > $pid
+
 # [group("cron jobs")]
 # [doc("Deploy user feedback utility scripts")]
 # cron-on:
