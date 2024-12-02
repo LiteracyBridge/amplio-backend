@@ -158,7 +158,6 @@ deploy:
     #!/usr/bin/env bash
     set -euxo pipefail
 
-    currentDir=$(pwd)
     tmpdir=$(mktemp -d)
 
     # Stop the server
@@ -183,7 +182,7 @@ deploy:
     cd ..
     sudo mv api-server /var/www/
 
-    cd $currentDir
+    cd /var/www/api-server
     rm -rf $tmpdir
 
     # Start the server
