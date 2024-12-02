@@ -158,16 +158,31 @@ deploy:
     #!/usr/bin/env bash
     set -euxo pipefail
 
+    currentDir=$(pwd)
+    tmpdir=$(mktemp -d)
+
     # Stop the server
-    pid="server.pid"
+    pid=/tmp/api-server.pid
     if [ -e $pid  ] && [ -s $pid ]; then # pid exists and is not empty
         kill $(cat $pid) || true
     fi
 
     # Run build
+    cd $tmpdir
+    git clone git@github:LiteracyBridge/amplio-backend.git api-server
+
     npm clean-install --no-fund --no-audit
     npm run build
     npm clean-install --omit dev
+
+    if [ -d /var/www/api-server ]; then
+        sudo rm -rvf /var/www/api-server
+    fi
+
+    sudo mv api-server /var/www/
+
+    cd $currentDir
+    rm -rf $tmpdir
 
     # Start the server
     npm run start:prod &
