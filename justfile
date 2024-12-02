@@ -159,7 +159,7 @@ deploy:
     set -euxo pipefail
 
     # Stop the server
-    pid = "server.pid"
+    pid="server.pid"
     if [ -e $pid  ] && [ -s $pid ]; then # pid exists and is not empty
         kill --pid $(cat $pid)
     fi
