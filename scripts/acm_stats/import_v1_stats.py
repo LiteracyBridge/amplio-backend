@@ -193,15 +193,15 @@ def import_user_feedback(dailyDir):
         for f in synced_uf_files:
             cmd += f" --exclude {f}"
 
-        subprocess.run(cmd, shell=True)
-
-        # Update exclude_uf.txt with the files that have been synced to S3
+        # Update exclude_uf.txt with the files that have been moved to S3
         print("Creating exclusion list")
         with open(exclude_uf_file, "a") as f:
             for root, _dirs, files in os.walk(tmpdir):
                 for file in files:
                     print(file)
                     f.write(f"{os.path.relpath(os.path.join(root, file), tmpdir)}\n")
+
+        subprocess.run(cmd, shell=True)
 
         # List files in the tmpdir directory
         subprocess.run(["find", tmpdir])
