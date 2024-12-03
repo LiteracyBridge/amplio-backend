@@ -185,7 +185,10 @@ deploy:
     cd /var/www/api-server
 
     # Start the server
-    npm run start:prod &
+    pm2 start dist/main.js -- \
+        --name api-server \
+        --log /tmp/api-server-$(date +%Y-%m-%d).log
+    # npm run start:prod &
     echo $! > $pid
 
     rm -rf $tmpdir
