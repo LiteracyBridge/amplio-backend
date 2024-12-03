@@ -46,6 +46,8 @@ _OPDATA_FILE_PATTERN = re.compile(
     r"(?P<name>(?P<stem>[a-z0-9_.-]+)(?P<suffix>\.[a-z0-9_]+))"
 )
 
+conn = get_db_connection()
+
 
 def aws_status_code(aws_result) -> int:
     return aws_result.get("ResponseMetadata", {}).get("HTTPStatusCode", -1)
@@ -432,23 +434,24 @@ class S3Importer:
         if self._uf_importer.have_uf and (self._save_s3 or self._save_uf):
             # copy userrecordings
             collection_props = self._tb_collected_data.stats_collected_properties
+            print(collection_props)
+            # Db lookup for missing values
             deployment_number = collection_props.get(
                 "deployment_DEPLOYMENT_NUMBER", None
             )
-
             if deployment_number is None:
-                deployment_number = get_db_connection().execute(
+                result = conn.execute(
                     text(
-                        "SELECT deploymentnumber FROM deployments WHERE program_id = :id AND deploymentname = :name LIMIT 1"
+                        "SELECT deploymentnumber FROM deployments WHERE project = :id AND deploymentname = :name LIMIT 1"
                     ),
                     {
                         "id": collection_props["deployment_PROJECT"],
                         "name": collection_props["deployment_DEPLOYMENT"],
                     },  # type: ignore
-                )[0][0]
+                ).all()[0][0]
+                collection_props["deployment_DEPLOYMENT_NUMBER"] = result
 
-            uf_prefix = f'{UF_PREFIX}/{collection_props["deployment_PROJECT"]}/{deployment_number}'
-            print(uf_prefix)
+            uf_prefix = f'{UF_PREFIX}/{collection_props["deployment_PROJECT"]}/{collection_props["deployment_DEPLOYMENT_NUMBER"]}'
             for fn, properties in self._uf_importer.userrecordings_properties.items():
                 if (uuid := properties.get("metadata.MESSAGE_UUID")) and (
                     (
@@ -540,6 +543,7 @@ class S3Importer:
             ]  # inserts col:None for missing values
             command = make_insert(metadata)
             result = conn.execute(command, normalized)
+            conn.commit()
             print(
                 f'{result.rowcount} rows inserted{"/updated" if self._upsert else ""} into {table_name}.'
             )
@@ -561,7 +565,6 @@ class S3Importer:
                 survey_data.extend(rows)
             insert_rows(survey_data, SURVEY_RESPONSES_TABLE)
 
-        conn = get_db_connection()
         if self.have_collection and self._save_db:
             insert_rows(self._tbscollected_rows, TBS_COLLECTED_TABLE)
         if self.have_deployment and self._save_db:

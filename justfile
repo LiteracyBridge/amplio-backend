@@ -10,6 +10,10 @@ uvicorn := VIRTUAL_ENV / "bin/uvicorn"
 default:
     @just --choose
 
+[doc("Executes a python script. Usage: just run_script <script_name.py> <args>")]
+run-script *args='': venv
+    {{ PYTHONPATH }} {{ python }} "$@"
+
 venv:
     export PIPENV_IGNORE_VIRTUALENVS=1
     . {{ VIRTUAL_ENV }}/bin/activate
@@ -39,6 +43,9 @@ new-acm *args='': venv
 tableau-geo *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/tableau/tableau_geo_importer.py "$@"
 
+[doc("Sends an email using AWS SES")]
+email *args='':
+    just run-script scripts/sendses.py "$@"
 
 # START: Statistics related commands
 [doc("Inserts processed stats 'tbsdeployed.csv' and 'tbscollected.csv' files into the database")]
@@ -58,7 +65,7 @@ update-usage-info *args='': venv
 
 [group("statistics")]
 kv2csv *args='': venv
-    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/kv2csv.py "$@"
+    {{ PYTHONPATH }} {{ python }} scripts/kv2csv.py "$@"
 
 [doc("Converts user feedback audio files from a18 to wav/mp3")]
 [group("statistics")]
@@ -68,19 +75,40 @@ uf-utility *args='': venv
 [doc("Import Talking Books v1 statistics into db")]
 [group("statistics")]
 import-v1-stats *args='': venv
-    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/import_stats.py "$@"
-    # {{ PYTHONPATH }} {{ python }} scripts/acm_stats/initial_sql.py "$@"
-    # just update-usage-info
+    just move-android-collected-data
+
+    {{ PYTHONPATH }} {{ python }} scripts/acm_stats/import_v1_stats.py "$@"
+    just update-usage-info
 
 [doc("Re-imports Talking Books v1 statistics into db")]
 [group("statistics")]
 re-import-v1-stats *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/acm_stats/re_import_stats.py "$@"
+    just update-usage-info
 
 [doc("Import Talking Book v2 statistics into db")]
-[group("statistics")]
 import-v2-stats *args='': venv
+    just move-android-collected-data
+
     {{ PYTHONPATH }} {{ python }} scripts/v2_log_reader/main.py "$@"
+    just update-usage-info
+
+[group("docker")]
+[doc("Builds the audio converter docker image")]
+docker-build-audio-converter:
+    just docker-allow-network-access
+
+    cd scripts/userfeedback_utility/docker_build && docker build --tag audio-converter:latest --platform linux/386 .
+
+    just docker-disable-network-access
+
+[doc("Drop docker packets in iptables")]
+docker-disable-network-access:
+    sudo iptables --insert DOCKER-USER --in-interface eth0 ! --source 127.0.0.1 --jump DROP
+
+[doc("Allow docker to access the internet")]
+docker-allow-network-access:
+    sudo iptables --insert DOCKER-USER --in-interface eth0 ! --source 127.0.0.1 --jump ACCEPT
 
 # END: Statistics related commands
 
@@ -104,20 +132,9 @@ migration-revert *args='': venv
 migration-create *args='': venv
     cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic revision --message "$@"
 
-[doc("Dumps psql database contents. Usage backup-db <username> <db-name> <output-name>")]
-backup-db *args='':
-    echo "NB: Don't forget to set \$PGHOST, \$PGPORT env variables!"
 
-    pg_dump --verbose --password --create --clean --schema-only --username "$1" --dbname "$2" --file "$3"_schema.sql
-    pg_dump --format=custom --data-only --verbose --password --username "$1" --dbname "$2" --file "$3".data
-    pg_dump --format=custom --verbose --password --username "$1" --dbname "$2" --file "$3".full
 
-# END: Migration commands
-
-[doc("Executes a python script. Usage: just run_script <script_name.py> <args>")]
-run-script *args='': venv
-    {{ PYTHONPATH }} {{ python }} "$@"
-
+[doc("Disables IPv6 in other for aws congnito verification to work. NB: Run this command with caution!")]
 disable-ipv6:
     #!/usr/bin/env bash
     set -euxo pipefail
@@ -125,4 +142,62 @@ disable-ipv6:
     sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
     sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
     sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
+
+[doc("Reboots server")]
+reboot:
+    #!/usr/bin/env bash
+    date
+    sudo reboot now
+
+[doc("Backup the database")]
+backup-db:
+    just run-script scripts/backup_db.py
+
+[doc("Deploy Nestjs app in production mode")]
+deploy:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+
+    tmpdir=$(mktemp -d)
+
+    # Run build
+    cd $tmpdir
+    git clone --branch stable git@github:LiteracyBridge/amplio-backend.git api-server
+    cd api-server
+
+    npm clean-install --no-fund --no-audit
+    npm run build
+    npm clean-install --omit dev
+    rm --force --recursive .git
+
+    if [ -d /var/www/api-server ]; then
+        sudo rm --force --recursive /var/www/api-server
+    fi
+
+    cd ..
+
+    # Stop the server
+    pm2 stop api_server || true
+
+    sudo mv api-server /var/www/
+    cd /var/www/api-server
+
+    # Start the server
+    pm2 start dist/main.js \
+        --force \
+        --name api_server
+
+    rm -rf $tmpdir
+
+
+[group("cron jobs")]
+[doc("Reload cron jobs")]
+cron-on:
+    cd cron && sh cronON.sh
+
+[group("cron jobs")]
+[doc("Stop cron jobs")]
+cron-off:
+    cd cron && sh cronOFF.sh
+
 # TODO: Add a build step to compile acm & copy jars to AWS-LB/bin dir

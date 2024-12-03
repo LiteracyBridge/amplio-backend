@@ -4,27 +4,31 @@ import shutil
 import subprocess
 import tempfile
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
-from sqlalchemy import select, text
+from sqlalchemy import text
 
 from config import STATISTICS_BUCKET, config
 from database import get_db
 from utilities.aws_ses import send_email
 
 STATS_ROOT = config.statistics_data_dir
-BIN = os.path.join(STATS_ROOT, "AWS-LB/bin")
+SCRIPT_DIR = Path(__file__).resolve().parent
+BIN = os.path.join(SCRIPT_DIR, "AWS-LB", "bin")
 CORE_DIR = os.path.join(BIN, "core-with-deps.jar")
 ACM_DIR = os.path.join(BIN, "acm")
 PROCESSED_DATA_DIR = os.path.join(STATS_ROOT, "processed-data")
 REPORT_FILE = ""  # path to file set in main
+
+IMPORT_STATS_DIR = f"{SCRIPT_DIR}/AWS-LB/importStats"
+STATS_CSS = f"{IMPORT_STATS_DIR}/importStats.css"
 
 S3_STATS_BUCKET = f"s3://{STATISTICS_BUCKET}"
 S3_IMPORT = f"{S3_STATS_BUCKET}/collected-data"
 S3_USER_FEEDBACK = "s3://amplio-uf/collected"
 LOGS_DIR = os.path.join(STATS_ROOT, "logs")
 
-email = os.path.join(BIN, "sendses.py")
 
 gatheredAny = False
 needcss = True
@@ -34,12 +38,12 @@ execute = True
 db = next(get_db())
 
 
-def find_zips(directory):
+def find_zips(tmpdir: str):
     zips = []
-    for root, dirs, files in os.walk(directory):
+    for root, dirs, files in os.walk(tmpdir):
         for file in files:
             if file.endswith(".zip"):
-                zips.append(os.path.join(root, file))
+                zips.append(os.path.join(root, file).replace(f"{tmpdir}/", ""))
     return zips
 
 
@@ -64,18 +68,17 @@ def gather_files(
         stdout=open(f"{LOGS_DIR}/reports3.raw", "w"),
         check=True,
     )
+    statslist = find_zips(tmpdir)
 
     # process into collected-data
     print("Process into collected-data")
     results = subprocess.run(
-        f"java -cp \"{os.path.abspath(ACM_DIR)}/acm.jar:{os.path.abspath(ACM_DIR)}/lib/*\" org.literacybridge.acm.utils.MoveStats -b {os.path.abspath(os.path.join(STATS_ROOT, 'blacklist.txt'))} {tmpdir} {os.path.abspath(daily_dir)} {timestamp}",
+        f"java -cp \"{os.path.abspath(ACM_DIR)}/acm.jar:{os.path.abspath(ACM_DIR)}/lib/*\" org.literacybridge.acm.utils.MoveStats -b {os.path.join(SCRIPT_DIR, 'blacklist.txt')} {tmpdir} {os.path.abspath(daily_dir)} {timestamp}",
         # check=True,
-        stdout=open(LOGS_DIR + "/err.log", "a"),
-        stderr=open(LOGS_DIR + "/err.log", "a"),
+        stdout=open(LOGS_DIR + "/err.log", "w"),
+        stderr=open(LOGS_DIR + "/err.log", "w"),
         shell=True,
     )
-
-    print(results)
 
     if results.returncode == 0:
         gatheredAny = True
@@ -84,17 +87,18 @@ def gather_files(
     else:
         gatheredAny = False
         print("MoveStats failed")
+        print(results)
 
     # move s3 files from import to archive "folder".
     raw_report = f"{LOGS_DIR}/reports3.raw"
     if not re_import:
         # save a list of the zip file names. They'll be deleted locally, so get the list now. We'll use
         # the list later, to move the files in s3 to an archival location.
-        statslist = find_zips(tmpdir)
 
         print("Archive s3 objects")
         for statfile in statslist:
             with open(raw_report, "a") as f:
+                print(statfile)
                 subprocess.run(
                     [
                         "aws",
@@ -102,7 +106,6 @@ def gather_files(
                         "mv",
                         f"{s3_import}/{statfile}",
                         f"{s3_archive}/{statfile}",
-                        "--verbose",
                     ],
                     stdout=f,
                 )
@@ -145,11 +148,19 @@ def import_user_feedback(dailyDir):
     """Import user feedback to ACM-{project}-FB-{update}"""
 
     recordings_dir = os.path.join(dailyDir, "userrecordings")
+    os.makedirs(recordings_dir, exist_ok=True)
 
     print(
         "-------- importUserFeedback: Importing user feedback audio to s3, metadata to database. --------"
     )
     print("Checking for user feedback recordings")
+
+    # Track the files that have been synced to S3
+    exclude_uf_file = f"{recordings_dir}/exclude_uf.txt"
+    synced_uf_files = []
+    if os.path.exists(exclude_uf_file):
+        with open(exclude_uf_file, "r") as f:
+            synced_uf_files = f.read().splitlines()
 
     # Check if recordings_dir is a directory
     if os.path.isdir(recordings_dir):
@@ -161,10 +172,7 @@ def import_user_feedback(dailyDir):
         )
 
         # Create a temporary directory
-        tmpname = subprocess.run(
-            ["mktemp", "-d"], capture_output=True, text=True
-        ).stdout.strip()
-        tmpdir = tempfile.mkdtemp(f"importUserFeedback{tmpname}")
+        tmpdir = tempfile.mkdtemp(f"importUserFeedback")
         print("uf temp:", tmpdir)
 
         # Run the Python script
@@ -181,14 +189,28 @@ def import_user_feedback(dailyDir):
         )
 
         # Upload files to S3
-        subprocess.run(["aws", "s3", "mv", "--recursive", tmpdir, S3_USER_FEEDBACK])
+        cmd = f"aws s3 mv --recursive {tmpdir} {S3_USER_FEEDBACK}"
+        for f in synced_uf_files:
+            cmd += f" --exclude {f}"
+
+        # Update exclude_uf.txt with the files that have been moved to S3
+        print("Creating exclusion list")
+        with open(exclude_uf_file, "a") as f:
+            for root, _dirs, files in os.walk(tmpdir):
+                for file in files:
+                    f.write(
+                        f"{os.path.relpath(os.path.join(root, file), tmpdir).replace(f'{tmpdir}/', '')}\n"
+                    )
+
+        subprocess.run(cmd, shell=True)
 
         # List files in the tmpdir directory
         subprocess.run(["find", tmpdir])
 
         # Remove files and directory
-        subprocess.run(["rm", "-rf", tmpdir, "*"])
-        subprocess.run(["rmdir", "-p", "--ignore-fail-on-non-empty", tmpdir])
+        subprocess.run(["rm", "--recursive", "--force", tmpdir, "*"])
+        if os.path.exists(tmpdir):
+            subprocess.run(["rmdir", "--parents", "--ignore-fail-on-non-empty", tmpdir])
     else:
         print("No directory", recordings_dir)
 
@@ -226,7 +248,7 @@ def import_statistics(daily_dir):
 
     # Append CSS file to report
     with open(REPORT_FILE, "a") as f:
-        f.write(open("importStats.css", "r").read())
+        f.write(open(STATS_CSS, "r").read())
 
     print("-------- importStatistics: Importing 'playstatistics' to database. --------")
     print("<h2>Importing TB Statistics to database.</h2>", file=open(REPORT_FILE, "a"))
@@ -269,7 +291,7 @@ def import_alt_statistics(daily_dir: str):
 
     if execute:
         with open(REPORT_FILE, "a") as f:
-            f.write(open("importStats.css", "r").read())
+            f.write(open(STATS_CSS, "r").read())
 
     print(
         "-------- importAltStatistics: Importing playstatistics to database. --------"
@@ -279,20 +301,23 @@ def import_alt_statistics(daily_dir: str):
     )
 
     # Remove temporary file
-    os.remove(temp_report)
+    if os.path.exists(temp_report):
+        os.remove(temp_report)
 
     playstatistics_csv = os.path.join(daily_dir, "playstatistics.csv")
 
+    print("stats dir")
+    print(playstatistics_csv)
+    print(daily_dir)
+
     # Gather the playstatistics.kvp files from the daily directory
-    playstatistics_files = (
-        subprocess.run(
-            ["find", daily_dir, "-iname", "playstatistics.kvp"],
-            capture_output=True,
-            text=True,
-        )
-        .stdout.strip()
-        .splitlines()
-    )
+    playstatistics_files = subprocess.check_output(
+        f"find {daily_dir} -iname playstatistics.kvp", shell=True, text=True
+    ).splitlines()
+
+    print("files-->>")
+    print(playstatistics_files)
+    print(temp_report)
 
     # Create extract command
     extract_command = [
@@ -300,7 +325,7 @@ def import_alt_statistics(daily_dir: str):
         "kv2csv",
         "--2pass",
         "--columns",
-        "@columns.txt",
+        f"@{os.path.join(IMPORT_STATS_DIR, 'columns.txt')}",
         "--map",
         recipients_map_file,
         "--output",
@@ -316,40 +341,32 @@ def import_alt_statistics(daily_dir: str):
 
     # Import into db and update playstatistics
     with open(playstatistics_csv, "r") as file:
-        csv_data = file.read()
-        rows = csv_data.split("\n")
+        csv_reader = csv.DictReader(file)
+        headers = (
+            list(csv_reader.fieldnames) if csv_reader.fieldnames is not None else []
+        )
 
-        # Remove the header row
-        header = rows[0]
-        rows = rows[1:]
+        # Build the SQL insert statement dynamically
+        columns = ", ".join(headers)
+        sql = f"INSERT INTO mstemp ({columns}) VALUES "
+        for row in csv_reader:
+            placeholders = ", ".join([f"'{row[k]}'" for k in headers])
+            sql += f"({placeholders}),"
 
-        # Prepare the SQL query
-        query = "INSERT INTO mstemp ({}) VALUES ".format(header)
-
-        # Iterate over the rows and append them to the query
-        for row in rows:
-            if row:
-                query += "({}, {}), ".format(row, datetime.now())
-
-        # Remove the trailing comma and space
-        query = query[:-2]
+        sql = sql.removesuffix(",")
 
         query = f"""
             CREATE TEMPORARY TABLE mstemp AS SELECT * FROM playstatistics WHERE false;
 
-            {query};
+            {sql};
 
             DELETE FROM playstatistics d USING mstemp t WHERE d.timestamp=t.timestamp
             AND d.tbcdid=t.tbcdid AND d.project=t.project AND d.deployment=t.deployment AND d.talkingbookid=t.talkingbookid AND d.contentid=t.contentid;
 
             INSERT INTO playstatistics SELECT * FROM mstemp ON CONFLICT DO NOTHING;
         """
-        results = db.execute(text(query)).fetchall()
-
-        with open(temp_report, "a", newline="") as csvfile:
-            csv_writer = csv.writer(csvfile)
-            csv_writer.writerow([col for col in results.keys()])
-            csv_writer.writerows(results)
+        db.execute(text(query))
+        db.commit()
 
     # Write HTML section to the report
     with open(temp_report, "a") as f:
@@ -360,31 +377,28 @@ def import_alt_statistics(daily_dir: str):
 
 #  extractTbLoaderArtifacts "${dailyDir}/${statdir}">>"${report}.tmp"
 def extract_tbloader_artifacts(directory):
-    print("-------- extractTbLoaderArtifacts: in directory", directory, "--------")
-
+    print(f"-------- extractTbLoaderArtifacts: in directory {directory} --------")
+    wd = os.getcwd()
     os.chdir(directory)
-    for filename in [
-        "tbsdeployed.csv",
-        "tbscollected.csv",
-        "stats_collected.properties",
-    ]:
-        if not os.path.exists(filename):
-            print("no existing", filename)
+    print(os.getcwd())
 
-            try:
-                with open("tmp", "w") as f:
-                    subprocess.run(
-                        ["unzip", "-p", "tbcd*.zip", "*{}".format(filename)],
-                        stdout=f,
-                        check=True,
-                    )
-                    print("extracted", filename, "from zip")
-
-                os.rename("tmp", filename)
-            except subprocess.CalledProcessError:
-                print("could not extract", filename, "from zip: $?")
+    for f in ["tbsdeployed.csv", "tbscollected.csv", "stats_collected.properties"]:
+        if not os.path.exists(f):
+            print(f"no existing {f}")
+            if (
+                subprocess.run(
+                    ["unzip", "-p", "tbcd*.zip", f"*{f}"], stdout=open("tmp", "w")
+                ).returncode
+                == 0
+            ):
+                print(f"extracted {f} from zip")
+                os.rename("tmp", f)
+            else:
+                print(f"could not extract {f} from zip")
         else:
-            print("found existing", filename)
+            print(f"found existing {f}")
+
+    os.chdir(wd)
 
 
 def import_deployments(daily_dir: str):
@@ -398,7 +412,6 @@ def import_deployments(daily_dir: str):
 
     # Remove temporary file
     temp_report = f"{REPORT_FILE}.tmp"
-    os.remove(temp_report)
 
     print("get tb-loader artifacts")
 
@@ -413,13 +426,14 @@ def import_deployments(daily_dir: str):
                 extract_tbloader_artifacts(statdir_path)
 
     # Import into db and update tbsdeployed
+    print(daily_dir)
     csv_insert_command = [
         "just",
-        "csv-insert.py",
+        "csv-insert",
         "--table",
         "tbscollected",
         "--files",
-        "*Z/tbscollected.csv",
+        f"{daily_dir}/*Z/tbscollected.csv",
         "--verbose",
         "--c2ll",
         "--upsert",
@@ -433,11 +447,11 @@ def import_deployments(daily_dir: str):
 
     csv_insert_command = [
         "just",
-        "csv-insert.py",
+        "csv-insert",
         "--table",
         "tbsdeployed",
         "--files",
-        "*Z/tbsdeployed.csv",
+        f"{daily_dir}/*Z/tbsdeployed.csv",
         "--verbose",
         "--c2ll",
         "--upsert",
@@ -455,40 +469,41 @@ def import_deployments(daily_dir: str):
         f.write(open(temp_report, "r").read())
         f.write("</div>\n")
 
+    # os.remove(temp_report)
+
 
 def import_stats():
     global REPORT_FILE
 
-    timestamp = datetime.now(timezone.utc).utcnow().strftime("%Yy%mm%dd%Hh%Mm%Ss")
+    timestamp = datetime.now(timezone.utc).strftime("%Yy%mm%dd%Hh%Mm%Ss")
     curYear = datetime.now(timezone.utc).strftime("%Y")
     curMonth = datetime.now(timezone.utc).strftime("%m")
     curDay = datetime.now(timezone.utc).strftime("%d")
 
     s3DailyDir = f"{S3_STATS_BUCKET}/processed-data/{curYear}/{curMonth}/{curDay}"
-    dailyDir = f"{PROCESSED_DATA_DIR}/{curYear}/{curMonth}/{curDay}"
 
+    dailyDir = f"{PROCESSED_DATA_DIR}/{curYear}/{curMonth}/{curDay}"
     os.makedirs(dailyDir, exist_ok=True)
+    dailyDir = os.path.abspath(dailyDir)
+
     timestampedDir = os.path.join(dailyDir, timestamp)
     os.makedirs(timestampedDir, exist_ok=True)
 
-    s3archive = f"{S3_STATS_BUCKET}/archived-data-test/{curYear}/{curMonth}/{curDay}"
+    s3archive = f"{S3_STATS_BUCKET}/archived-data/{curYear}/{curMonth}/{curDay}"
 
     recipientsfile = os.path.join(dailyDir, "recipients.csv")
 
-    REPORT_FILE = os.path.join(dailyDir, "importStats.html")
+    REPORT_FILE = os.path.abspath(os.path.join(dailyDir, "importStats.html"))
     if os.path.exists(REPORT_FILE):
         os.remove(REPORT_FILE)
 
     if not os.path.exists(LOGS_DIR):
         os.mkdir(LOGS_DIR)
 
-    gatheredAny = False
-
     print(f"Stats root is {STATS_ROOT}")
     print(f"bin in {BIN}")
     print(f"core is {CORE_DIR}")
     print(f"acm is {ACM_DIR}")
-    print(f"email is {email}")
     print(f"processed_data in {PROCESSED_DATA_DIR}")
     print(f"s3import in {S3_IMPORT}")
     print(f"s3archive in {s3archive}")
@@ -506,7 +521,7 @@ def import_stats():
 
         send_email(
             subject="Statistics & User Feedback imported",
-            body=open(REPORT_FILE, "r").readall(),
+            body=open(REPORT_FILE, "r").read(),
             recipients=["ictnotifications@amplio.org"],
             html=True,
         )
@@ -516,7 +531,12 @@ def import_stats():
     subprocess.run(["aws", "s3", "sync", dailyDir, s3DailyDir])
 
     # If the timestampedDir is empty, we don't want it. Same for the dailyDir. If can't remove, ignore error.
-    os.rmdir(timestampedDir)
+
+    subprocess.run(["rm", "--recursive", "--force", timestampedDir, "*"])
+    if os.path.exists(timestampedDir):
+        subprocess.run(
+            ["rmdir", "--parents", "--ignore-fail-on-non-empty", timestampedDir]
+        )
 
 
 if __name__ == "__main__":
