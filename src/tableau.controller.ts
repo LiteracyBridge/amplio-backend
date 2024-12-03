@@ -18,7 +18,7 @@ export class TableauController {
 
     const claims = {
       "iss": appConfig().tableau.clientId,
-      "exp": Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour,
+      "exp": Math.floor(Date.now() / 1000) + 60 * 5, // 1 hour,
       "jti": randomUUID(),
       "aud": "tableau",
       "sub": program.tableau_id,

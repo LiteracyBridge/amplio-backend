@@ -185,8 +185,7 @@ deploy:
     # Start the server
     pm2 start dist/main.js \
         --force \
-        --name api_server \
-        --log /tmp/api-server-$(date +%Y-%m-%d).log
+        --name api_server
 
     rm -rf $tmpdir
 
