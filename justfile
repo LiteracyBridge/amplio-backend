@@ -176,10 +176,7 @@ deploy:
     cd ..
 
     # Stop the server
-    pid=/tmp/api-server.pid
-    if [ -e $pid  ] && [ -s $pid ]; then # pid exists and is not empty
-        kill $(cat $pid) || true
-    fi
+    pm2 stop api-server || true
 
     sudo mv api-server /var/www/
     cd /var/www/api-server
@@ -189,7 +186,7 @@ deploy:
         --name api-server \
         --log /tmp/api-server-$(date +%Y-%m-%d).log
     # npm run start:prod &
-    echo $! > $pid
+    # echo $! > $pid
 
     rm -rf $tmpdir
 
