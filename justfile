@@ -168,21 +168,23 @@ deploy:
     npm clean-install --no-fund --no-audit
     npm run build
     npm clean-install --omit dev
+    rm --force --recursive .git
 
     if [ -d /var/www/api-server ]; then
-        sudo rm -rvf /var/www/api-server
+        sudo rm --force --recursive /var/www/api-server
     fi
 
     cd ..
 
     # Stop the server
-    pm2 stop api-server || true
+    # pm2 stop api-server || true
 
     sudo mv api-server /var/www/
     cd /var/www/api-server
 
     # Start the server
     pm2 start dist/main.js -- \
+        --force
         --name api-server \
         --log /tmp/api-server-$(date +%Y-%m-%d).log
     # npm run start:prod &
