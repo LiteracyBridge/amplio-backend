@@ -1,0 +1,20 @@
+# Backup database everyday at 11:59am in the midnight
+59 23 * * * just --justfile $HOME/amplio-backend/justfile backup-db
+
+# Run cronjob.sh every 6 hours at x:00. Import v1 stats.
+0 */6 * * * $HOME/amplio-backend/cron/cronjob.sh > $HOME/amplio-backend/cron/logs/cronjob.log 2>&1
+
+# Run v2import every 4 hours at x:55. Import v2 stats.
+55 */4 * * * $HOME/amplio-backend/cron/tbv2cron.sh > $HOME/amplio-backend/cron/logs/cronjob-v2.log 2>&1
+
+# Missing UF report daily at 01:00.
+#0 1 * * * /home/ubuntu/acm-stats/AWS-LB/bin/missing_uf.sh 2>&1 >>/home/ubuntu/work/missing_uf.log
+
+# Reboot daily at 00:30
+30 0 * * * just --justfile $HOME/amplio-backend/justfile reboot  2>&1 >> $HOME/reboot.log
+
+@reboot just --justfile $HOME/amplio-backend/justfile deploy 2>&1 > $HOME/reboot.log
+
+# Run cronjob every minute, for testing
+#* * * * * /home/ubuntu/Dropbox/AWS-LB/cron/cronjob.sh >>/home/ubuntu/test.log
+#* * * * * /home/ubuntu/Dropbox/AWS-LB/cron/template.sh cron/cronvars.sh

@@ -6,5 +6,7 @@ bin
 
 # Exclude log files
 reports3.raw
+reports3.filtered
+rpt.html
 acm.log
 acm_stats/logs

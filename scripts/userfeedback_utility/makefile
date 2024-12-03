@@ -14,9 +14,9 @@ deploy:
 	cp -v *.py ~/Dropbox\ \(Amplio\)/AWS-LB/bin/ufUtility/
 
 build:
-	@cd docker_build; docker build -t amplionetwork/ac:1.0 .
+	@cd docker_build; docker build -t audio-converter:latest .
 
 push:
-	@docker push amplionetwork/ac:1.0
+	@docker push audio-converter:latest
 
 all: build push
