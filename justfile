@@ -177,7 +177,7 @@ deploy:
     cd ..
 
     # Stop the server
-    # pm2 stop api-server || true
+    pm2 stop api_server || true
 
     sudo mv api-server /var/www/
     cd /var/www/api-server
@@ -185,7 +185,7 @@ deploy:
     # Start the server
     pm2 start dist/main.js -- \
         --force \
-        --name api-server \
+        --name api_server \
         --log /tmp/api-server-$(date +%Y-%m-%d).log
     # npm run start:prod &
     # echo $! > $pid
