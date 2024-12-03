@@ -184,7 +184,7 @@ deploy:
 
     # Start the server
     pm2 start dist/main.js -- \
-        --force
+        --force \
         --name api-server \
         --log /tmp/api-server-$(date +%Y-%m-%d).log
     # npm run start:prod &
