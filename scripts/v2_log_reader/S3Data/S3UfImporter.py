@@ -70,6 +70,8 @@ dynamodb = session.resource("dynamodb", region_name=REGION_NAME)
 KEY_TABLE_NAME = "uf_keys"
 uf_key_table = None
 
+db = get_db_connection()
+
 
 class S3UfImporter:
     def __init__(
@@ -317,7 +319,6 @@ class S3UfImporter:
             return
 
         collection_props = self._tb_collected_data.stats_collected_properties
-        db = get_db_connection()
 
         for fn, properties in self._userrecordings_properties.items():
             if (uuid := properties.get("metadata.MESSAGE_UUID")) and (
@@ -327,28 +328,22 @@ class S3UfImporter:
             ).exists():
 
                 # Db lookup for missing values
-                if collection_props.get("deployment_DEPLOYMENT_NUMBER", None) is None:
+                properties["DEPLOYMENT_NUMBER"] = collection_props.get(
+                    "deployment_DEPLOYMENT_NUMBER", None
+                )
+                if properties["DEPLOYMENT_NUMBER"] is None:
                     result = db.execute(
                         text(
-                            "SELECT deploymentnumber FROM deployments WHERE program_id = :id AND deploymentname = :name LIMIT 1"
+                            "SELECT deploymentnumber FROM deployments WHERE project = :id AND deploymentname = :name LIMIT 1"
                         ),
                         {
                             "id": collection_props["deployment_PROJECT"],
                             "name": collection_props["deployment_DEPLOYMENT"],
                         },  # type: ignore
-                    )[0][0]
+                    ).all()[0][0]
+
                     properties["DEPLOYMENT_NUMBER"] = result
-                    print(
-                        db.execute(
-                            text(
-                                "SELECT deploymentnumber FROM deployments WHERE program_id = :id AND deploymentname = :name LIMIT 1"
-                            ),
-                            {
-                                "id": collection_props["deployment_PROJECT"],
-                                "name": collection_props["deployment_DEPLOYMENT"],
-                            },
-                        )
-                    )
+                    collection_props["deployment_DEPLOYMENT_NUMBER"] = result
 
                 properties["PROJECT"] = collection_props["deployment_PROJECT"]
                 properties["RECIPIENTID"] = collection_props["deployment_RECIPIENTID"]

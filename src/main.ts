@@ -21,6 +21,8 @@ export async function bootstrap(
 		app = await NestFactory.create(AppModule, { logger: new Logger() });
 	}
 
+	app.getHttpServer().setTimeout(3 * 60 * 1000); // 3 minutes
+
 	app.enableCors({
 		origin: [
 			"http://localhost:8080",

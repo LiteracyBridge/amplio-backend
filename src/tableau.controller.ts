@@ -4,6 +4,7 @@ import appConfig from 'src/app.config';
 import { Program } from 'src/entities/program.entity';
 import { ApiResponse } from 'src/utilities/api_response';
 import * as jws from 'jws';
+import { DateTime } from 'luxon';
 
 @Controller('tableau')
 export class TableauController {
@@ -18,7 +19,7 @@ export class TableauController {
 
     const claims = {
       "iss": appConfig().tableau.clientId,
-      "exp": Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour,
+      "exp": DateTime.now().plus({minutes: 5}).toUnixInteger(),
       "jti": randomUUID(),
       "aud": "tableau",
       "sub": program.tableau_id,
@@ -26,7 +27,7 @@ export class TableauController {
     }
 
     const signature = jws.sign({
-      header: { alg: 'HS256', kid: appConfig().tableau.secretId, "iss": appConfig().tableau.clientId },
+      header: { alg: 'HS256', kid: appConfig().tableau.secretId, iss: appConfig().tableau.clientId },
       payload: claims,
       secret: appConfig().tableau.secretValue,
     });

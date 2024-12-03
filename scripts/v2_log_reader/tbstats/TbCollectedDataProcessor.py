@@ -384,6 +384,8 @@ class TbCollectedData:
                     f"No packages_data.txt in {self._zip_file_name} from {self._data_source_name}"
                 )
             return
+
+        print(packages_data_path)
         self._packages_data: Deployment = packagesdata.read_packages_data(
             packages_data_path, collected_data_zip_name=self._data_source_name
         )
