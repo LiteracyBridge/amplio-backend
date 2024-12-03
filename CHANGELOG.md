@@ -1,3 +1,7 @@
+## [0.0.7](https://github.com/LiteracyBridge/amplio-backend/compare/v0.0.6...v0.0.7) (2024-12-03)
+
+
+
 ## [0.0.6](https://github.com/LiteracyBridge/amplio-backend/compare/v0.0.5...v0.0.6) (2024-11-08)
 
 
@@ -18,10 +22,6 @@
 
 
 ## [0.0.3](https://github.com/LiteracyBridge/amplio-backend/compare/v0.0.2...v0.0.3) (2024-10-25)
-
-
-
-## [0.0.2](https://github.com/LiteracyBridge/amplio-backend/compare/v0.2.2...v0.0.2) (2024-10-25)
 
 
 
