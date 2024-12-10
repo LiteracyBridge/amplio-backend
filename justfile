@@ -2,7 +2,7 @@ set positional-arguments := true
 set dotenv-load := true
 # Enables loading .env values
 
-VIRTUAL_ENV := `pipenv --venv 2> /dev/null`
+VIRTUAL_ENV := `pipenv --venv 2> /dev/null || true`
 PYTHONPATH := "PYTHONPATH=" + env('PYTHONPATH', '') + ":" + source_directory() + "/src"
 python := VIRTUAL_ENV / "bin/python"
 uvicorn := VIRTUAL_ENV / "bin/uvicorn"

@@ -4,10 +4,14 @@ import { TalkingBookAnalyticsService } from "./tb-analytics.service";
 import { Recipient } from "src/entities/recipient.entity";
 import { TalkingBookDeployed } from "src/entities/tb_deployed.entity";
 import { Deployment } from "src/entities/deployment.entity";
+import { UsageQueryService } from "./usage-query.service";
 
 @Controller("tb-analytics")
 export class TalkingBookAnalyticsController {
-	constructor(protected service: TalkingBookAnalyticsService) {}
+	constructor(
+		protected service: TalkingBookAnalyticsService,
+		protected usageService: UsageQueryService,
+	) {}
 
 	@Get(":program_id/status")
 	async status(
@@ -58,17 +62,18 @@ export class TalkingBookAnalyticsController {
 		});
 	}
 
-	// @Get(":program_id/tbs-deployed")
-	// async tbsdeployed(@Param("program_id") programId: string) {
-	// 	const data = {
-	// 		recipients: await Recipient.find({
-	// 			where: { program_id: programId },
-	// 			relations: { talkingbooks_deployed: true },
-	// 		}),
-	// 	};
-
-	// 	return ApiResponse.Success({
-	// 		data: data,
-	// 	});
-	// }
+	@Get(":program_id/usage")
+	async usage(
+		@Param("program_id") programId: string,
+		@Query("columns") columns: string,
+		@Query("deployment") deployment: number,
+	) {
+		return ApiResponse.Success({
+			data: await this.usageService.run({
+				deployment_number: deployment,
+				programid: programId,
+				columns,
+			}),
+		});
+	}
 }
