@@ -66,6 +66,7 @@ export class TalkingBookAnalyticsController {
 	async usage(
 		@Param("program_id") programId: string,
 		@Query("columns") columns: string,
+		@Query("group") group: string,
 		@Query("deployment") deployment: number,
 	) {
 		return ApiResponse.Success({
@@ -73,6 +74,7 @@ export class TalkingBookAnalyticsController {
 				deployment_number: deployment,
 				programid: programId,
 				columns,
+				group: group ?? '',
 			}),
 		});
 	}

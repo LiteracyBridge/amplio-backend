@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { Deployment } from "src/entities/deployment.entity";
+import { DataSource } from "typeorm";
 
 /**
  *A list of the columns that the user may request.
@@ -70,16 +71,16 @@ WITH temp_usage AS (
 const TEMP_VIEW = "temp_usage";
 
 const COLUMN_SPEC = new RegExp(
-  '^\s*' +  // ignore case, whitespace
-  '(?:(?<agg>count|sum)\s*\(\s*)?' +  // optional aggregation
-  '(?<col>\w+)\s*' +  // column
-  // if aggregated, closing paren
-  //'(?(<agg>)\\)\\s*' +
-  // Also, if aggregated, optional normalization of aggregation
-  '(/((?<norm>count|sum)\s*\(\s*(?<norm_col>\w+)\s*\)))?)' +
-  // Optional ' as '
-  '(\s*as\s+(?<as_col>\w+)\s*)?$/u',
-  'ig'
+	"^s*" + // ignore case, whitespace
+		"(?:(?<agg>count|sum)s*(s*)?" + // optional aggregation
+		"(?<col>w+)s*" + // column
+		// if aggregated, closing paren
+		//'(?(<agg>)\\)\\s*' +
+		// Also, if aggregated, optional normalization of aggregation
+		"(/((?<norm>count|sum)s*(s*(?<norm_col>w+)s*)))?)" +
+		// Optional ' as '
+		"(s*ass+(?<as_col>w+)s*)?$/u",
+	"ig",
 );
 // const COLUMN_SPEC = new RegExp(
 //   /^\s*(?:(?<agg>count|sum)\s*\(\s*)?(?<col>\w+)\s*(?(<agg>)\)\s*(\/(?<norm>count|sum)\s*\(\s*(?<norm_col>\w+)\s*\)))?(\s*as\s+(?<as_col>\w+)\s*)?$/u,
@@ -110,25 +111,60 @@ export class UsageQueryService {
 	// The expressions for each column
 	private expressions: string[] = [];
 
+	constructor(private dataSource: DataSource) {}
+
 	async run(opts: {
 		programid: string;
 		columns: string;
+		group: string;
 		deployment_number?: number;
 	}) {
-		const { programid, deployment_number } = opts;
+		const { programid, deployment_number, columns, group } = opts;
 
-		let query = this.parseQuery(opts.columns);
-		if (deployment_number) {
-			console.log(
-				`Program filter: "${VIEW_QUERY_DEPL}" with: ${programid}, ${deployment_number}`,
-			);
-			query = VIEW_QUERY_DEPL + query;
-			return await Deployment.query(VIEW_QUERY_DEPL + query, [
-				programid,
-				deployment_number,
-			]);
+		const keywordRegex =
+			/delete|drop|truncate|revoke|grant|rename|update|alter|create|trigger/gim;
+
+		if (keywordRegex.test(columns) || keywordRegex.test(group)) {
+			throw new BadRequestException("Invalid query");
 		}
-		return await Deployment.query(VIEW_QUERY + query, [programid]);
+
+		let query = `SELECT DISTINCT ${columns} FROM ${TEMP_VIEW}`;
+		if (group.length > 0) {
+			query += `\n GROUP BY ${group} ORDER BY ${group};`;
+		}
+
+
+		let results: Record<string, any> = [];
+
+
+    // Executes the user's query in a transaction, and rolls back the transaction
+    // to prevent any changes to the database.
+		const queryRunner = this.dataSource.createQueryRunner();
+		await queryRunner.connect();
+		await queryRunner.startTransaction();
+
+		try {
+			if (deployment_number) {
+				console.log(
+					`Program filter: "${VIEW_QUERY_DEPL}" with: ${programid}, ${deployment_number}`,
+				);
+				query = VIEW_QUERY_DEPL + query;
+				results = await queryRunner.manager.query(query, [
+					programid,
+					deployment_number,
+				]);
+			} else {
+				results = await queryRunner.manager.query(VIEW_QUERY + query, [
+					programid,
+				]);
+			}
+
+			await queryRunner.rollbackTransaction();
+		} finally {
+			await queryRunner.release();
+		}
+
+		return results;
 	}
 
 	private parseQuery(simple_query: string) {
