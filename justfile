@@ -10,13 +10,13 @@ uvicorn := VIRTUAL_ENV / "bin/uvicorn"
 default:
     @just --choose
 
-[doc("Executes a python script. Usage: just run_script <script_name.py> <args>")]
-run-script *args='': venv
-    {{ PYTHONPATH }} {{ python }} "$@"
-
 venv:
     export PIPENV_IGNORE_VIRTUALENVS=1
     . {{ VIRTUAL_ENV }}/bin/activate
+
+[doc("Executes a python script. Usage: just run_script <script_name.py> <args>")]
+run-script *args='': venv
+    {{ PYTHONPATH }} {{ python }} "$@"
 
 install: venv
     pipenv install --verbose "$@"
