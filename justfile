@@ -2,7 +2,8 @@ set positional-arguments := true
 set dotenv-load := true
 # Enables loading .env values
 
-VIRTUAL_ENV := `pipenv --venv 2> /dev/null || true`
+project_dir := justfile_directory()
+VIRTUAL_ENV := justfile_directory() + "/.venv"
 PYTHONPATH := "PYTHONPATH=" + env('PYTHONPATH', '') + ":" + source_directory() + "/src"
 python := VIRTUAL_ENV / "bin/python"
 uvicorn := VIRTUAL_ENV / "bin/uvicorn"
@@ -11,8 +12,9 @@ default:
     @just --choose
 
 venv:
+    echo {{ project_dir }}
     export PIPENV_IGNORE_VIRTUALENVS=1
-    . {{ VIRTUAL_ENV }}/bin/activate
+    cd {{ project_dir }} && . {{ VIRTUAL_ENV }}/bin/activate
 
 [doc("Executes a python script. Usage: just run_script <script_name.py> <args>")]
 run-script *args='': venv
@@ -151,7 +153,7 @@ reboot:
 
 [doc("Backup the database")]
 backup-db:
-    just run-script scripts/backup_db.py
+    cd {{ project_dir }} && just run-script scripts/backup_db.py
 
 [doc("Deploy Nestjs app in production mode")]
 deploy:
