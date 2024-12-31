@@ -53,7 +53,11 @@ export class UsageQueryService {
 		}
 
 		let query = `SELECT DISTINCT ${columns} FROM ${TEMP_VIEW}`;
-		if (isNonNullish(opts.date) && !keywordRegex.test(opts.date!)) {
+		if (
+			opts.date !== "undefined" &&
+			isNonNullish(opts.date) &&
+			!keywordRegex.test(opts.date!)
+		) {
 			query += ` WHERE deployment_timestamp::DATE = '${opts.date}'`;
 		}
 		if (group.length > 0) {
@@ -69,7 +73,7 @@ export class UsageQueryService {
 		await queryRunner.startTransaction();
 
 		try {
-			 if (deployment_number) {
+			if (deployment_number) {
 				console.log(
 					`Program filter: "${VIEW_QUERY_DEPL}" with: ${programid}, ${deployment_number}`,
 				);
