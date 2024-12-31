@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
+import { isNonNullish } from "remeda";
 import { DataSource } from "typeorm";
 
 const VIEW_QUERY = `
@@ -52,7 +53,7 @@ export class UsageQueryService {
 		}
 
 		let query = `SELECT DISTINCT ${columns} FROM ${TEMP_VIEW}`;
-		if (opts.date && !keywordRegex.test(opts.date)) {
+		if (isNonNullish(opts.date) && !keywordRegex.test(opts.date!)) {
 			query += ` WHERE deployment_timestamp::DATE = '${opts.date}'`;
 		}
 		if (group.length > 0) {
