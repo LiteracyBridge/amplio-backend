@@ -5,6 +5,7 @@ import { Recipient } from "src/entities/recipient.entity";
 import { TalkingBookDeployed } from "src/entities/tb_deployed.entity";
 import { Deployment } from "src/entities/deployment.entity";
 import { UsageQueryService } from "./usage-query.service";
+import { isNumber } from "class-validator";
 
 @Controller("tb-analytics")
 export class TalkingBookAnalyticsController {
@@ -68,14 +69,34 @@ export class TalkingBookAnalyticsController {
 		@Query("columns") columns: string,
 		@Query("group") group: string,
 		@Query("deployment") deployment: number,
+		@Query("date") date: string | undefined,
 	) {
 		return ApiResponse.Success({
 			data: await this.usageService.run({
 				deployment_number: deployment,
 				programid: programId,
 				columns,
-				group: group ?? '',
+				group: group ?? "",
+        date
 			}),
+		});
+	}
+
+	@Get(":program_id/deployment-dates")
+	async deploymentTimestamp(
+		@Param("program_id") programId: string,
+		@Query("deployment") deployment: number,
+	) {
+		const params: any[] = [programId];
+		let query =
+			"SELECT DISTINCT deployment_timestamp::DATE AS date FROM usage_info WHERE project = $1";
+		if (isNumber(deployment)) {
+			query += " AND deploymentnumber = $2";
+			params.push(deployment);
+		}
+
+		return ApiResponse.Success({
+			data: await TalkingBookDeployed.query(query, params),
 		});
 	}
 }
