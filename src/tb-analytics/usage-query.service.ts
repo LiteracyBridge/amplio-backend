@@ -1,12 +1,14 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
+import { isNonNullish } from "remeda";
 import { DataSource } from "typeorm";
 
 const VIEW_QUERY = `
 WITH temp_usage AS (
   SELECT * FROM usage_info
   WHERE recipientid IN (SELECT recipientid FROM recipients WHERE project ILIKE $1)
-    AND played_seconds>0
+    AND played_seconds > 0
 )
+
 `;
 
 const VIEW_QUERY_DEPL = `
@@ -39,6 +41,7 @@ export class UsageQueryService {
 		columns: string;
 		group: string;
 		deployment_number?: number;
+		date?: string;
 	}) {
 		const { programid, deployment_number, columns, group } = opts;
 
@@ -50,6 +53,9 @@ export class UsageQueryService {
 		}
 
 		let query = `SELECT DISTINCT ${columns} FROM ${TEMP_VIEW}`;
+		if (isNonNullish(opts.date) && !keywordRegex.test(opts.date!)) {
+			query += ` WHERE deployment_timestamp::DATE = '${opts.date}'`;
+		}
 		if (group.length > 0) {
 			query += `\n GROUP BY ${group} ORDER BY ${group};`;
 		}
@@ -63,12 +69,11 @@ export class UsageQueryService {
 		await queryRunner.startTransaction();
 
 		try {
-			if (deployment_number) {
+			 if (deployment_number) {
 				console.log(
 					`Program filter: "${VIEW_QUERY_DEPL}" with: ${programid}, ${deployment_number}`,
 				);
-				query = VIEW_QUERY_DEPL + query;
-				results = await queryRunner.manager.query(query, [
+				results = await queryRunner.manager.query(VIEW_QUERY_DEPL + query, [
 					programid,
 					deployment_number,
 				]);
