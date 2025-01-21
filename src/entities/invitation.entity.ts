@@ -61,6 +61,7 @@ export class Invitation extends BaseEntity {
     user.first_name = invitation.first_name;
     user.last_name = invitation.last_name;
     user.email = invitation.email;
+    user.status = 'PENDING_INVITATION';
     user.organisation_id = invitation.organisation_id;
 
     await user.save()

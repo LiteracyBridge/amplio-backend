@@ -52,6 +52,9 @@ export class User extends BaseEntity {
 	@Column({ type: "varchar", nullable: true })
 	phone_number: string;
 
+	@Column({ type: "varchar", nullable: true })
+	status: string;
+
 	@Column({ type: "bigint", nullable: false })
 	organisation_id: number;
 

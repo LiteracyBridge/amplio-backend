@@ -11,6 +11,8 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 import { Program } from "src/entities/program.entity";
 import { ProgramUser } from "src/entities/program_user.entity";
+import { Organisation } from "src/entities/organisation.entity";
+import e from "express";
 
 @Injectable()
 export class UsersService {
@@ -43,21 +45,21 @@ export class UsersService {
 	}
 
 	async createInvitation(dto: InvitationDto, user: User) {
-		const record = await Invitation.findOne({ where: { email: dto.email } });
-		if (record != null) {
-			return await Invitation.createUser(record);
+
+		const newUser = new User();
+		newUser.first_name = dto.first_name;
+		newUser.last_name = dto.last_name;
+		newUser.email = dto.email;
+		newUser.status = 'PENDING';
+		newUser.organisation_id = dto.organisation_id ?? user.organisation_id;
+	
+		try {
+			await newUser.save();
+		} catch (error) {
+			throw new BadRequestException("Failed to create user: " + error);
 		}
 
-		const invitation = new Invitation();
-		invitation.id = randomUUID();
-		invitation.first_name = dto.first_name;
-		invitation.last_name = dto.last_name;
-		invitation.email = dto.email;
-		invitation.status = "PENDING";
-		invitation.organisation_id = dto.organisation_id ?? user.organisation_id;
-
-		await invitation.save();
-
+ 
 		// Create user on cognito
 		const client = new CognitoIdentityProviderClient();
 		const command = new AdminCreateUserCommand({
@@ -74,11 +76,24 @@ export class UsersService {
 			DesiredDeliveryMediums: ["EMAIL"],
 		});
 		const response = await client.send(command);
-		console.log(response);
 
-		return invitation;
+	try {
+        const response = await client.send(command);
+        console.log("Cognito user created successfully:", response);
+
+        console.log("Invitation status updated to 'INVITATION_APPROVED'");
+
+    } catch (error) {
+        console.error("Error while creating Cognito user:", error);
+        throw new BadRequestException("Failed to create user on Cognito: " + error);
+    }
+
+		return newUser;
 	}
 
+
+
+	
 	async deleteInvitation(email: string) {
 		const invite = await Invitation.findOne({ where: { email } });
 		const user = await User.findOne({ where: { email } });

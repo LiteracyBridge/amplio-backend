@@ -62,14 +62,27 @@ export class AuthGuard implements CanActivate {
       const payload = await verifier.verify(token);
       let user = await this.userServer.me(payload.email as string)
 
-      if (user == null) {
-        user = await Invitation.createUser(payload.email as string)
+      // if (user == null) {
+      //   user = await Invitation.createUser(payload.email as string)
+      // if(user?.status === 'PENDING') {
+      //   user?.status = 'ACTIVE'
+
+
+      //   if (user == null) {
+      //     throw new UnauthorizedException();
+      //   }
+      //   user = await this.userServer.me(payload.email as string)
+      // }
+
+      if (user?.status === "PENDING") {
+        // user = await Invitation.createUser(payload.email as string)
+         user.status = "NEW_USER";
 
         if (user == null) {
           throw new UnauthorizedException();
         }
-        user = await this.userServer.me(payload.email as string)
-      }
+        user = await this.userServer.me(payload.email as string)
+     }
 
       request.user = user
       JWT_CACHE[hash] = request.user;
