@@ -1,18 +1,15 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { User } from "src/entities/user.entity";
 import { InvitationDto } from "./invitation.dto";
-import { Invitation } from "src/entities/invitation.entity";
-import { randomUUID } from "node:crypto";
+// import { Invitation } from "src/entities/invitation.entity";
 import appConfig from "src/app.config";
 import {
 	AdminCreateUserCommand,
 	AdminDeleteUserCommand,
 	CognitoIdentityProviderClient,
 } from "@aws-sdk/client-cognito-identity-provider";
-import { Program } from "src/entities/program.entity";
 import { ProgramUser } from "src/entities/program_user.entity";
-import { Organisation } from "src/entities/organisation.entity";
-import e from "express";
+import { UserStatus } from "./users.status";
 
 @Injectable()
 export class UsersService {
@@ -50,7 +47,7 @@ export class UsersService {
 		newUser.first_name = dto.first_name;
 		newUser.last_name = dto.last_name;
 		newUser.email = dto.email;
-		newUser.status = 'PENDING';
+		newUser.status = UserStatus.INVITED;
 		newUser.organisation_id = dto.organisation_id ?? user.organisation_id;
 	
 		try {
@@ -89,33 +86,6 @@ export class UsersService {
     }
 
 		return newUser;
-	}
-
-
-
-	
-	async deleteInvitation(email: string) {
-		const invite = await Invitation.findOne({ where: { email } });
-		const user = await User.findOne({ where: { email } });
-
-		if (invite != null && user != null) {
-			// A/c already exists, delete the invitation
-			await Invitation.remove(invite);
-			return invite;
-		}
-
-		if (user == null && invite != null) {
-			const command = new AdminDeleteUserCommand({
-				UserPoolId: appConfig().aws.poolId, // required
-				Username: email, // required
-			});
-
-			const response = await new CognitoIdentityProviderClient().send(command);
-			console.log(response);
-
-			await Invitation.remove(invite);
-		}
-		return invite;
 	}
 
 	async allUsers(currentUser: User) {

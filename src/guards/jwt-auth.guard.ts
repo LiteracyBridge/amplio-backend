@@ -6,17 +6,14 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { CognitoJwtVerifier } from "aws-jwt-verify";
-import { SimpleJsonFetcher } from "aws-jwt-verify/https";
-import { SimpleJwksCache } from "aws-jwt-verify/jwk";
 import axios from "axios";
 import { Request } from "express";
 import appConfig from "src/app.config";
-import { Invitation } from "src/entities/invitation.entity";
-import { User } from "src/entities/user.entity";
 import { UsersService } from "src/users/users.service";
 import { hashString } from "src/utilities";
 import { JWT_CACHE } from "src/utilities/constants";
 import { SHOULD_SKIP_JWT_AUTH } from "src/decorators/skip-jwt-auth.decorator";
+import { UserStatus } from "src/users/users.status";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -62,27 +59,12 @@ export class AuthGuard implements CanActivate {
       const payload = await verifier.verify(token);
       let user = await this.userServer.me(payload.email as string)
 
-      // if (user == null) {
-      //   user = await Invitation.createUser(payload.email as string)
-      // if(user?.status === 'PENDING') {
-      //   user?.status = 'ACTIVE'
+      if (user?.status === UserStatus.INVITED) {
+        
+         user.status = UserStatus.ACTIVE;
 
-
-      //   if (user == null) {
-      //     throw new UnauthorizedException();
-      //   }
-      //   user = await this.userServer.me(payload.email as string)
-      // }
-
-      if (user?.status === "PENDING") {
-        // user = await Invitation.createUser(payload.email as string)
-         user.status = "NEW_USER";
-
-        if (user == null) {
-          throw new UnauthorizedException();
-        }
-        user = await this.userServer.me(payload.email as string)
-     }
+        user = await user.save();
+      }
 
       request.user = user
       JWT_CACHE[hash] = request.user;

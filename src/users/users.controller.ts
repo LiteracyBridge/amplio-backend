@@ -1,12 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
 import { CurrentUser } from "src/decorators/user.decorator";
-import { Invitation } from "src/entities/invitation.entity";
+// import { Invitation } from "src/entities/invitation.entity";
 import { Organisation } from "src/entities/organisation.entity";
 import { User } from "src/entities/user.entity";
 import { ApiResponse } from "src/utilities/api_response";
-import { FindOptionsWhere } from "typeorm";
 import { UsersService } from "./users.service";
 import { InvitationDto } from "./invitation.dto";
+import { UserStatus } from "./users.status";
 
 @Controller("users")
 export class UsersController {
@@ -41,15 +41,15 @@ export class UsersController {
 		let query: any = {};
 		if (user.organisation.isParent) {
 			query = [
-				{ organisation_id: user.organisation_id },
-				{ organisation_id: user.organisation.parent_id },
+				{ organisation_id: user.organisation_id, status: UserStatus.INVITED },
+				{ organisation_id: user.organisation.parent_id, status: UserStatus.INVITED },
 			];
 		} else {
-			query = { organisation_id: user.organisation_id };
+			query = { organisation_id: user.organisation_id, status: UserStatus.INVITED };
 		}
 
 		return ApiResponse.Success({
-			data: await Invitation.find({
+			data: await User.find({
 				where: query,
 				relations: { organisation: true },
 			}),
@@ -60,16 +60,6 @@ export class UsersController {
 	async createInvite(@Body() body: InvitationDto, @CurrentUser() user: User) {
 		return ApiResponse.Success({
 			data: await this.userService.createInvitation(body, user),
-		});
-	}
-
-	@Delete("/invitations/:email")
-	async deleteInvitation(
-		@Param("email") email: string,
-		@CurrentUser() user: User,
-	) {
-		return ApiResponse.Success({
-			data: await this.userService.deleteInvitation(email),
 		});
 	}
 }

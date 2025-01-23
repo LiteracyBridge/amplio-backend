@@ -6,7 +6,6 @@ import { config } from "dotenv";
 import { User, UserSubscriber } from "./entities/user.entity";
 import { Organisation } from "./entities/organisation.entity";
 import { UserRole } from "./entities/user_role.entity";
-import { Invitation } from "./entities/invitation.entity";
 import { UsersModule } from "./users/users.module";
 import { APP_FILTER, APP_GUARD, RouterModule, Routes } from "@nestjs/core";
 import { AuthGuard } from "./guards/jwt-auth.guard";
@@ -73,7 +72,7 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 				User,
 				UserRole,
 				Role,
-				Invitation,
+				// Invitation,
 				Organisation,
 				Analysis,
 				SupportedCategory,
