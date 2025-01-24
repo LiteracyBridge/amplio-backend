@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { User } from "src/entities/user.entity";
+import { User, UserStatus } from "src/entities/user.entity";
 import { InvitationDto } from "./invitation.dto";
 // import { Invitation } from "src/entities/invitation.entity";
 import appConfig from "src/app.config";
@@ -9,7 +9,6 @@ import {
 	CognitoIdentityProviderClient,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { ProgramUser } from "src/entities/program_user.entity";
-import { UserStatus } from "./users.status";
 
 @Injectable()
 export class UsersService {
@@ -42,21 +41,14 @@ export class UsersService {
 	}
 
 	async createInvitation(dto: InvitationDto, user: User) {
-
 		const newUser = new User();
 		newUser.first_name = dto.first_name;
 		newUser.last_name = dto.last_name;
 		newUser.email = dto.email;
 		newUser.status = UserStatus.INVITED;
 		newUser.organisation_id = dto.organisation_id ?? user.organisation_id;
-	
-		try {
-			await newUser.save();
-		} catch (error) {
-			throw new BadRequestException("Failed to create user: " + error);
-		}
+		await newUser.save();
 
- 
 		// Create user on cognito
 		const client = new CognitoIdentityProviderClient();
 		const command = new AdminCreateUserCommand({
@@ -72,18 +64,7 @@ export class UsersService {
 			// MessageAction: "RESEND",
 			DesiredDeliveryMediums: ["EMAIL"],
 		});
-		const response = await client.send(command);
-
-	try {
-        const response = await client.send(command);
-        console.log("Cognito user created successfully:", response);
-
-        console.log("Invitation status updated to 'INVITATION_APPROVED'");
-
-    } catch (error) {
-        console.error("Error while creating Cognito user:", error);
-        throw new BadRequestException("Failed to create user on Cognito: " + error);
-    }
+		await client.send(command);
 
 		return newUser;
 	}

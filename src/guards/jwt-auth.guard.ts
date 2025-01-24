@@ -1,8 +1,8 @@
 import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
+	CanActivate,
+	ExecutionContext,
+	Injectable,
+	UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { CognitoJwtVerifier } from "aws-jwt-verify";
@@ -13,76 +13,85 @@ import { UsersService } from "src/users/users.service";
 import { hashString } from "src/utilities";
 import { JWT_CACHE } from "src/utilities/constants";
 import { SHOULD_SKIP_JWT_AUTH } from "src/decorators/skip-jwt-auth.decorator";
-import { UserStatus } from "src/users/users.status";
+import { UserStatus } from "src/entities/user.entity";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(
-    private userServer: UsersService,
-    private reflector: Reflector
-  ) { }
+	constructor(
+		private userServer: UsersService,
+		private reflector: Reflector,
+	) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+	async canActivate(context: ExecutionContext): Promise<boolean> {
+		const request = context.switchToHttp().getRequest();
 
-    const isPublic = this.reflector.getAllAndOverride<boolean>(
-      SHOULD_SKIP_JWT_AUTH,
-      [context.getHandler(), context.getClass()],
-    );
-    if(isPublic) return true;
+		const isPublic = this.reflector.getAllAndOverride<boolean>(
+			SHOULD_SKIP_JWT_AUTH,
+			[context.getHandler(), context.getClass()],
+		);
+		if (isPublic) return true;
 
-    const token = this.extractTokenFromHeader(request)?.trim();
+		const token = this.extractTokenFromHeader(request)?.trim();
 
-    if (!token) {
-      throw new UnauthorizedException();
-    }
+		if (!token) {
+			throw new UnauthorizedException();
+		}
 
-    const hash = hashString(token)
-    if (JWT_CACHE[hash] != null) {
-      request.user = JWT_CACHE[hash];
-      return true;
-    }
+		const hash = hashString(token);
+		if (JWT_CACHE[hash] != null) {
+			request.user = JWT_CACHE[hash];
+			return true;
+		}
 
-    // Verifier that expects valid access tokens:
-    try {
-      const jwksResponse = await axios.get(`https://cognito-idp.${appConfig().aws.region}.amazonaws.com/${appConfig().aws.poolId}/.well-known/jwks.json/`, { timeout: 1000000000 });
-      // const response = await fetch(url); // Increase timeout to 10 seconds
+		// Verifier that expects valid access tokens:
+		try {
+			const jwksResponse = await axios.get(
+				`https://cognito-idp.${appConfig().aws.region}.amazonaws.com/${appConfig().aws.poolId}/.well-known/jwks.json/`,
+				{ timeout: 1000000000 },
+			);
+			// const response = await fetch(url); // Increase timeout to 10 seconds
 
-      const verifier = CognitoJwtVerifier.create({
-        userPoolId: appConfig().aws.poolId!,
-        tokenUse: "id",
-        clientId: appConfig().aws.poolClientId,
-      });
+			const verifier = CognitoJwtVerifier.create({
+				userPoolId: appConfig().aws.poolId!,
+				tokenUse: "id",
+				clientId: appConfig().aws.poolClientId,
+			});
 
-      await verifier.cacheJwks(jwksResponse.data);
+			await verifier.cacheJwks(jwksResponse.data);
 
-      const payload = await verifier.verify(token);
-      let user = await this.userServer.me(payload.email as string)
+			const payload = await verifier.verify(token);
+			const user = await this.userServer.me(payload.email as string);
 
-      if (user?.status === UserStatus.INVITED) {
-        
-         user.status = UserStatus.ACTIVE;
+			if (user == null) {
+				throw new UnauthorizedException(
+					"User account not be found! Reach out to support@amplio.org for assistance",
+				);
+			}
 
-        user = await user.save();
-      }
+			if (user.status === UserStatus.INVITED) {
+				user.status = UserStatus.ACTIVE;
 
-      request.user = user
-      JWT_CACHE[hash] = request.user;
+				await user.save();
+			}
 
-      return true
-    } catch (err) {
-      console.error(err);
-      throw new UnauthorizedException("Invalid session token");
-    }
-  }
+			request.user = user;
+			JWT_CACHE[hash] = request.user;
 
-  private extractTokenFromHeader(request: Request): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+			return true;
+		} catch (err) {
+			console.error(err);
+			throw new UnauthorizedException("Invalid session token");
+		}
+	}
 
-    if (type != null && type !== '' && type !== 'Bearer') { // Authorization: <token>
-      return type
-    }
+	private extractTokenFromHeader(request: Request): string | undefined {
+		const [type, token] = request.headers.authorization?.split(" ") ?? [];
 
-    return type === 'Bearer' ? token : undefined; // Authorization: Bearer <token>
-  }
+		if (type != null && type !== "" && type !== "Bearer") {
+			// Authorization: <token>
+			return type;
+		}
+
+		return type === "Bearer" ? token : undefined; // Authorization: Bearer <token>
+	}
 }

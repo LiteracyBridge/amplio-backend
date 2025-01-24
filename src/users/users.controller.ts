@@ -2,11 +2,10 @@ import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
 import { CurrentUser } from "src/decorators/user.decorator";
 // import { Invitation } from "src/entities/invitation.entity";
 import { Organisation } from "src/entities/organisation.entity";
-import { User } from "src/entities/user.entity";
+import { User, UserStatus } from "src/entities/user.entity";
 import { ApiResponse } from "src/utilities/api_response";
 import { UsersService } from "./users.service";
 import { InvitationDto } from "./invitation.dto";
-import { UserStatus } from "./users.status";
 
 @Controller("users")
 export class UsersController {

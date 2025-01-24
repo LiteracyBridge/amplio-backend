@@ -26,6 +26,11 @@ import { Permission } from "./role.entity";
 import { isArray } from "class-validator";
 import { UnauthorizedException } from "@nestjs/common";
 
+export enum UserStatus {
+  ACTIVE = 'ACTIVE',
+  INVITED = 'INVITED'
+}
+
 @Entity({ name: "users" })
 @Unique("uq_user__id", ["_id"])
 export class User extends BaseEntity {
@@ -53,7 +58,7 @@ export class User extends BaseEntity {
 	phone_number: string;
 
 	@Column({ type: "varchar", nullable: true })
-	status: string;
+	status: UserStatus;
 
 	@Column({ type: "bigint", nullable: false })
 	organisation_id: number;
