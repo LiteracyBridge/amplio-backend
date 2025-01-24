@@ -5,7 +5,7 @@ const dotenv = require("dotenv");
 
 const { User } = require("../dist/entities/user.entity");
 const { UserRole } = require("../dist/entities/user_role.entity");
-const { Invitation } = require("../dist/entities/invitation.entity");
+// const { Invitation } = require("../dist/entities/invitation.entity");
 const { Organisation } = require("../dist/entities/organisation.entity");
 const { Analysis } = require("../dist/entities/analysis.entity");
 const { SupportedCategory } = require("../dist/entities/category.entity");
@@ -48,7 +48,7 @@ const AppDataSource = new DataSource({
     Log,
 		User,
 		UserRole,
-		Invitation,
+		// Invitation,
 		Organisation,
 		Analysis,
 		SupportedCategory,

@@ -1,15 +1,13 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { User } from "src/entities/user.entity";
+import { User, UserStatus } from "src/entities/user.entity";
 import { InvitationDto } from "./invitation.dto";
-import { Invitation } from "src/entities/invitation.entity";
-import { randomUUID } from "node:crypto";
+// import { Invitation } from "src/entities/invitation.entity";
 import appConfig from "src/app.config";
 import {
 	AdminCreateUserCommand,
 	AdminDeleteUserCommand,
 	CognitoIdentityProviderClient,
 } from "@aws-sdk/client-cognito-identity-provider";
-import { Program } from "src/entities/program.entity";
 import { ProgramUser } from "src/entities/program_user.entity";
 
 @Injectable()
@@ -43,20 +41,13 @@ export class UsersService {
 	}
 
 	async createInvitation(dto: InvitationDto, user: User) {
-		const record = await Invitation.findOne({ where: { email: dto.email } });
-		if (record != null) {
-			return await Invitation.createUser(record);
-		}
-
-		const invitation = new Invitation();
-		invitation.id = randomUUID();
-		invitation.first_name = dto.first_name;
-		invitation.last_name = dto.last_name;
-		invitation.email = dto.email;
-		invitation.status = "PENDING";
-		invitation.organisation_id = dto.organisation_id ?? user.organisation_id;
-
-		await invitation.save();
+		const newUser = new User();
+		newUser.first_name = dto.first_name;
+		newUser.last_name = dto.last_name;
+		newUser.email = dto.email;
+		newUser.status = UserStatus.INVITED;
+		newUser.organisation_id = dto.organisation_id ?? user.organisation_id;
+		await newUser.save();
 
 		// Create user on cognito
 		const client = new CognitoIdentityProviderClient();
@@ -73,34 +64,9 @@ export class UsersService {
 			// MessageAction: "RESEND",
 			DesiredDeliveryMediums: ["EMAIL"],
 		});
-		const response = await client.send(command);
-		console.log(response);
+		await client.send(command);
 
-		return invitation;
-	}
-
-	async deleteInvitation(email: string) {
-		const invite = await Invitation.findOne({ where: { email } });
-		const user = await User.findOne({ where: { email } });
-
-		if (invite != null && user != null) {
-			// A/c already exists, delete the invitation
-			await Invitation.remove(invite);
-			return invite;
-		}
-
-		if (user == null && invite != null) {
-			const command = new AdminDeleteUserCommand({
-				UserPoolId: appConfig().aws.poolId, // required
-				Username: email, // required
-			});
-
-			const response = await new CognitoIdentityProviderClient().send(command);
-			console.log(response);
-
-			await Invitation.remove(invite);
-		}
-		return invite;
+		return newUser;
 	}
 
 	async allUsers(currentUser: User) {
