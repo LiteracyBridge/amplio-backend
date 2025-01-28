@@ -77,7 +77,7 @@ export class TalkingBookAnalyticsController {
 				programid: programId,
 				columns,
 				group: group ?? "",
-        date
+				date,
 			}),
 		});
 	}
@@ -97,6 +97,16 @@ export class TalkingBookAnalyticsController {
 
 		return ApiResponse.Success({
 			data: await TalkingBookDeployed.query(query, params),
+		});
+	}
+
+	@Get(":program_id/summaries")
+	async summaries(
+		@Param("program_id") programId: string,
+		@Query("deployment") deployment: number,
+	) {
+		return ApiResponse.Success({
+			data: await this.service.summaries(programId),
 		});
 	}
 }

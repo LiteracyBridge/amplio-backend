@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { Deployment } from 'src/entities/deployment.entity';
+import { Injectable } from "@nestjs/common";
+import { Deployment } from "src/entities/deployment.entity";
+import { TalkingBookDeployed } from "src/entities/tb_deployed.entity";
 
 const STATUS_BY_DEPLOYMENT = `
 WITH status_by_deployment AS (
@@ -17,7 +18,7 @@ WITH status_by_deployment AS (
      ORDER BY tbd.project, d.deploymentnumber
 )
 SELECT * FROM status_by_deployment WHERE programid=$1;
-`
+`;
 
 const STATUS_BY_TB = `
 WITH latest_deployments AS (
@@ -56,14 +57,91 @@ WITH latest_deployments AS (
 )
 SELECT * FROM status_by_tb WHERE programid=$1
  ORDER BY region, district, communityname, groupname, agent, language, talkingbookid
-`
+`;
 
 @Injectable()
 export class TalkingBookAnalyticsService {
-  async status_by_deployment(programid: string) {
-    return Deployment.query(STATUS_BY_DEPLOYMENT, [programid]);
-  }
-  async status_by_tb(programid: string) {
-    return Deployment.query(STATUS_BY_TB, [programid]);
-  }
+	async status_by_deployment(programid: string) {
+		return Deployment.query(STATUS_BY_DEPLOYMENT, [programid]);
+	}
+	async status_by_tb(programid: string) {
+		return Deployment.query(STATUS_BY_TB, [programid]);
+	}
+
+	async summaries(programId: string) {
+		const [tbs] = await TalkingBookDeployed.query(
+			`
+      SELECT COUNT(tbd.talkingbookid) AS "tbs"
+      FROM tbsdeployed tbd
+      JOIN recipients r ON tbd.recipientid = r.recipientid
+      JOIN deployments d ON tbd.deployment = d.deployment
+      WHERE tbd.project = $1
+      GROUP BY tbd.talkingbookid
+    `,
+			[programId],
+		);
+
+		const recipients = await TalkingBookDeployed.query(
+			`
+      SELECT r.recipientid AS id, r.region, r.groupname AS "group_name", r.district,
+       r.communityname AS "community_name", r.latitude AS "latitude",
+        r.longitude AS "longitude", r.numtbs,
+      ui.deploymentnumber AS "Deployment Number",
+      sum(ui.played_seconds) AS "played_seconds",
+      sum(ui.played_seconds) / 60 AS "played_minutes"
+      FROM recipients r
+      LEFT JOIN usage_info ui
+      on r.recipientid = ui.recipientid
+      WHERE R.project = $1
+      GROUP BY r.country,r.region,r.district,r.communityname,r.latitude,
+        r.longitude,r.numtbs,ui.deploymentnumber, r.recipientid,
+        r.groupname
+    `,
+			[programId],
+		);
+
+		return {
+			tbsCount: tbs,
+			map: {
+				data: recipients,
+				centroid: this.calculateCentroid(
+					recipients.map((r) => [r.latitude, r.longitude]),
+				),
+			},
+		};
+	}
+
+	private calculateCentroid(coordinates: [number, number][]): {
+		latitude: number;
+		longitude: number;
+	} {
+		const toDegrees = (radians: number): number => radians * (180 / Math.PI);
+
+		const toRadians = (degrees: number): number => degrees * (Math.PI / 180);
+
+		// Convert latitude and longitude from degrees to radians
+		const latitudes = coordinates.map((coord) => toRadians(coord[0]));
+		const longitudes = coordinates.map((coord) => toRadians(coord[1]));
+
+		// Compute the average of the coordinates
+		const avgLat = latitudes.reduce((a, b) => a + b, 0) / latitudes.length;
+		const avgLon = longitudes.reduce((a, b) => a + b, 0) / longitudes.length;
+
+		// Convert the average coordinates back to degrees
+		const centroidLat = toDegrees(avgLat);
+		const centroidLon = toDegrees(avgLon);
+
+		return { latitude: centroidLat, longitude: centroidLon };
+	}
+
+	// Example usage
+	// const coordinates: [number, number][] = [
+	//     [37.7749, -122.4194], // San Francisco, CA
+	//     [34.0522, -118.2437], // Los Angeles, CA
+	//     [40.7128, -74.0060],  // New York, NY
+	//     [41.8781, -87.6298]   // Chicago, IL
+	// ];
+
+	// const centroid = calculateCentroid(coordinates);
+	// console.log(`The centroid is at latitude: ${centroid[0]}, longitude: ${centroid[1]}`);
 }
