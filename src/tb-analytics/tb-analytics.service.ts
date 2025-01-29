@@ -81,6 +81,21 @@ export class TalkingBookAnalyticsService {
 			[programId],
 		);
 
+		const content = await TalkingBookDeployed.query(
+			`
+      SELECT deploymentnumber   as "Deployment #"
+        ,message            as "Message"
+        ,language           as "Language"
+        ,format             as "Format"
+        ,playlist           as "Playlist"
+        ,position           as "Position"
+        ,duration_seconds   as "Duration"
+      FROM tableau_standard_usage2 WHERE project=$1
+      GROUP BY deploymentnumber, message, language, format, position, playlist, duration_seconds
+      ORDER BY playlist, message
+    `,
+			[programId],
+		);
 		const recipients = await TalkingBookDeployed.query(
 			`
       SELECT r.recipientid AS id, r.region, r.groupname AS "group_name", r.district,
@@ -108,6 +123,7 @@ export class TalkingBookAnalyticsService {
 					recipients.map((r) => [r.latitude, r.longitude]),
 				),
 			},
+      content: content
 		};
 	}
 
@@ -133,15 +149,4 @@ export class TalkingBookAnalyticsService {
 
 		return { latitude: centroidLat, longitude: centroidLon };
 	}
-
-	// Example usage
-	// const coordinates: [number, number][] = [
-	//     [37.7749, -122.4194], // San Francisco, CA
-	//     [34.0522, -118.2437], // Los Angeles, CA
-	//     [40.7128, -74.0060],  // New York, NY
-	//     [41.8781, -87.6298]   // Chicago, IL
-	// ];
-
-	// const centroid = calculateCentroid(coordinates);
-	// console.log(`The centroid is at latitude: ${centroid[0]}, longitude: ${centroid[1]}`);
 }
