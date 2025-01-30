@@ -12,10 +12,10 @@ export class AddNewColumnToUsers1737621277283 implements MigrationInterface {
 
     public async down(queryRunner: QueryRunner): Promise<void> {
               // Write the SQL to revert the change here
-              await queryRunner.query(`
-                ALTER TABLE users
-                DROP COLUMN status;
-            `);
+            //   await queryRunner.query(`
+            //     ALTER TABLE users
+            //     DROP COLUMN status;
+            // `);
     }
 
 }
