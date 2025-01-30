@@ -114,6 +114,30 @@ export class TalkingBookAnalyticsService {
     `,
 			[programId],
 		);
+		const operations = await TalkingBookDeployed.query(
+			`
+      SELECT tbd.talkingbookid AS "TB",
+      r.region AS "Region",
+      r.district AS "District",
+      r.communityname AS "Community",
+      r.agent AS "Agent",
+      d.deploymentnumber AS "Deployment",
+      d.startdate AS "Start Date",
+      TO_CHAR(tbd.deployedtimestamp, 'Mon DD, YYYY') AS "Install Date",
+      --date_trunc('second',tbd.deployedtimestamp::time) AS "Install Time",
+      TO_CHAR(MAX(ps.stats_timestamp), 'Mon DD, YYYY') AS "Date of Latest Stats",
+      date_trunc('second',max(ps.stats_timestamp)::time) AS "Time of Latest Stats",
+      count(distinct ps.stats_timestamp) AS "# of Times Stats Collected"
+      FROM tbsdeployed tbd
+      JOIN recipients r ON tbd.recipientid = r.recipientid
+      JOIN deployments d ON tbd.deployment = d.deployment
+      LEFT JOIN playstatistics ps ON tbd.talkingbookid = ps.talkingbookid AND tbd.deployment = ps.deployment AND tbd.recipientid = ps.recipientid AND tbd.deployedtimestamp = ps.deployment_timestamp
+      WHERE tbd.project = $1
+      GROUP BY tbd.talkingbookid, r.region, r.district, r.communityname, r.agent, d.deploymentnumber, d.startdate, tbd.deployedtimestamp
+      ORDER BY tbd.talkingbookid,d.deploymentnumber,r.communityname
+    `,
+			[programId],
+		);
 
 		return {
 			tbsCount: tbs,
@@ -123,7 +147,8 @@ export class TalkingBookAnalyticsService {
 					recipients.map((r) => [r.latitude, r.longitude]),
 				),
 			},
-      content: content
+      content: content,
+      operations: operations,
 		};
 	}
 
