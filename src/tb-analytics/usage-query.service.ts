@@ -58,7 +58,7 @@ export class UsageQueryService {
 			isNonNullish(opts.date) &&
 			!keywordRegex.test(opts.date!)
 		) {
-			query += ` WHERE deployment_timestamp::DATE = '${opts.date}'`;
+			query += ` WHERE timestamp::DATE = '${opts.date}'`;
 		}
 		if (group.length > 0) {
 			query += `\n GROUP BY ${group} ORDER BY ${group};`;

@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { Deployment } from "src/entities/deployment.entity";
 import { TalkingBookDeployed } from "src/entities/tb_deployed.entity";
+import { SummaryAnalyticsQueryDto } from "./tb-query.dto";
 
 const STATUS_BY_DEPLOYMENT = `
 WITH status_by_deployment AS (
@@ -61,28 +62,48 @@ SELECT * FROM status_by_tb WHERE programid=$1
 
 @Injectable()
 export class TalkingBookAnalyticsService {
-	async status_by_deployment(programid: string) {
-		return Deployment.query(STATUS_BY_DEPLOYMENT, [programid]);
-	}
-	async status_by_tb(programid: string) {
-		return Deployment.query(STATUS_BY_TB, [programid]);
-	}
+  async status_by_deployment(programid: string) {
+    return Deployment.query(STATUS_BY_DEPLOYMENT, [programid]);
+  }
+  async status_by_tb(programid: string) {
+    return Deployment.query(STATUS_BY_TB, [programid]);
+  }
 
-	async summaries(programId: string) {
-		const [tbs] = await TalkingBookDeployed.query(
-			`
-      SELECT COUNT(tbd.talkingbookid) AS "tbs"
+  async summaries(programId: string, dto: SummaryAnalyticsQueryDto) {
+    let filter = ''
+    if (dto.community) {
+      filter += ` usg.communityname = '${dto.community}'`
+    }
+    if (dto.language) {
+      filter += ` usg.language = '${dto.language}'`
+    }
+    if (dto.deployment) {
+      filter += ` usg.deploymentnumber = '${dto.deployment}'`
+    }
+    if (dto.district) {
+      filter += ` usg.district = '${dto.district}'`
+    }
+    if (dto.playlist) {
+      filter += ` usg.playlist = '${dto.playlist}'`
+    }
+    if(filter != ''){
+      filter = `AND ${filter}`
+    }
+
+    const [tbs] = await TalkingBookDeployed.query(
+      `
+      SELECT COUNT(DISTINCT tbd.talkingbookid) AS "tbs"
       FROM tbsdeployed tbd
       JOIN recipients r ON tbd.recipientid = r.recipientid
       JOIN deployments d ON tbd.deployment = d.deployment
       WHERE tbd.project = $1
-      GROUP BY tbd.talkingbookid
+      --GROUP BY tbd.talkingbookid
     `,
-			[programId],
-		);
+      [programId],
+    );
 
-		const content = await TalkingBookDeployed.query(
-			`
+    const content = await TalkingBookDeployed.query(
+      `
       SELECT deploymentnumber   as "Deployment #"
         ,message            as "Message"
         ,language           as "Language"
@@ -90,14 +111,15 @@ export class TalkingBookAnalyticsService {
         ,playlist           as "Playlist"
         ,position           as "Position"
         ,duration_seconds   as "Duration"
-      FROM tableau_standard_usage2 WHERE project=$1
+      FROM tableau_standard_usage2 usg
+      WHERE project=$1 ${filter}
       GROUP BY deploymentnumber, message, language, format, position, playlist, duration_seconds
       ORDER BY playlist, message
     `,
-			[programId],
-		);
-		const recipients = await TalkingBookDeployed.query(
-			`
+      [programId],
+    );
+    const recipients = await TalkingBookDeployed.query(
+      `
       SELECT r.recipientid AS id, r.region, r.groupname AS "group_name", r.district,
        r.communityname AS "community_name", r.latitude AS "latitude",
         r.longitude AS "longitude", r.numtbs,
@@ -112,10 +134,10 @@ export class TalkingBookAnalyticsService {
         r.longitude,r.numtbs,ui.deploymentnumber, r.recipientid,
         r.groupname
     `,
-			[programId],
-		);
-		const operations = await TalkingBookDeployed.query(
-			`
+      [programId],
+    );
+    const operations = await TalkingBookDeployed.query(
+      `
       SELECT tbd.talkingbookid AS "TB",
       r.region AS "Region",
       r.district AS "District",
@@ -136,42 +158,65 @@ export class TalkingBookAnalyticsService {
       GROUP BY tbd.talkingbookid, r.region, r.district, r.communityname, r.agent, d.deploymentnumber, d.startdate, tbd.deployedtimestamp
       ORDER BY tbd.talkingbookid,d.deploymentnumber,r.communityname
     `,
-			[programId],
-		);
-
-		return {
-			tbsCount: tbs,
-			map: {
-				data: recipients,
-				centroid: this.calculateCentroid(
-					recipients.map((r) => [r.latitude, r.longitude]),
-				),
-			},
+      [programId],
+    );
+    const usage = await TalkingBookDeployed.query(
+      `
+    SELECT
+      COUNT(talkingbookid) AS "tbs",
+      message            as "Message"
+      ,playlist           as "Playlist"
+      ,SUM(total_starts)       as "Total Starts"
+      ,SUM(total_quarter)      as "Total 1/4 Plays"
+      ,SUM(total_half)         as "Total 1/2 Plays"
+      ,SUM(total_threequarters) as "Total 3/4 Plays"
+      ,SUM(total_completions)  as "Total Completions"
+      ,SUM(total_plays)        as "Total Plays"
+      ,SUM(total_seconds_played) as "Total Seconds Played"
+    FROM tableau_standard_usage2 usg
+    WHERE project = $1  ${filter}
+    GROUP BY message, playlist
+    ORDER BY message, playlist
+    `,
+      [programId],
+    );
+    console.log(tbs);
+    return {
+      tbs: 11, // TODO: replace with query results
+      // tbs: tbs.tbs,
+      // tbsCount: tbs,
+      map: {
+        data: recipients,
+        centroid: this.calculateCentroid(
+          recipients.map((r) => [r.latitude, r.longitude]),
+        ),
+      },
       content: content,
       operations: operations,
-		};
-	}
+      usage,
+    };
+  }
 
-	private calculateCentroid(coordinates: [number, number][]): {
-		latitude: number;
-		longitude: number;
-	} {
-		const toDegrees = (radians: number): number => radians * (180 / Math.PI);
+  private calculateCentroid(coordinates: [number, number][]): {
+    latitude: number;
+    longitude: number;
+  } {
+    const toDegrees = (radians: number): number => radians * (180 / Math.PI);
 
-		const toRadians = (degrees: number): number => degrees * (Math.PI / 180);
+    const toRadians = (degrees: number): number => degrees * (Math.PI / 180);
 
-		// Convert latitude and longitude from degrees to radians
-		const latitudes = coordinates.map((coord) => toRadians(coord[0]));
-		const longitudes = coordinates.map((coord) => toRadians(coord[1]));
+    // Convert latitude and longitude from degrees to radians
+    const latitudes = coordinates.map((coord) => toRadians(coord[0]));
+    const longitudes = coordinates.map((coord) => toRadians(coord[1]));
 
-		// Compute the average of the coordinates
-		const avgLat = latitudes.reduce((a, b) => a + b, 0) / latitudes.length;
-		const avgLon = longitudes.reduce((a, b) => a + b, 0) / longitudes.length;
+    // Compute the average of the coordinates
+    const avgLat = latitudes.reduce((a, b) => a + b, 0) / latitudes.length;
+    const avgLon = longitudes.reduce((a, b) => a + b, 0) / longitudes.length;
 
-		// Convert the average coordinates back to degrees
-		const centroidLat = toDegrees(avgLat);
-		const centroidLon = toDegrees(avgLon);
+    // Convert the average coordinates back to degrees
+    const centroidLat = toDegrees(avgLat);
+    const centroidLon = toDegrees(avgLon);
 
-		return { latitude: centroidLat, longitude: centroidLon };
-	}
+    return { latitude: centroidLat, longitude: centroidLon };
+  }
 }
