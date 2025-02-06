@@ -70,47 +70,42 @@ export class TalkingBookAnalyticsService {
   }
 
   async summaries(programId: string, dto: SummaryAnalyticsQueryDto) {
-    let filter = { recipient: '', tbsdeployed: '', usg: '' }
+    let filter = { recipient: [] as string[], tbsdeployed: [] as string[], usg: [] as string[] }
     if (dto.community) {
-      filter.recipient += ` r.communityname = '${dto.community}'`
-      filter.usg += ` usg.communityname = '${dto.community}'`
+      filter.recipient.push(`r.communityname = '${dto.community}'`)
+      filter.usg.push(` usg.communityname = '${dto.community}'`)
     }
     if (dto.language) {
-      filter.recipient += ` r.language = '${dto.language}'`
-      filter.usg += ` usg.language = '${dto.language}'`
+      filter.recipient.push(` r.language = '${dto.language}'`)
+      filter.usg.push(` usg.language = '${dto.language}'`)
     }
     if (dto.deployment) {
-      filter.recipient += ` r.deploymentnumber = '${dto.deployment}'`
-      filter.usg += ` usg.deploymentnumber = '${dto.deployment}'`
-      filter.tbsdeployed += ` tbd.deployment = '${dto.deployment_name}'`
+      filter.usg.push(` usg.deploymentnumber = '${dto.deployment}'`)
+      filter.tbsdeployed.push(` tbd.deployment = '${dto.deployment_name}'`)
     }
     if (dto.district) {
-      filter.usg += ` usg.district = '${dto.district}'`
-      filter.recipient += ` r.district = '${dto.district}'`
+      filter.usg.push(` usg.district = '${dto.district}'`)
+      filter.recipient.push(` r.district = '${dto.district}'`)
     }
     if (dto.playlist) {
-      filter.usg += ` usg.playlist = '${dto.playlist}'`
+      filter.usg.push(` usg.playlist = '${dto.playlist}'`)
     }
-    if (filter.recipient != '') {
-      filter.recipient = ` AND ${filter.recipient}`
-    }
-    if (filter.tbsdeployed != '') {
-      filter.tbsdeployed = ` AND ${filter.tbsdeployed}`
-    }
-    if (filter.usg != '') {
-      filter.usg = ` AND ${filter.usg}`
-    }
+
+    const f_recipient = filter.recipient.length == 0 ? '' : ` AND ${filter.recipient.join(' AND ')}`
+    const f_tbsdeployed = filter.tbsdeployed.length == 0 ? '' : ` AND ${filter.tbsdeployed.join(' AND ')}`
+    const f_usage = filter.usg.length == 0 ? '' : ` AND ${filter.usg.join(' AND ')}`
+
 
     const [tbs] = await TalkingBookDeployed.query(
       `
      WITH active_tbs AS (
         SELECT SUM(numtbs) AS "project_tbs" FROM recipients r
-        WHERE project = '${programId}' ${filter.recipient}
+        WHERE project = '${programId}' ${f_recipient}
     ),
     usage AS (
         SELECT COUNT(DISTINCT usg.message) AS "total_messages", (SUM(usg.total_seconds_played) / 60) AS "minutes_played"
         FROM tableau_standard_usage2 usg
-        WHERE project = '${programId}' ${filter.usg}
+        WHERE project = '${programId}' ${f_usage}
     ),
     installed_tbs AS (
         SELECT
@@ -120,7 +115,7 @@ export class TalkingBookAnalyticsService {
         JOIN recipients r ON tbd.recipientid = r.recipientid
         JOIN deployments d ON tbd.deployment = d.deployment
         LEFT JOIN playstatistics ps ON tbd.talkingbookid = ps.talkingbookid AND tbd.deployment = ps.deployment AND tbd.recipientid = ps.recipientid AND tbd.deployedtimestamp = ps.deployment_timestamp
-        WHERE tbd.project = '${programId}' ${filter.tbsdeployed}
+        WHERE tbd.project = '${programId}' ${f_tbsdeployed}
     )
     SELECT  it.installed, it.reporting_stats, usage.*, active_tbs.*
     FROM installed_tbs it, usage, active_tbs
@@ -136,7 +131,7 @@ export class TalkingBookAnalyticsService {
         ,position           as "Position"
         ,SUM(duration_seconds)   as "Duration"
       FROM tableau_standard_usage2 usg
-      WHERE project='${programId}' ${filter.usg}
+      WHERE project='${programId}' ${f_usage}
       GROUP BY deploymentnumber, message, language, format, position, playlist
       ORDER BY playlist, message
     `);
@@ -152,7 +147,7 @@ export class TalkingBookAnalyticsService {
       FROM recipients r
       LEFT JOIN usage_info ui
       on r.recipientid = ui.recipientid
-      WHERE R.project = '${programId}' ${filter.recipient}
+      WHERE R.project = '${programId}' ${f_recipient}
       GROUP BY r.country, r.region, r.district,r.communityname,r.latitude,
         r.longitude,r.numtbs,ui.deploymentnumber, r.recipientid,
         r.groupname
@@ -176,7 +171,7 @@ export class TalkingBookAnalyticsService {
       JOIN recipients r ON tbd.recipientid = r.recipientid
       JOIN deployments d ON tbd.deployment = d.deployment
       LEFT JOIN playstatistics ps ON tbd.talkingbookid = ps.talkingbookid AND tbd.deployment = ps.deployment AND tbd.recipientid = ps.recipientid AND tbd.deployedtimestamp = ps.deployment_timestamp
-      WHERE tbd.project = $1 ${filter.tbsdeployed}
+      WHERE tbd.project = $1 ${f_tbsdeployed}
       GROUP BY tbd.talkingbookid, r.region, r.district, r.communityname, r.agent, d.deploymentnumber, d.startdate, tbd.deployedtimestamp
       ORDER BY tbd.talkingbookid,d.deploymentnumber,r.communityname
     `,
@@ -196,13 +191,13 @@ export class TalkingBookAnalyticsService {
       ,SUM(total_plays)        as "Total Plays"
       ,SUM(total_seconds_played) as "Total Seconds Played"
     FROM tableau_standard_usage2 usg
-    WHERE project = $1  ${filter.usg}
+    WHERE project = $1  ${f_usage}
     GROUP BY message, playlist
     ORDER BY message, playlist
     `,
       [programId],
     );
-    console.log(tbs);
+
     return {
       tbs: tbs,
       map: {
