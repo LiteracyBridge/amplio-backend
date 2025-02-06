@@ -7,6 +7,10 @@ export class SummaryAnalyticsQueryDto {
 
   @IsOptional()
   @IsString()
+  deployment_name?: string;
+
+  @IsOptional()
+  @IsString()
   district?: string;
 
   @IsOptional()

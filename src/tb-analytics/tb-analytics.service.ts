@@ -70,37 +70,61 @@ export class TalkingBookAnalyticsService {
   }
 
   async summaries(programId: string, dto: SummaryAnalyticsQueryDto) {
-    let filter = ''
+    let filter = { recipient: '', tbsdeployed: '', usg: '' }
     if (dto.community) {
-      filter += ` usg.communityname = '${dto.community}'`
+      filter.recipient += ` r.communityname = '${dto.community}'`
+      filter.usg += ` usg.communityname = '${dto.community}'`
     }
     if (dto.language) {
-      filter += ` usg.language = '${dto.language}'`
+      filter.recipient += ` r.language = '${dto.language}'`
+      filter.usg += ` usg.language = '${dto.language}'`
     }
     if (dto.deployment) {
-      filter += ` usg.deploymentnumber = '${dto.deployment}'`
+      filter.recipient += ` r.deploymentnumber = '${dto.deployment}'`
+      filter.usg += ` usg.deploymentnumber = '${dto.deployment}'`
+      filter.tbsdeployed += ` tbd.deployment = '${dto.deployment_name}'`
     }
     if (dto.district) {
-      filter += ` usg.district = '${dto.district}'`
+      filter.usg += ` usg.district = '${dto.district}'`
+      filter.recipient += ` r.district = '${dto.district}'`
     }
     if (dto.playlist) {
-      filter += ` usg.playlist = '${dto.playlist}'`
+      filter.usg += ` usg.playlist = '${dto.playlist}'`
     }
-    if(filter != ''){
-      filter = `AND ${filter}`
+    if (filter.recipient != '') {
+      filter.recipient = ` AND ${filter.recipient}`
+    }
+    if (filter.tbsdeployed != '') {
+      filter.tbsdeployed = ` AND ${filter.tbsdeployed}`
+    }
+    if (filter.usg != '') {
+      filter.usg = ` AND ${filter.usg}`
     }
 
     const [tbs] = await TalkingBookDeployed.query(
       `
-      SELECT COUNT(DISTINCT tbd.talkingbookid) AS "tbs"
-      FROM tbsdeployed tbd
-      JOIN recipients r ON tbd.recipientid = r.recipientid
-      JOIN deployments d ON tbd.deployment = d.deployment
-      WHERE tbd.project = $1
-      --GROUP BY tbd.talkingbookid
-    `,
-      [programId],
-    );
+     WITH active_tbs AS (
+        SELECT SUM(numtbs) AS "project_tbs" FROM recipients r
+        WHERE project = '${programId}' ${filter.recipient}
+    ),
+    usage AS (
+        SELECT COUNT(DISTINCT usg.message) AS "total_messages", (SUM(usg.total_seconds_played) / 60) AS "minutes_played"
+        FROM tableau_standard_usage2 usg
+        WHERE project = '${programId}' ${filter.usg}
+    ),
+    installed_tbs AS (
+        SELECT
+          COUNT(DISTINCT tbd.talkingbookid ) AS "installed",
+          COUNT(distinct ps.stats_timestamp) AS "reporting_stats"
+        FROM tbsdeployed tbd
+        JOIN recipients r ON tbd.recipientid = r.recipientid
+        JOIN deployments d ON tbd.deployment = d.deployment
+        LEFT JOIN playstatistics ps ON tbd.talkingbookid = ps.talkingbookid AND tbd.deployment = ps.deployment AND tbd.recipientid = ps.recipientid AND tbd.deployedtimestamp = ps.deployment_timestamp
+        WHERE tbd.project = '${programId}' ${filter.tbsdeployed}
+    )
+    SELECT  it.installed, it.reporting_stats, usage.*, active_tbs.*
+    FROM installed_tbs it, usage, active_tbs
+    `);
 
     const content = await TalkingBookDeployed.query(
       `
@@ -110,18 +134,17 @@ export class TalkingBookAnalyticsService {
         ,format             as "Format"
         ,playlist           as "Playlist"
         ,position           as "Position"
-        ,duration_seconds   as "Duration"
+        ,SUM(duration_seconds)   as "Duration"
       FROM tableau_standard_usage2 usg
-      WHERE project=$1 ${filter}
-      GROUP BY deploymentnumber, message, language, format, position, playlist, duration_seconds
+      WHERE project='${programId}' ${filter.usg}
+      GROUP BY deploymentnumber, message, language, format, position, playlist
       ORDER BY playlist, message
-    `,
-      [programId],
-    );
+    `);
     const recipients = await TalkingBookDeployed.query(
       `
-      SELECT r.recipientid AS id, r.region, r.groupname AS "group_name", r.district,
-       r.communityname AS "community_name", r.latitude AS "latitude",
+      SELECT
+        r.recipientid AS id, r.region, r.groupname AS "group_name", r.district,
+        r.communityname AS "community_name", r.latitude AS "latitude",
         r.longitude AS "longitude", r.numtbs,
       ui.deploymentnumber AS "Deployment Number",
       sum(ui.played_seconds) AS "played_seconds",
@@ -129,12 +152,11 @@ export class TalkingBookAnalyticsService {
       FROM recipients r
       LEFT JOIN usage_info ui
       on r.recipientid = ui.recipientid
-      WHERE R.project = $1
-      GROUP BY r.country,r.region,r.district,r.communityname,r.latitude,
+      WHERE R.project = '${programId}' ${filter.recipient}
+      GROUP BY r.country, r.region, r.district,r.communityname,r.latitude,
         r.longitude,r.numtbs,ui.deploymentnumber, r.recipientid,
         r.groupname
-    `,
-      [programId],
+    `
     );
     const operations = await TalkingBookDeployed.query(
       `
@@ -154,7 +176,7 @@ export class TalkingBookAnalyticsService {
       JOIN recipients r ON tbd.recipientid = r.recipientid
       JOIN deployments d ON tbd.deployment = d.deployment
       LEFT JOIN playstatistics ps ON tbd.talkingbookid = ps.talkingbookid AND tbd.deployment = ps.deployment AND tbd.recipientid = ps.recipientid AND tbd.deployedtimestamp = ps.deployment_timestamp
-      WHERE tbd.project = $1
+      WHERE tbd.project = $1 ${filter.tbsdeployed}
       GROUP BY tbd.talkingbookid, r.region, r.district, r.communityname, r.agent, d.deploymentnumber, d.startdate, tbd.deployedtimestamp
       ORDER BY tbd.talkingbookid,d.deploymentnumber,r.communityname
     `,
@@ -174,7 +196,7 @@ export class TalkingBookAnalyticsService {
       ,SUM(total_plays)        as "Total Plays"
       ,SUM(total_seconds_played) as "Total Seconds Played"
     FROM tableau_standard_usage2 usg
-    WHERE project = $1  ${filter}
+    WHERE project = $1  ${filter.usg}
     GROUP BY message, playlist
     ORDER BY message, playlist
     `,
@@ -182,9 +204,7 @@ export class TalkingBookAnalyticsService {
     );
     console.log(tbs);
     return {
-      tbs: 11, // TODO: replace with query results
-      // tbs: tbs.tbs,
-      // tbsCount: tbs,
+      tbs: tbs,
       map: {
         data: recipients,
         centroid: this.calculateCentroid(
