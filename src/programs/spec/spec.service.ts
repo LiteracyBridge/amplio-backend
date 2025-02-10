@@ -267,7 +267,7 @@ export class ProgramSpecService {
 							"variant",
 							"supportentity",
 						],
-						"recipients_pkey",
+						"recipients_uniqueness_key",
 					)
 					.getQueryAndParameters();
 
