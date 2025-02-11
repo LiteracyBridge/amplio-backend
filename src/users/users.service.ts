@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { User, UserStatus } from "src/entities/user.entity";
 import { InvitationDto } from "./invitation.dto";
-// import { Invitation } from "src/entities/invitation.entity";
 import appConfig from "src/app.config";
 import {
 	AdminCreateUserCommand,

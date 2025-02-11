@@ -7,6 +7,7 @@ import { ApiResponse } from "src/utilities/api_response";
 import { UsersService } from "./users.service";
 import { InvitationDto } from "./invitation.dto";
 
+
 @Controller("users")
 export class UsersController {
 	constructor(private userService: UsersService) {}

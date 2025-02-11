@@ -6,7 +6,6 @@ import { Question } from "src/entities/uf_question.entity";
 import { QuestionItemDto, QuestionsDto, SurveyDto } from "./survey.dto";
 import { isUUID } from "class-validator";
 
-// {id: int, name: string}
 @Injectable()
 export class SurveyService {
   async createOrUpdate(dto: SurveyDto): Promise<Survey> {
@@ -54,51 +53,61 @@ export class SurveyService {
     dto.sections ??= [];
     dto.questions ??= [];
 
+    // Fetch existing questions in the database
+    const existingQuestions = await Question.find({
+        where: { survey_id: survey.id }
+    });
+
+    // Create a Set of question IDs from the new data
+    const newQuestionIds = new Set(dto.questions.map(q => q._id));
+
+    // Identify questions that are missing in the new list (i.e., they were removed)
+    const removedQuestions = existingQuestions.filter(q => !newQuestionIds.has(q._id));
+
+    // Delete removed questions from the database
+    for (const removedQuestion of removedQuestions) {
+        await removedQuestion.remove();
+    }
+
+    // Handle sections
     for (let i = 0; i < dto.sections.length; i++) {
-      const section_dto = dto.sections[i];
+        const section_dto = dto.sections[i];
 
-      // Delete removed sections from db
-      if (section_dto.is_deleted === true) {
-        await SurveySection.findOne({
-          where: { _id: section_dto._id, survey_id: survey.id },
-        }).then((section) => section?.softRemove());
+        // Delete removed sections from db
+        if (section_dto.is_deleted === true) {
+            await SurveySection.findOne({
+                where: { _id: section_dto._id, survey_id: survey.id },
+            }).then((section) => section?.softRemove());
 
-        dto.sections.splice(i, 1); // Remove from dto
-        continue;
-      }
-
-      const created = await this.createSection(
-        { id: section_dto._id, name: section_dto.name },
-        surveyId,
-      )
-
-      dto.sections[i] = section_dto;
-      dto.questions = dto.questions.map(q => {
-        if (q.section_id === created._id || q.section_id === created.id) {
-          q.section_id = created.id
+            dto.sections.splice(i, 1); // Remove from dto
+            continue;
         }
-        return q
-      })
+
+        const created = await this.createSection(
+            { id: section_dto._id, name: section_dto.name },
+            surveyId
+        );
+
+        dto.sections[i] = section_dto;
+        dto.questions = dto.questions.map(q => {
+            if (q.section_id === created._id || q.section_id === created.id) {
+                q.section_id = created.id;
+            }
+            return q;
+        });
     }
 
     // Create/update questions
     for (let i = 0; i < dto.questions.length; i++) {
-      const question_dto = dto.questions[i];
+        const question_dto = dto.questions[i];
 
-      // Delete removed questions from db
-      if (question_dto.is_deleted ?? false) {
-        await Question.findOne({ where: { _id: question_dto._id } }).then(
-          (question) => question?.softRemove(),
-        );
-        continue;
-      }
-
-      question_dto.order = i
-      await this.createQuestion(surveyId, question_dto).then((q) => q.id);
+        question_dto.order = i;
+        await this.createQuestion(surveyId, question_dto).then((q) => q.id);
     }
 
     return this.findById(surveyId);
-  }
+}
+
 
   private async createQuestion(survey_id: number, dto: QuestionItemDto) {
     const question = (await Question.findOne({ where: { _id: dto._id } })) ?? new Question();
