@@ -6,7 +6,6 @@ import { Question } from "src/entities/uf_question.entity";
 import { QuestionItemDto, QuestionsDto, SurveyDto } from "./survey.dto";
 import { isUUID } from "class-validator";
 
-// {id: int, name: string}
 @Injectable()
 export class SurveyService {
   async createOrUpdate(dto: SurveyDto): Promise<Survey> {
@@ -62,14 +61,11 @@ export class SurveyService {
     // Create a Set of question IDs from the new data
     const newQuestionIds = new Set(dto.questions.map(q => q._id));
 
-
     // Identify questions that are missing in the new list (i.e., they were removed)
     const removedQuestions = existingQuestions.filter(q => !newQuestionIds.has(q._id));
 
-
     // Delete removed questions from the database
     for (const removedQuestion of removedQuestions) {
-
         await removedQuestion.remove();
     }
 
