@@ -236,10 +236,12 @@ export class NewAcmService {
 
 		const project = new Project();
 		project.code = opts.programCode.trim();
-		project.name = opts.name;
+	  project.name = opts.name;
+    project.active = true
+
 		await manager.save(Project, project);
 
-		console.log("ok");
+		process.stdout.write("ok");
 		return true;
 	}
 
