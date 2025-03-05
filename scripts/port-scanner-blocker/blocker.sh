@@ -4,8 +4,7 @@ IFTOP_LOG_FILE="/tmp/iftop.log"
 IFTOP_TEMP_LOG_FILE="/tmp/tmp-iftop.log"
 OUTPUT_FILE="/tmp/block-ips.sh"
 
-duration=5*60 # 5 minutes
-sudo iftop -PFG -t -n -s $duration -L 2000 > $IFTOP_TEMP_LOG_FILE
+sudo iftop -PFG -t -n -s 300 -L 2000 > $IFTOP_TEMP_LOG_FILE
 
 awk '{ print $1, $NF }' $IFTOP_TEMP_LOG_FILE > $IFTOP_LOG_FILE
 
