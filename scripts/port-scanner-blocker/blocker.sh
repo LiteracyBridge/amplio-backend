@@ -8,7 +8,7 @@ sudo iftop -PFG -t -n -s 3 -L 200 > $IFTOP_TEMP_LOG_FILE
 
 awk '{ print $1, $NF }' $IFTOP_TEMP_LOG_FILE > $IFTOP_LOG_FILE
 
-python ift_logs_reader.py
+python3 ift_logs_reader.py
 
 chmod +x $OUTPUT_FILE
 
