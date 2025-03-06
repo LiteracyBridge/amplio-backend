@@ -14,4 +14,12 @@ cat $OUTPUT_FILE
 
 sudo bash $OUTPUT_FILE
 
+# save iptables rules
+sudo sh -c 'iptables-save > /etc/iptables/rules.v4'
+sudo sh -c 'ip6tables-save > /etc/iptables/rules.v6'
+
+# restore updated rules
+sudo sh -c 'iptables-restore < /etc/iptables/rules.v4'
+sudo sh -c 'ip6tables-restore < /etc/iptables/rules.v6'
+
 rm $OUTPUT_FILE
