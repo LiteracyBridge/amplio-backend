@@ -29,8 +29,7 @@ def main():
                     if result:
                         ip = result.group(1)
                         if ip != "94.130.76.196":
-                            iptables_cmd += f"sudo iptables -A INPUT -d {ip} -j DROP\n"
-                            iptables_cmd += f"sudo iptables -A INPUT -s {ip} -j DROP\n\n"
+                            iptables_cmd += f"sudo fail2ban-client set manualban banip {ip}\n"
 
             line_no += 1
 
