@@ -22,7 +22,6 @@ import { join } from "node:path";
 import { PublishedProgramSpecs } from "src/entities/published_spec.entity";
 import { instanceToPlain } from "class-transformer";
 import { diff } from "json-diff-ts";
-import { Request } from "express";
 import { randomUUID } from "node:crypto";
 
 @Injectable()
@@ -126,6 +125,10 @@ export class ProgramSpecService {
 			for (const d of dto.deployments) {
 				// Handle playlists data
 				for (const pl of d.playlists) {
+
+					// remove  invalid characters from playlists titles
+					pl.title = this.sanitazeString(pl.title);
+
 					const deployment = allDeployments.find(
 						(d) =>
 							d._id === pl.deployment_id ||
@@ -154,6 +157,10 @@ export class ProgramSpecService {
 					// handle playlist messages
 					// const existingMessageIds = new Set(pl.messages.flatMap((m) => m._id));
 					for (const m of pl.messages) {
+
+						// remove invalid characters from the message title
+						m.title = this.sanitazeString(m.title);
+
 						m.playlist_id = resp.id;
 						m.program_id = project.code;
 						m.default_category_code =
@@ -577,5 +584,11 @@ export class ProgramSpecService {
 		general.project_id ??= program.project_id;
 		general.languages = languages;
 		await manager.upsert(Program, general, ["program_id"]);
+	}
+
+	private sanitazeString(input: string) {
+		const invalidChars = /[^\d\w\s]/g;
+		// Replace invalid characters with a space
+		return input.replace(invalidChars, ' ');
 	}
 }
