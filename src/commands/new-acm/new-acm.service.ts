@@ -155,7 +155,7 @@ export class NewAcmService {
 	): Promise<boolean> {
 		console.log(`Creating program record for '${opts.programCode}'....`);
 
-		const project = (await Project.findOne({
+		const project = (await manager.findOne(Project, {
 			where: { code: opts.programCode },
 		}))!;
 
