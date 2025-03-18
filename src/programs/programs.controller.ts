@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
 	Body,
 	Controller,
 	Delete,
@@ -106,15 +107,14 @@ export class ProgramsController {
 	@Delete(":program_id/users")
 	async removeUserFromProgram(
 		@Param("program_id") program_id: number,
-
-		// Using @Query() rather than @Param() decorator in the controller
-		// Prevents "invalid input syntax for type integer: 'NaN'" errors previously encountered
-
-		// @Param("user_id") user_id: number,
-		@Query("user_id") user_id: number,
+		@Query("user_id") userId: number,
 		@CurrentUser() user: User,
 	) {
-		await ProgramUser.delete({ program_id, user_id });
+    if(userId == null){
+      throw new BadRequestException("User id is required in the query url")
+    }
+
+		await ProgramUser.delete({ program_id, user_id: userId });
 
 		return ApiResponse.Success({ data: await this.service.getAll(user) });
 	}
