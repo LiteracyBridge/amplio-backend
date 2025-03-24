@@ -22,7 +22,6 @@ import { join } from "node:path";
 import { PublishedProgramSpecs } from "src/entities/published_spec.entity";
 import { instanceToPlain } from "class-transformer";
 import { diff } from "json-diff-ts";
-import { Request } from "express";
 import { randomUUID } from "node:crypto";
 
 @Injectable()
@@ -642,7 +641,7 @@ export class ProgramSpecService {
 	}
 
 	private sanitazeString(input: string) {
-		const invalidChars = /[\\/:*?<>_|"']/g;
+		const invalidChars = /[^\d\w\s]/g;
 		// Replace invalid characters with a space
 		return input.replace(invalidChars, ' ');
 	}
