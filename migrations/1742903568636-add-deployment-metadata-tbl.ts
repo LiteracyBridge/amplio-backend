@@ -15,6 +15,9 @@ export class AddDeploymentMetadataTbl1742903568636 implements MigrationInterface
         await queryRunner.query(`ALTER TABLE "contentmetadata2" ADD "transcription" character varying`);
         await queryRunner.query(`ALTER TABLE "contentmetadata2" ADD "variant" character varying`);
         await queryRunner.query(`ALTER TABLE "contentmetadata2" ADD "relative_path" character varying`);
+        await queryRunner.query(`ALTER TABLE "contentmetadata2" ADD "type" character varying`);
+        await queryRunner.query(`ALTER TABLE "contentmetadata2" ADD "size" double precision`);
+        await queryRunner.query(`ALTER TABLE "contentmetadata2" ADD "position" integer`);
         await queryRunner.query(`ALTER TABLE "contentmetadata2" ADD "playlist_id" uuid`);
         await queryRunner.query(`ALTER TABLE "contentmetadata2" ADD "deployment_metadata_id" uuid`);
 
@@ -23,10 +26,10 @@ export class AddDeploymentMetadataTbl1742903568636 implements MigrationInterface
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "contentmetadata2" DROP COLUMN "deployment_metadata_id"`);
+
         await queryRunner.query(`DROP TABLE "deployment_metadata"`);
 
-        await queryRunner.query(`ALTER TABLE "contentmetadata2" DROP COLUMN "deploymentMetadataId"`);
-        await queryRunner.query(`ALTER TABLE "contentmetadata2" DROP COLUMN "deployment_metadata_id"`);
         await queryRunner.query(`ALTER TABLE "contentmetadata2" DROP COLUMN "playlist_id"`);
         await queryRunner.query(`ALTER TABLE "contentmetadata2" DROP COLUMN "relative_path"`);
         await queryRunner.query(`ALTER TABLE "contentmetadata2" DROP COLUMN "variant"`);
