@@ -94,10 +94,10 @@ export class ContentMetadata extends BaseEntity {
   @Column({ type: 'varchar', nullable: true })
   type?: ContentType;
 
-  @Column({ type: 'double', nullable: true })
+  @Column({ type: 'double precision', nullable: true })
   size?: number;
 
-  @Column({ type: 'double', nullable: true })
+  @Column({ type: 'integer', nullable: true })
   position?: number;
 
   @Column({ type: 'uuid', nullable: true })
