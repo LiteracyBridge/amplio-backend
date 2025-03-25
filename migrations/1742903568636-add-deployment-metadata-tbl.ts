@@ -4,9 +4,9 @@ export class AddDeploymentMetadataTbl1742903568636 implements MigrationInterface
     name = 'AddDeploymentMetadataTbl1742903568636'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`CREATE TABLE "deployment_metadata" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "program_id" integer NOT NULL, "revision" character varying NOT NULL, "platform" character varying NOT NULL, "published" boolean NOT NULL, "user_id" uuid NOT NULL, "deployment_id" uuid NOT NULL, "created_at" TIME WITH TIME ZONE NOT NULL, "computer_name" character varying NOT NULL, "languages" jsonb NOT NULL, "variants" jsonb NOT NULL, "acm_metadata" jsonb NOT NULL, "programId" integer, CONSTRAINT "PK_0e4bc4d4cb03ada18871ef07b13" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "deployment_metadata" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "project_id" UUID, "revision" character varying NOT NULL, "platform" character varying NOT NULL, "published" boolean NOT NULL, "user_id" uuid NOT NULL, "deployment_id" uuid NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL, "computer_name" character varying NOT NULL, "languages" jsonb NOT NULL, "variants" jsonb NOT NULL, "acm_metadata" jsonb NOT NULL, CONSTRAINT "PK_0e4bc4d4cb03ada18871ef07b13" PRIMARY KEY ("id"))`);
 
-        await queryRunner.query(`ALTER TABLE "deployment_metadata" ADD CONSTRAINT "FK_71ea4d4805c20375911ee5e5dec" FOREIGN KEY ("program_id") REFERENCES "programs"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "deployment_metadata" ADD CONSTRAINT "fk_project_id" FOREIGN KEY ("project_id") REFERENCES "projects"("_id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
 
         await queryRunner.query(`ALTER TABLE "deployment_metadata" ADD CONSTRAINT "FK_0b3929459ade39283e79b049024" FOREIGN KEY ("deployment_id") REFERENCES "deployments"("_id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
 
@@ -32,6 +32,9 @@ export class AddDeploymentMetadataTbl1742903568636 implements MigrationInterface
 
         await queryRunner.query(`ALTER TABLE "contentmetadata2" DROP COLUMN "playlist_id"`);
         await queryRunner.query(`ALTER TABLE "contentmetadata2" DROP COLUMN "relative_path"`);
+        await queryRunner.query(`ALTER TABLE "contentmetadata2" DROP COLUMN "type"`);
+        await queryRunner.query(`ALTER TABLE "contentmetadata2" DROP COLUMN "position"`);
+        await queryRunner.query(`ALTER TABLE "contentmetadata2" DROP COLUMN "size"`);
         await queryRunner.query(`ALTER TABLE "contentmetadata2" DROP COLUMN "variant"`);
         await queryRunner.query(`ALTER TABLE "contentmetadata2" DROP COLUMN "transcription"`);
     }
