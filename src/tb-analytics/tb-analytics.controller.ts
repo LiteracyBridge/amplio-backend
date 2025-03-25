@@ -82,21 +82,27 @@ export class TalkingBookAnalyticsController {
 		});
 	}
 
-	@Get(":program_id/deployment-dates")
-	async deploymentTimestamp(
-		@Param("program_id") programId: string,
-		@Query("deployment") deployment: number,
-	) {
-		const params: any[] = [programId];
-		let query =
-			"SELECT DISTINCT deployment_timestamp::DATE AS date FROM usage_info WHERE project = $1";
-		if (isNumber(deployment)) {
-			query += " AND deploymentnumber = $2";
-			params.push(deployment);
-		}
+  @Get(":program_id/deployment-dates")
+  async deploymentTimestamp(
+    @Param("program_id") programId: string,
+    @Query("deployment") deployment: number,
+  ) {
+    const params: any[] = [programId];
+    let query =
+      "SELECT DISTINCT deployment_timestamp::DATE AS date FROM usage_info WHERE project = $1";
+    let query2 =
+      "SELECT DISTINCT timestamp::DATE AS date FROM usage_info WHERE project = $1";
+    if (isNumber(deployment)) {
+      query += " AND deploymentnumber = $2";
+      query2 += " AND deploymentnumber = $2";
+      params.push(deployment);
+    }
 
-		return ApiResponse.Success({
-			data: await TalkingBookDeployed.query(query, params),
-		});
-	}
+    return ApiResponse.Success({
+      data: {
+        deployments: await TalkingBookDeployed.query(query, params),
+        collections: await TalkingBookDeployed.query(query2, params)
+      },
+    });
+  }
 }
