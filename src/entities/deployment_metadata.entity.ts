@@ -1,15 +1,17 @@
-import { Entity, PrimaryColumn, Column, BaseEntity, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, PrimaryColumn, Column, BaseEntity, ManyToOne, JoinColumn, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { Program } from './program.entity';
 import { User } from './user.entity';
 import { Deployment } from './deployment.entity';
+import { Project } from './project.entity';
+import { ContentMetadata } from './content_metadata.entity';
 
 @Entity('deployment_metadata')
 export class DeploymentMetadata extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @PrimaryColumn({ type: 'integer' })
-  program_id: number;
+  @PrimaryColumn({ type: 'uuid' })
+  project_id: string;
 
   @Column({ type: 'varchar' })
   revision: string;
@@ -26,7 +28,7 @@ export class DeploymentMetadata extends BaseEntity {
   @Column({ type: 'uuid' })
   deployment_id: string;
 
-  @Column({ type: 'time with time zone' })
+  @Column({ type: 'timestamp with time zone' })
   created_at: Date;
 
   @Column({ type: 'varchar' })
@@ -41,9 +43,9 @@ export class DeploymentMetadata extends BaseEntity {
   @Column({ type: 'jsonb' })
   acm_metadata: Record<string, any> = []
 
-  @ManyToOne(() => Program)
-  @JoinColumn({ referencedColumnName: "id", name: "program_id" })
-  program: Program;
+  @ManyToOne(() => Project)
+  @JoinColumn({ referencedColumnName: "_id", name: "project_id" })
+  project: Project;
 
   @ManyToOne(() => Deployment)
   @JoinColumn({ referencedColumnName: "_id", name: "deployment_id" })
@@ -52,4 +54,7 @@ export class DeploymentMetadata extends BaseEntity {
   @ManyToOne(() => User)
   @JoinColumn({ referencedColumnName: "_id", name: "user_id" })
   user: User;
+
+  @OneToMany(() => ContentMetadata, (c) => c.deploymentMetadata)
+  contents: ContentMetadata[];
 }

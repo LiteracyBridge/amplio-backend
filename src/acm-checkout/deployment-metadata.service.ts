@@ -7,6 +7,7 @@ import { Deployment } from "src/entities/deployment.entity";
 import { DeploymentMetadata } from "src/entities/deployment_metadata.entity";
 import { Playlist } from "src/entities/playlist.entity";
 import { User } from "src/entities/user.entity";
+import { EntityManager } from "typeorm";
 
 @Injectable()
 export class DeploymentMetadataService {
@@ -22,51 +23,63 @@ export class DeploymentMetadataService {
 				deployment: dto.deployment.name,
 				project_id: dto.project,
 			},
+			relations: { project: true },
 		});
 
 		const metadata = new DeploymentMetadata();
-		metadata.platform = dto.platform;
-		metadata.deployment_id = deployment!._id;
-		metadata.created_at = dto.created_at;
-		metadata.user_id = currentUser._id;
-		metadata.computer_name = dto.computer_name;
-		metadata.revision = dto.revision;
-		metadata.published = dto.published;
-		metadata.languages = Object.keys(dto.contents).filter(
-			(k) => k.indexOf("-") === -1,
-		); // en, fr, dga
-		metadata.variants = Object.keys(dto.contents).filter(
-			(k) => k.indexOf("-") > -1,
-		); // en-dga, dga-group-1, en-A
 
-		await metadata.save();
+		await DeploymentMetadata.getRepository().manager.transaction(
+			async (manager) => {
+				metadata.platform = dto.platform;
+				metadata.deployment_id = deployment!._id;
+				metadata.project_id = deployment!.project._id;
+				metadata.created_at = dto.created_at;
+				metadata.user_id = currentUser._id;
+				metadata.computer_name = dto.computer_name;
+				metadata.revision = dto.revision;
+				metadata.published = dto.published ?? false;
+				metadata.languages = Object.keys(dto.contents).filter(
+					(k) => k.indexOf("-") === -1,
+				); // en, fr, dga
+				metadata.variants = Object.keys(dto.contents).filter(
+					(k) => k.indexOf("-") > -1,
+				); // en-dga, dga-group-1, en-A
+				metadata.acm_metadata = dto;
 
-		// Save contents
-		const keys = Object.keys(dto.contents);
-		for (const k of keys) {
-			const messages = dto.contents[k].messages;
-			const playlistPrompts = dto.contents[k].playlist_prompts;
+				await manager.save(DeploymentMetadata, metadata);
 
-			// Save messages
-			for (const m of messages) {
-				await this.saveContent(
-					ContentType.message,
-					deployment!,
-					m,
-					k,
-					metadata,
-				);
-			}
-			for (const p of playlistPrompts) {
-				await this.saveContent(
-					ContentType.playlist_prompt,
-					deployment!,
-					p,
-					k,
-					metadata,
-				);
-			}
-		}
+				// Save contents
+				const keys = Object.keys(dto.contents);
+				for (const k of keys) {
+					const messages = dto.contents[k].messages;
+					const playlistPrompts = dto.contents[k].playlist_prompts;
+
+					// Save messages
+					for (const m of messages) {
+						await this.saveContent(
+							ContentType.message,
+							deployment!,
+							m,
+							k,
+							metadata,
+							manager,
+						);
+					}
+					for (const p of playlistPrompts) {
+						await this.saveContent(
+							ContentType.playlist_prompt,
+							deployment!,
+							p,
+							k,
+							metadata,
+							manager,
+						);
+					}
+				}
+			},
+		);
+
+		return metadata;
 	}
 
 	private async saveContent(
@@ -75,6 +88,7 @@ export class DeploymentMetadataService {
 		data: Record<string, any>,
 		languageOrVariant: string,
 		metadata: DeploymentMetadata,
+		manager: EntityManager,
 	) {
 		const content = new ContentMetadata();
 		content.type = type;
@@ -98,6 +112,7 @@ export class DeploymentMetadataService {
 		content.notes = data.notes;
 		content.status = data.status;
 		content.categories = data.category;
+		content.project = deployment.project_id;
 
 		if (languageOrVariant.indexOf("-") > -1) {
 			content.variant = languageOrVariant;
@@ -122,5 +137,13 @@ export class DeploymentMetadataService {
 			content.duration_sec = (+minutes * 60 + +seconds).toString();
 			content.quality = quality;
 		}
+
+		await manager
+			.createQueryBuilder()
+			.insert()
+			.into(ContentMetadata)
+			.values(content)
+			.orIgnore()
+			.execute();
 	}
 }
