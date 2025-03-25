@@ -2,6 +2,12 @@ import { Entity, PrimaryColumn, Column, BaseEntity, JoinColumn, ManyToOne } from
 import { Playlist } from './playlist.entity';
 import { DeploymentMetadata } from './deployment_metadata.entity';
 
+export enum ContentType {
+  message = "message",
+  playlist_prompt = "playlist_prompt",
+  system_prompt = "system_prompt",
+}
+
 @Entity('contentmetadata2')
 export class ContentMetadata extends BaseEntity {
   @PrimaryColumn({ type: 'varchar' })
@@ -77,19 +83,28 @@ export class ContentMetadata extends BaseEntity {
   language_code: string;
 
   @Column({ type: 'varchar', nullable: true })
-  transcription?: string; // FIXME: new column
+  transcription?: string;
 
   @Column({ type: 'varchar', nullable: true })
-  variant?: string; // FIXME: new column
+  variant?: string;
 
   @Column({ type: 'varchar', nullable: true })
-  relative_path?: string; // FIXME: new column
+  relative_path?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  type?: ContentType;
+
+  @Column({ type: 'double', nullable: true })
+  size?: number;
+
+  @Column({ type: 'double', nullable: true })
+  position?: number;
 
   @Column({ type: 'uuid', nullable: true })
-  playlist_id?: string; // FIXME: new column
+  playlist_id?: string;
 
   @Column({ type: 'uuid', nullable: true })
-  deployment_metadata_id?: string; // FIXME: new column
+  deployment_metadata_id?: string;
 
   @ManyToOne(() => Playlist)
   @JoinColumn({ referencedColumnName: "_id" })
