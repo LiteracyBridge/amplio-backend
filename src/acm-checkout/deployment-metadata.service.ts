@@ -37,7 +37,7 @@ export class DeploymentMetadataService {
 				metadata.user_id = currentUser._id;
 				metadata.computer_name = dto.computer_name;
 				metadata.revision = dto.revision;
-				metadata.published = dto.published ?? false;
+				metadata.published = dto.published ?? true;
 				metadata.languages = Object.keys(dto.contents).filter(
 					(k) => k.indexOf("-") === -1,
 				); // en, fr, dga
