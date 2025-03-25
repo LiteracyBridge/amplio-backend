@@ -46,6 +46,7 @@ import { TalkingBookLoaderId } from "./entities/tbloader-ids.entity";
 import { TbLoaderModule } from './tb-loader/tb-loader.module';
 import { TalkingBookAnalyticsModule } from "./tb-analytics/tb-analytics.module";
 import { PublishedProgramSpecs } from "./entities/published_spec.entity";
+import { DeploymentMetadata } from "./entities/deployment_metadata.entity";
 
 config();
 
@@ -98,6 +99,7 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 				UserFeedbackMessage,
 				TalkingBookLoaderId,
 				PublishedProgramSpecs,
+        DeploymentMetadata
 			],
 			subscribers: [
 				PlaylistSubscriber,
