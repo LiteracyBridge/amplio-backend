@@ -155,6 +155,12 @@ export class NewAcmService {
 	): Promise<boolean> {
 		console.log(`Creating program record for '${opts.programCode}'....`);
 
+		const org = await Organisation.findOne({ where: { name: opts.org } });
+		if (org == null) {
+			console.error(`Organisation name '${opts.org}' cannot be found!`, 1);
+			return false;
+		}
+
 		const project = (await manager.getRepository(Project).findOne({
 			where: { code: opts.programCode },
 		}))!;
@@ -195,9 +201,7 @@ export class NewAcmService {
 		// Create program organisation record
 		const programOrg = new OrganisationProgram();
 		programOrg.program_id = program.id;
-		programOrg.organisation_id = (await Organisation.findOne({
-			where: { name: opts.org },
-		}))!.id;
+		programOrg.organisation_id = org.id;
 		await manager.save(OrganisationProgram, programOrg);
 
 		// Create first deployment record
@@ -236,8 +240,8 @@ export class NewAcmService {
 
 		const project = new Project();
 		project.code = opts.programCode.trim();
-	  project.name = opts.name;
-    project.active = true
+		project.name = opts.name;
+		project.active = true;
 
 		await manager.save(Project, project);
 
