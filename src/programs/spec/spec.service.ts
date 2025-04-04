@@ -273,6 +273,7 @@ export class ProgramSpecService {
 							"agent",
 							"variant",
 							"supportentity",
+							"access_code",
 						],
 						"recipients_uniqueness_key",
 					)
@@ -295,7 +296,7 @@ export class ProgramSpecService {
 			{ is_published: true },
 		  );
 
-		  
+
 
 		// Save to db
 		const recent = await PublishedProgramSpecs.findOne({
@@ -309,7 +310,7 @@ export class ProgramSpecService {
 		tracker.diff = diff(recent?.spec ?? {}, tracker.spec);
 		tracker.previous_id = recent?.id;
 		await tracker.save();
-		
+
 
 		await this.writeToS3({
 			email: opts.email,
@@ -571,14 +572,14 @@ export class ProgramSpecService {
 		const existingDeployments = await manager
 			.getRepository(Deployment)
 			.find({ where: { project_id: program.program_id } });
-	
+
 		// Step 2: Loop through request deployments and upsert
 		for (const deployment of deployments) {
 			// Check if the deployment exists
 			const existingDeployment = existingDeployments.find(
 				(d) => d.deploymentnumber === deployment.deploymentnumber,
 			);
-	
+
 			if (existingDeployment) {
 				// Update the existing deployment
 				console.log("################################################################");
@@ -591,9 +592,8 @@ export class ProgramSpecService {
 							deploymentname: deployment.deploymentname,
 							start_date: deployment.startdate,
 							end_date: deployment.enddate,
-							deployment: deployment.deployment
 						},
-					);
+					)
 			} else {
 				// Insert a new deployment
 				console.log("################################################################");
@@ -610,20 +610,20 @@ export class ProgramSpecService {
 					});
 			}
 		}
-	
-		// Step 3: Delete missing deployments (if needed)	
+
+		// Step 3: Delete missing deployments (if needed)
 		const existingDeploymentNumbers = existingDeployments.map((d) => d.deploymentnumber);
 		const requestDeploymentNumbers = deployments.map((d) => d.deploymentnumber);
-	
+
 		const deploymentsToDelete = existingDeploymentNumbers.filter(
 			(number) => !requestDeploymentNumbers.includes(number),
 		);
-	
+
 		if (deploymentsToDelete.length > 0) {
 			await manager
 				.getRepository(Deployment)
 				.delete({ deploymentnumber: In(deploymentsToDelete), project_id: program.program_id });
-	
+
 			console.log("Deleted deployments:", deploymentsToDelete);
 		}
 	}
