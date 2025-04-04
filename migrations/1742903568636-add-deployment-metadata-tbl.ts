@@ -21,7 +21,7 @@ export class AddDeploymentMetadataTbl1742903568636 implements MigrationInterface
         await queryRunner.query(`ALTER TABLE "contentmetadata2" ADD "playlist_id" uuid`);
         await queryRunner.query(`ALTER TABLE "contentmetadata2" ADD "deployment_metadata_id" uuid`);
 
-        await queryRunner.query(`ALTER TABLE "contentmetadata2" ADD CONSTRAINT "FK_54080b9cf36df56e8f057323dfa" FOREIGN KEY ("playlist_id") REFERENCES "playlists"("_id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "contentmetadata2" ADD CONSTRAINT "FK_54080b9cf36df56e8f057323dfa" FOREIGN KEY ("playlist_id") REFERENCES "playlists"("_id") ON DELETE SET NULL ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "contentmetadata2" ADD CONSTRAINT "fk_deployment_metadata_id" FOREIGN KEY ("deployment_metadata_id") REFERENCES "deployment_metadata"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
     }
 
