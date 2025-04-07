@@ -155,12 +155,21 @@ reboot:
 backup-db:
     cd {{ project_dir }} && just run-script scripts/backup_db.py
 
-[doc("Deploy Nestjs app in production mode")]
+[group('deploy')]
+[doc("Deploy Nestjs app in test mode")]
 deploy-testing:
     docker build --tag test-api-server --build-arg PORT=6000 .
     docker run --publish 127.0.0.1:6000:6000 \
         --restart always \
         --detach test-api-server
+
+[group('deploy')]
+[doc("Deploy Nestjs app in production mode")]
+deploy-prod:
+    docker build --tag prod-api-server .
+    docker run --publish 127.0.0.1:5000:5000 \
+        --restart always \
+        --detach prod-api-server
 
 
 [group("cron jobs")]
