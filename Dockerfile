@@ -4,9 +4,14 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 
+RUN npm clean-install --omit dev
+
 COPY . .
 
-RUN npm clean-install --omit dev
+RUN \
+  if [ -f env.staging ]; then mv .env.staging .env; \
+  fi
+
 
 ARG PORT=5000
 ENV PORT=${PORT}
