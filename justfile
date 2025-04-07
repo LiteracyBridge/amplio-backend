@@ -159,7 +159,6 @@ backup-db:
 deploy-testing:
     docker build --tag test-api-server --build-arg PORT=6000 .
     docker run --publish 127.0.0.1:6000:6000 \
-        --name test-api-server \
         --restart always \
         --detach test-api-server
 
