@@ -158,7 +158,7 @@ backup-db:
 [doc("Deploy Nestjs app in production mode")]
 deploy-testing:
     docker build --tag test-api-server --build-arg PORT=6000 .
-    docker run --publish 127.0.0.1:4321:4321 --rm \
+    docker run --publish 127.0.0.1:4321:4321 \
         --name test-api-server \
         --restart always \
         --detach test-api-server
