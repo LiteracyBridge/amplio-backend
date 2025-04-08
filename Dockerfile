@@ -13,7 +13,7 @@ RUN \
   fi
 
 RUN npm run build
-RUN npm run prune --omit dev
+RUN npm prune --omit dev
 
 ARG PORT=5000
 ENV PORT=${PORT}
