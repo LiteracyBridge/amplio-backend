@@ -33,7 +33,7 @@ def main():
 
     # Create a schema of the database
     data_file = f"{dest}/{config.db_name}_backup_{timestamp}.data"
-    dump_command = f"pg_dump --host {config.db_host} --port {config.db_port} --username {config.db_user} --format=custom --data-only --no-privileges --no-privileges --large-objects --verbose --file {data_file} {config.db_name}"
+    dump_command = f"pg_dump --host {config.db_host} --port {config.db_port} --username {config.db_user} --format=custom --data-only --disable-triggers --no-privileges --no-privileges --large-objects --verbose --file {data_file} {config.db_name}"
     os.environ["PGPASSWORD"] = config.db_password
     subprocess.run(dump_command, shell=True, check=True)
 
