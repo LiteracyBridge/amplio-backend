@@ -18,21 +18,33 @@ def main():
         os.makedirs(dest)
 
     timestamp = datetime.now().strftime("%Y%m%d")
-    backup_file = f"{dest}/{config.db_name}_backup_{timestamp}.sql"
+    schema_file = f"{dest}/{config.db_name}_backup_{timestamp}.schema"
 
-    # Create a backup of the database
-    dump_command = f"pg_dump --host {config.db_host} --port {config.db_port} --username {config.db_user} --format=custom --blobs --verbose --file {backup_file} {config.db_name}"
+    # Create a data backup of the database
+    dump_command = f"pg_dump --host {config.db_host} --port {config.db_port} --username {config.db_user} --schema-only --verbose --file {schema_file} {config.db_name}"
+    os.environ["PGPASSWORD"] = config.db_password
+
+    subprocess.run(dump_command, shell=True, check=True)
+    # subprocess.run(
+    #     f"aws s3 cp {schema_file} s3://{os.getenv('AWS_DB_BACKUP_BUCKET')}/",
+    #     shell=True,
+    #     check=True,
+    # )
+
+    # Create a schema of the database
+    data_file = f"{dest}/{config.db_name}_backup_{timestamp}.data"
+    dump_command = f"pg_dump --host {config.db_host} --port {config.db_port} --username {config.db_user} --data-only --large-objects --verbose --file {data_file} {config.db_name}"
     os.environ["PGPASSWORD"] = config.db_password
     subprocess.run(dump_command, shell=True, check=True)
 
-    subprocess.run(
-        f"aws s3 cp {backup_file} s3://{os.getenv('AWS_DB_BACKUP_BUCKET')}/",
-        shell=True,
-        check=True,
-    )
+    # subprocess.run(
+    #     f"aws s3 cp {data_file} s3://{os.getenv('AWS_DB_BACKUP_BUCKET')}/",
+    #     shell=True,
+    #     check=True,
+    # )
 
     print(
-        f"Database backup uploaded to s3://{os.getenv('AWS_DB_BACKUP_BUCKET')}/{backup_file}"
+        f"Database backup uploaded to s3://{os.getenv('AWS_DB_BACKUP_BUCKET')}/{data_file}"
     )
 
 
