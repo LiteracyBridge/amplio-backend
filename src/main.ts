@@ -29,7 +29,7 @@ export async function bootstrap(
 			"http://localhost:4173",
 			"https://suite.amplio.org",
 			"https://suite-test.amplio.org",
-			"https://testapi.amplio.org",
+			"https://test.amplio.org",
 		],
 	});
 
