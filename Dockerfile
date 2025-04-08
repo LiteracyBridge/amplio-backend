@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN npm clean-install --omit dev
+RUN npm clean-install
 
 COPY . .
 
@@ -13,6 +13,7 @@ RUN \
   fi
 
 RUN npm run build
+RUN npm run prune --omit dev
 
 ARG PORT=5000
 ENV PORT=${PORT}
