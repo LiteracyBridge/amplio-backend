@@ -12,6 +12,7 @@ RUN \
   if [ -f env.staging ]; then mv .env.staging .env; \
   fi
 
+RUN npm run build
 
 ARG PORT=5000
 ENV PORT=${PORT}
