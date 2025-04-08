@@ -2,7 +2,6 @@ import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
 import { AcmCheckoutDto, AcmCheckoutService } from "./acm-checkout.service";
 import { CurrentUser } from "src/decorators/user.decorator";
 import { User } from "src/entities/user.entity";
-import { SkipJwtAuth } from "src/decorators/skip-jwt-auth.decorator";
 import { DeploymentMetadataService } from "./deployment-metadata.service";
 
 @Controller("acm")

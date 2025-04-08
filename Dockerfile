@@ -15,6 +15,7 @@ RUN \
 
 ARG PORT=5000
 ENV PORT=${PORT}
-ENV HOST="0.0.0.0"
+
+EXPOSE ${PORT}
 
 CMD ["node", "dist/main.js"]
