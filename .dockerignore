@@ -2,3 +2,6 @@
 __pycache__
 .vscode
 .python-version
+.git
+node_modules
+scripts

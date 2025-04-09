@@ -33,6 +33,7 @@ const { TalkingBookLoaderId } = require("../dist/entities/tbloader-ids.entity");
 const { PublishedProgramSpecs } = require("../dist/entities/published_spec.entity");
 const { Role } = require("../dist/entities/role.entity");
 const { Log } = require("../dist/entities/log.entity");
+const { DeploymentMetadata } = require("../dist/entities/deployment_metadata.entity");
 
 dotenv.config();
 
@@ -75,6 +76,7 @@ const AppDataSource = new DataSource({
 		UserFeedbackMessage,
     TalkingBookLoaderId,
     PublishedProgramSpecs,
+    DeploymentMetadata,
 	],
 	migrations: ["./migrations/*.ts"],
 	// These two lines have been added:

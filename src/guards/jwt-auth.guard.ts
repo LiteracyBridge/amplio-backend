@@ -31,7 +31,6 @@ export class AuthGuard implements CanActivate {
 		);
 		if (isPublic) return true;
 
-    console.log(request.headers)
 		const token = this.extractTokenFromHeader(request)?.trim();
 
 		if (!token) {
@@ -80,7 +79,6 @@ export class AuthGuard implements CanActivate {
 
 			return true;
 		} catch (err) {
-			console.error(err);
 			throw new UnauthorizedException("Invalid session token");
 		}
 	}
