@@ -1,13 +1,23 @@
-FROM python:3.8
+FROM node:lts
 
-ADD ./src ./app
-
-# COPY .//requirements.txt ./requirements.txt
 WORKDIR /app
 
-RUN pip install -r ./requirements.txt
+COPY package.json package-lock.json ./
 
-ENV HOST="0.0.0.0"
-ENV PORT=5000
+RUN npm clean-install
 
-CMD uvicorn app:app --host ${HOST} --port ${PORT}
+COPY . .
+
+RUN \
+  if [ -f .env.staging ]; then mv .env.staging .env; \
+  fi
+
+RUN npm run build
+RUN npm prune --omit dev
+
+ARG PORT=5000
+ENV PORT=${PORT}
+
+EXPOSE ${PORT}
+
+CMD ["node", "dist/main.js"]
