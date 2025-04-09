@@ -51,6 +51,9 @@ export class Deployment extends BaseEntity {
   @Column({ type: 'varchar', nullable: false })
   component: string;
 
+  @Column({ default: false })
+  is_published: boolean;
+
   @OneToMany(() => Playlist, playlist => playlist.deployment)
   playlists: Playlist[];
 

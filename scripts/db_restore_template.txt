@@ -1,0 +1,12 @@
+# Database dump restore template
+# replace placeholders [xxxxx] with correct values
+
+## In psql shell
+GRANT ALL ON SCHEMA public TO [username];
+
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO [username];
+
+GRANT CREATE ON DATABASE [database-name] TO [username];
+
+# In bash
+pg_restore --host localhost --username [username] --no-owner  --verbose --no-owner --no-privileges --dbname [database]  --disable-triggers --no-tablespaces --no-privileges --port [port-number]  --single-transaction -Fd [backup.data]

@@ -22,7 +22,6 @@ import { join } from "node:path";
 import { PublishedProgramSpecs } from "src/entities/published_spec.entity";
 import { instanceToPlain } from "class-transformer";
 import { diff } from "json-diff-ts";
-import { Request } from "express";
 import { randomUUID } from "node:crypto";
 
 @Injectable()
@@ -118,14 +117,12 @@ export class ProgramSpecService {
 				.getRepository(Deployment)
 				.find({ where: { project_id: project.code } });
 
-			// 1. save playlists
-			await manager.query("DELETE FROM playlists WHERE program_id=$1", [
-				project.code,
-			]);
-
 			for (const d of dto.deployments) {
 				// Handle playlists data
 				for (const pl of d.playlists) {
+					// remove  invalid characters from playlists titles
+					pl.title = this.sanitazeString(pl.title);
+
 					const deployment = allDeployments.find(
 						(d) =>
 							d._id === pl.deployment_id ||
@@ -154,6 +151,9 @@ export class ProgramSpecService {
 					// handle playlist messages
 					// const existingMessageIds = new Set(pl.messages.flatMap((m) => m._id));
 					for (const m of pl.messages) {
+						// remove invalid characters from the message title
+						m.title = this.sanitazeString(m.title);
+
 						m.playlist_id = resp.id;
 						m.program_id = project.code;
 						m.default_category_code =
@@ -219,6 +219,19 @@ export class ProgramSpecService {
 					}
 				}
 			}
+			// Delete playlists not in request data from db
+			await manager.delete(Playlist, {
+				_id: Not(
+					In(dto.deployments.flatMap((d) => d.playlists.map((p) => p._id))),
+				),
+				program_id: project.code,
+			});
+
+			// Delete deployments not in request data from db
+			await manager.delete(Deployment, {
+				_id: Not(In(dto.deployments.map((d) => d._id))),
+				project: project.code,
+			});
 
 			for (const row of dto.recipients) {
 				row.id = row.id ?? row.recipientid ?? row.recipient_id;
@@ -266,6 +279,7 @@ export class ProgramSpecService {
 							"agent",
 							"variant",
 							"supportentity",
+							"access_code",
 						],
 						"recipients_uniqueness_key",
 					)
@@ -280,6 +294,13 @@ export class ProgramSpecService {
 
 	async publish(opts: { code: string; email: string }) {
 		const project = await this.findByCode(opts.code);
+
+		// Mark all deployments as published
+		await this.dataSource.manager.update(
+			Deployment,
+			{ project_id: project.code },
+			{ is_published: true },
+		);
 
 		// Save to db
 		const recent = await PublishedProgramSpecs.findOne({
@@ -550,21 +571,71 @@ export class ProgramSpecService {
 		deployments: Record<string, any>[],
 		program: Program,
 	) {
-		// TODO: prevent 'deployment' field from being renamed
+		// Step 1: Fetch existing deployments from the database
+		const existingDeployments = await manager
+			.getRepository(Deployment)
+			.find({ where: { project_id: program.program_id } });
 
-		await manager
-			.createQueryBuilder()
-			.insert()
-			.into(Deployment)
-			.values(
-				deployments.map((row) => {
-					row.project_id = program.program_id;
-					row.deploymentname = row.deployment;
-					return row;
-				}) as unknown as Deployment[],
-			)
-			.orIgnore()
-			.execute();
+		// Step 2: Loop through request deployments and upsert
+		for (const deployment of deployments) {
+			// Check if the deployment exists
+			const existingDeployment = existingDeployments.find(
+				(d) => d.deploymentnumber === deployment.deploymentnumber,
+			);
+
+			if (existingDeployment) {
+				// Update the existing deployment
+				console.log(
+					"################################################################",
+				);
+				console.log(
+					`Deployment ${deployment.deploymentnumber} exists, updating...`,
+				);
+				await manager.getRepository(Deployment).update(
+					{ _id: existingDeployment._id, project_id: program.program_id },
+					{
+						deploymentname: deployment.deploymentname,
+						start_date: deployment.startdate,
+						end_date: deployment.enddate,
+					},
+				);
+			} else {
+				// Insert a new deployment
+				console.log(
+					"################################################################",
+				);
+				console.log(
+					`Deployment ${deployment.deploymentnumber} does not exist, inserting...`,
+				);
+				await manager.getRepository(Deployment).insert({
+					project_id: program.program_id,
+					deploymentnumber: deployment.deploymentnumber,
+					deploymentname: deployment.deploymentname,
+					start_date: deployment.startdate,
+					end_date: deployment.enddate,
+					deployment: deployment.deployment,
+				});
+			}
+		}
+
+		// Step 3: Delete missing deployments (if needed)
+		const existingDeploymentNumbers = existingDeployments.map(
+			(d) => d.deploymentnumber,
+		);
+		const requestDeploymentNumbers = deployments.map((d) => d.deploymentnumber);
+
+		const deploymentsToDelete = existingDeploymentNumbers.filter(
+			(number) => !requestDeploymentNumbers.includes(number),
+		);
+
+		if (deploymentsToDelete.length > 0) {
+			await manager.getRepository(Deployment).delete({
+				deploymentnumber: In(deploymentsToDelete),
+				project_id: program.program_id,
+			});
+
+			console.log("Deleted deployments:", deploymentsToDelete);
+		}
 	}
 
 	private async saveGeneralInfo(
@@ -577,5 +648,11 @@ export class ProgramSpecService {
 		general.project_id ??= program.project_id;
 		general.languages = languages;
 		await manager.upsert(Program, general, ["program_id"]);
+	}
+
+	private sanitazeString(input: string) {
+		const invalidChars = /[^\d\w\s]/g;
+		// Replace invalid characters with a space
+		return input.replace(invalidChars, " ");
 	}
 }

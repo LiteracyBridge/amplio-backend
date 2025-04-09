@@ -55,6 +55,7 @@ export class UsageQueryService {
 		let query = `SELECT DISTINCT ${columns} FROM ${TEMP_VIEW}`;
 		if (
 			opts.date !== "undefined" &&
+			opts.date !== "null" &&
 			isNonNullish(opts.date) &&
 			!keywordRegex.test(opts.date!)
 		) {
