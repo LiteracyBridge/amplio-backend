@@ -33,7 +33,7 @@ def restore_objects(bucket: str, object_key: str):
 
     versions_json = json.loads(output)
     for marker in versions_json["DeleteMarkers"]:
-        print(f"  restoring {marker['Key']}....", end="")
+        print(f"  restoring {marker['Key']}....", end="\t")
         cmd = [
             "aws",
             "s3api",
@@ -46,10 +46,8 @@ def restore_objects(bucket: str, object_key: str):
             marker["VersionId"],
         ]
         subprocess.run(cmd)
-        print(cmd)
-        print("ok")
 
-    print("Object restored successfully!")
+    print("Object(s) restored successfully!")
     print("")
     cmd = ["aws", "s3", "ls", f"s3://{bucket}/{object_key}"]
     output = subprocess.run(cmd, capture_output=True, text=True).stdout
