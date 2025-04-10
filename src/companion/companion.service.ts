@@ -4,9 +4,8 @@ import { DeploymentMetadata } from "src/entities/deployment_metadata.entity";
 import { Recipient } from "src/entities/recipient.entity";
 import os from "node:os"
 import fs from "node:fs"
-import { exec, execSync } from "node:child_process";
+import { execSync } from "node:child_process";
 import { zipDirectory } from "src/utilities";
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 @Injectable()
 export class CompanionAppService {
