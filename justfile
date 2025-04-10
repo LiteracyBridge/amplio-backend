@@ -95,6 +95,10 @@ import-v2-stats *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/v2_log_reader/main.py "$@"
     just update-usage-info
 
+[doc("Restore deleted s3 objects")]
+restore-s3-objects *args='': venv
+    {{ PYTHONPATH }} {{ python }} scripts/restore_s3_objects.py "$@"
+
 [group("docker")]
 [doc("Builds the audio converter docker image")]
 docker-build-audio-converter:
@@ -133,8 +137,6 @@ migration-revert *args='': venv
 [group("migration")]
 migration-create *args='': venv
     cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic revision --message "$@"
-
-
 
 [doc("Disables IPv6 in other for aws congnito verification to work. NB: Run this command with caution!")]
 disable-ipv6:
