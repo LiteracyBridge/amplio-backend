@@ -49,10 +49,10 @@ export class DeploymentMetadataService {
 				await manager.save(DeploymentMetadata, metadata);
 
 				// Save contents
-				const keys = Object.keys(dto.contents);
-				for (const k of keys) {
-					const messages = dto.contents[k].messages;
-					const playlistPrompts = dto.contents[k].playlist_prompts;
+				const languages = Object.keys(dto.contents);
+				for (const l of languages) {
+					const messages = dto.contents[l].messages;
+					const playlistPrompts = dto.contents[l].playlist_prompts;
 
 					// Save messages
 					for (const m of messages) {
@@ -60,7 +60,7 @@ export class DeploymentMetadataService {
 							ContentType.message,
 							deployment!,
 							m,
-							k,
+							l,
 							metadata,
 							manager,
 						);
@@ -70,7 +70,7 @@ export class DeploymentMetadataService {
 							ContentType.playlist_prompt,
 							deployment!,
 							p,
-							k,
+							l,
 							metadata,
 							manager,
 						);

@@ -47,6 +47,7 @@ import { TbLoaderModule } from './tb-loader/tb-loader.module';
 import { TalkingBookAnalyticsModule } from "./tb-analytics/tb-analytics.module";
 import { PublishedProgramSpecs } from "./entities/published_spec.entity";
 import { DeploymentMetadata } from "./entities/deployment_metadata.entity";
+import { CompanionAppModule } from "./companion/companion.module";
 
 config();
 
@@ -115,7 +116,8 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
     Log,
     AcmCheckoutModule,
     TbLoaderModule,
-    TalkingBookAnalyticsModule
+    TalkingBookAnalyticsModule,
+    CompanionAppModule
   ],
   controllers: [AppController, TableauController, CategoriesController],
   providers: [
