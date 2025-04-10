@@ -31,14 +31,13 @@ export class CompanionAppController {
 	}
 
 	@SkipJwtAuth()
-	@Get("packages/:id/playlist-prompts/:language")
-	async getContents(
+	@Get("packages/:id/contents/:language/:contentId")
+	async getContent(
 		@Param("id") id: string,
 		@Param("language") language: string,
-    @Res() res: Response
+		@Param("contentId") contentId: string,
 	) {
-    const path = await this.service.downloadPrompts(id, language)
-    const file = createReadStream(path);
-    file.pipe(res);
+    const url = await this.service.downloadContent({id, language, contentId})
+    return ApiResponse.Success({data: {url: url}})
 	}
 }

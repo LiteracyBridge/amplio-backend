@@ -4,8 +4,9 @@ import { DeploymentMetadata } from "src/entities/deployment_metadata.entity";
 import { Recipient } from "src/entities/recipient.entity";
 import os from "node:os"
 import fs from "node:fs"
-import { exec } from "node:child_process";
+import { exec, execSync } from "node:child_process";
 import { zipDirectory } from "src/utilities";
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 @Injectable()
 export class CompanionAppService {
@@ -55,26 +56,62 @@ export class CompanionAppService {
     }
 
     // Download system prompts
-    const key = `TB-Loaders/published/${metadata.revision}/system-prompts/${language}/`
-    const { stdout, stderr } = await exec(`
+    const key = `${this.getRevisionPath(metadata)}/system-prompts/${language}/`
+    const output1 = await execSync(`
     aws s3 sync \
-      s3://${appConfig().buckets.content}/${metadata.project.code}/${key} ${promptsDir}
+      s3://${appConfig().buckets.content}/${key} ${promptsDir}
     `);
-    console.log('stdout:', stdout);
-    console.log('stderr:', stderr);
+    console.log('stdout:', output1);
 
     // Download playlist prompts
-    const key2 = `TB-Loaders/published/${metadata.revision}/contents/${language}/playlist-prompts/`
+    const key2 = `${this.getRevisionPath(metadata)}/contents/${language}/playlist-prompts/`
     const cmd = `
     aws s3 sync \
-      s3://${appConfig().buckets.content}/${metadata.project.code}/${key2} ${promptsDir}
+      s3://${appConfig().buckets.content}/${key2} ${promptsDir}
     `
-    const { stdout: output, stderr: err } = await exec(cmd);
+    const output = await execSync(cmd);
     console.log('stdout:', output);
-    console.log('stderr:', err);
 
     await zipDirectory(promptsDir, promptsCache)
 
     return promptsCache
+  }
+
+  async downloadContent(opts: { id: string, language: string, contentId: string }) {
+    const { id, language, contentId } = opts;
+
+    const metadata = await DeploymentMetadata.findOne({
+      where: { id: id, published: true },
+      relations: { project: true },
+    });
+
+    if (metadata == null) {
+      throw new NotFoundException("Invalid deployment id");
+    }
+
+    // Verify the language code is valid
+    const contents = metadata.acm_metadata.contents[language]
+    if (contents == null) {
+      throw new BadRequestException("Invalid language provided")
+    }
+
+    const msg = contents.messages.find(m => m.acm_id == contentId)
+    if (msg == null) {
+      throw new NotFoundException("Message cannot be found")
+    }
+
+    // Generates a presigned url
+    const key = `${this.getRevisionPath(metadata)}/${msg.path}`
+    const cmd = `
+      aws s3 presign s3://${appConfig().buckets.content}/${key} --expires-in 604800
+    `
+    const output = await execSync(cmd);
+    console.log(output.toString())
+
+    return output.toString()
+  }
+
+  private getRevisionPath(metadata: DeploymentMetadata) {
+    return `${metadata.project.code}/TB-Loaders/published/${metadata.revision}`
   }
 }
