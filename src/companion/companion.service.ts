@@ -28,7 +28,7 @@ export class CompanionAppService {
     };
   }
 
-  async downloadSystemPrompts(id: string, language: string) {
+  async downloadPrompts(id: string, language: string) {
     const metadata = await DeploymentMetadata.findOne({
       where: { id: id, published: true },
       relations: { project: true },
@@ -43,25 +43,35 @@ export class CompanionAppService {
       throw new BadRequestException("Invalid language provided")
     }
 
-    const promptsCache = `${os.tmpdir()}/system-prompts-${metadata.revision}-${language}.zip`
+    const promptsCache = `${os.tmpdir()}/prompts-${metadata.revision}-${language}.zip`
     if (fs.existsSync(promptsCache)) {
       return promptsCache
     }
 
     // No cache exists, download from s3
-    const promptsDir = `${os.tmpdir()}/system-prompts-${metadata.revision}-${language}`
+    const promptsDir = `${os.tmpdir()}/prompts-${metadata.revision}-${language}`
     if (!fs.existsSync(promptsDir)) {
       fs.mkdirSync(promptsDir)
     }
 
+    // Download system prompts
     const key = `TB-Loaders/published/${metadata.revision}/system-prompts/${language}/`
-    const cmd = `
+    const { stdout, stderr } = await exec(`
     aws s3 sync \
       s3://${appConfig().buckets.content}/${metadata.project.code}/${key} ${promptsDir}
-    `
-    const { stdout, stderr } = await exec(cmd);
+    `);
     console.log('stdout:', stdout);
     console.log('stderr:', stderr);
+
+    // Download playlist prompts
+    const key2 = `TB-Loaders/published/${metadata.revision}/contents/${language}/playlist-prompts/`
+    const cmd = `
+    aws s3 sync \
+      s3://${appConfig().buckets.content}/${metadata.project.code}/${key2} ${promptsDir}
+    `
+    const { stdout: output, stderr: err } = await exec(cmd);
+    console.log('stdout:', output);
+    console.log('stderr:', err);
 
     await zipDirectory(promptsDir, promptsCache)
 
