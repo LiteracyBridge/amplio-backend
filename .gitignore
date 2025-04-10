@@ -40,6 +40,7 @@ api_test_server.pid
 .env
 firebaseAccountKey.json
 .firebase/hosting.**
+.aws
 
 # public/docs
 public/docs/swagger-*.json
