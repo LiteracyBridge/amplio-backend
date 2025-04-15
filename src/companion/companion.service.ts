@@ -22,7 +22,7 @@ export class CompanionAppService {
     return {
       recipient: recipient,
       program: recipient.project,
-      deploymentPackage: await DeploymentMetadata.find({
+      package: await DeploymentMetadata.find({
         where: { project_id: recipient.project._id },
       }),
     };
