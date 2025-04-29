@@ -170,7 +170,7 @@ deploy-prod:
     docker build --tag prod-api-server .
     docker run --publish 127.0.0.1:5000:5000 \
         --restart always \
-        --env-file .env.staging \
+        --env-file .env \
         --detach prod-api-server
 
 
