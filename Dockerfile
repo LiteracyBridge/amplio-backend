@@ -13,10 +13,6 @@ RUN npm clean-install
 
 COPY . .
 
-RUN \
-  if [ -f .env.staging ]; then mv .env.staging .env; \
-  fi
-
 RUN npm run build
 RUN npm prune --omit dev
 
