@@ -163,6 +163,7 @@ deploy-testing:
     docker build --tag test-api-server --build-arg PORT=6000 .
     docker run --publish 127.0.0.1:6000:6000 \
         --restart always \
+        --env-file .env.staging \
         --detach test-api-server
 
 [group('deploy')]
@@ -171,6 +172,7 @@ deploy-prod:
     docker build --tag prod-api-server .
     docker run --publish 127.0.0.1:5000:5000 \
         --restart always \
+        --env-file .env.staging \
         --detach prod-api-server
 
 
