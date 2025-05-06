@@ -248,6 +248,14 @@ export class ProgramSpecService {
 					row.id = Recipient.generateId(row as any);
 				}
 
+				if (!row.support_entity) {
+					row.support_entity = 'Unknown';
+				  }
+
+				if (!row.group_size){
+					row.group_size = 0; 
+				}  
+
 				// Save recipients
 				const [query, params] = await manager
 					.createQueryBuilder()
