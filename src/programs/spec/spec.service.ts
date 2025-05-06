@@ -249,7 +249,7 @@ export class ProgramSpecService {
 				}
 
 				if (!row.support_entity) {
-					row.support_entity = 'Unknown';
+					row.support_entity = '';
 				  }
 
 				if (!row.group_size){
