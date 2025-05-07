@@ -51,8 +51,24 @@ export class AcmCheckoutController {
 	}
 
 	@Get("report")
+	async handlerGetReport(
+		@Body() body: AcmCheckoutDto,
+		@Query() query: AcmCheckoutDto,
+		@CurrentUser() user: User,
+	) {
+		const dto = new AcmCheckoutDto();
+		// Merge the query and body into the dto
+		Object.assign(dto, body, query);
+
+		return await this.service.handleEvent({
+			dto,
+			currentUser: user,
+			programCode: dto.db || dto.program
+		});
+	}
+
 	@Post("report")
-	async handlerReport(
+	async handlerPostReport(
 		@Body() body: AcmCheckoutDto,
 		@Query() query: AcmCheckoutDto,
 		@CurrentUser() user: User,

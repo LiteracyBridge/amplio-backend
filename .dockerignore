@@ -1,0 +1,12 @@
+.github
+__pycache__
+.vscode
+.python-version
+.git
+node_modules
+scripts
+tests
+justfile
+acm-stats
+dist
+cron

@@ -11,7 +11,7 @@
 #0 1 * * * /home/ubuntu/acm-stats/AWS-LB/bin/missing_uf.sh 2>&1 >>/home/ubuntu/work/missing_uf.log
 
 # Reboot daily at 00:30
-30 0 * * * just --justfile $HOME/amplio-backend/justfile reboot  2>&1 >> $HOME/reboot.log
+# 30 0 * * * just --justfile $HOME/amplio-backend/justfile reboot  2>&1 >> $HOME/reboot.log
 
 @reboot just --justfile $HOME/amplio-backend/justfile deploy 2>&1 > $HOME/reboot.log
 
