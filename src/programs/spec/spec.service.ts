@@ -248,13 +248,14 @@ export class ProgramSpecService {
 					row.id = Recipient.generateId(row as any);
 				}
 
-				if (!row.support_entity) {
-					row.support_entity = '';
-				  }
-
+			
 				if (!row.group_size){
 					row.group_size = 0; 
 				}  
+
+				if (!row.support_entity) {
+					row.support_entity = '';
+				  }
 
 				// Save recipients
 				const [query, params] = await manager
@@ -538,7 +539,7 @@ export class ProgramSpecService {
 			 region: appConfig().aws.region,
 			 credentials: {
 				accessKeyId: appConfig().aws.accessKeyId!,
-				secretAccessKey: appConfig().aws.accessKeyId!,
+				secretAccessKey: appConfig().aws.secretId!,
 			  },
 			});
 
