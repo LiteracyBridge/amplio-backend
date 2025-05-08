@@ -534,7 +534,13 @@ export class ProgramSpecService {
 			Languages: "pub_languages.csv",
 		};
 
-		const client = new S3Client({ region: appConfig().aws.region });
+		const client = new S3Client({
+			 region: appConfig().aws.region,
+			 credentials: {
+				accessKeyId: appConfig().aws.accessKeyId!,
+				secretAccessKey: appConfig().aws.secretAccessKey!,
+			  },
+			});
 		// try {
 			// Upload excel file
 			if (opts.format === "xlsx") {
