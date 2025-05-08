@@ -535,7 +535,7 @@ export class ProgramSpecService {
 		};
 
 		const client = new S3Client({ region: appConfig().aws.region });
-		try {
+		// try {
 			// Upload excel file
 			if (opts.format === "xlsx") {
 				await client.send(
@@ -563,11 +563,11 @@ export class ProgramSpecService {
 					);
 				}
 			}
-		} catch (error) {
-			throw new InternalServerErrorException(
-				"Failed to upload excel file to S3",
-			);
-		}
+		// } catch (error) {
+		// 	throw new InternalServerErrorException(
+		// 		"Failed to upload excel file to S3",
+		// 	);
+		// }
 	}
 
 	private async saveDeployments(
