@@ -541,6 +541,13 @@ export class ProgramSpecService {
 				secretAccessKey: appConfig().aws.secretAccessKey!,
 			  },
 			});
+			console.log("################################################################");
+			console.log("Uploading to S3...");
+			console.log(appConfig().buckets.programSpec);
+			console.log(appConfig().aws.region);
+			console.log(appConfig().aws.accessKeyId);
+			console.log(appConfig().aws.secretAccessKey);
+			console.log("################################################################");
 		// try {
 			// Upload excel file
 			if (opts.format === "xlsx") {
