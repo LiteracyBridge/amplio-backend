@@ -538,7 +538,7 @@ export class ProgramSpecService {
 			 region: appConfig().aws.region,
 			 credentials: {
 				accessKeyId: appConfig().aws.accessKeyId!,
-				secretAccessKey: appConfig().aws.secretAccessKey!,
+				secretAccessKey: appConfig().aws.accessKeyId!,
 			  },
 			});
 
