@@ -283,7 +283,8 @@ export class ProgramSpecService {
 							"variant",
 							"supportentity",
 						],
-						"recipients_uniqueness_key",
+						["recipientid", "project"] 
+						//  "recipients_uniqueness_key"
 					)
 					.getQueryAndParameters();
 
