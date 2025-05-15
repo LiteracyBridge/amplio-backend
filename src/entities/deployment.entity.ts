@@ -36,10 +36,10 @@ export class Deployment extends BaseEntity {
   @Column({ type: 'varchar', name: 'project', nullable: false })
   project_id: string;
 
-  @Column({ type: 'date', name: 'startdate', nullable: true })
+  @Column({ type: 'date', name: 'startdate', nullable: false })
   start_date: Date;
 
-  @Column({ type: 'date', name: 'enddate', nullable: true })
+  @Column({ type: 'date', name: 'enddate', nullable: false })
   end_date: Date;
 
   @Column({ type: 'varchar', length: 255, nullable: true })

@@ -282,6 +282,7 @@ export class ProgramSpecService {
 							"agent",
 							"variant",
 							"supportentity",
+							"deployments",
 						],
 						["recipientid", "project"] 
 						//  "recipients_uniqueness_key"
@@ -584,6 +585,21 @@ export class ProgramSpecService {
 		deployments: Record<string, any>[],
 		program: Program,
 	) {
+
+		
+		// validate required fields
+    const requiredFields = ['deploymentnumber', 'deploymentname', 'startdate', 'enddate', 'deployment'];
+    
+    for (const deployment of deployments) {
+        for (const field of requiredFields) {
+            if (!deployment[field]) {
+                throw new BadRequestException(
+                    `Field '${field}' is required for deployment ${deployment.deploymentnumber || ''}`
+                );
+            }
+        }
+    }
+
 		// Step 1: Fetch existing deployments from the database
 		const existingDeployments = await manager
 			.getRepository(Deployment)
