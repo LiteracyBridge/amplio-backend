@@ -254,6 +254,15 @@ export class ProgramSpecService {
 					row.id = Recipient.generateId(row as any);
 				}
 
+			
+				if (!row.group_size){
+					row.group_size = 0; 
+				}  
+
+				if (!row.support_entity) {
+					row.support_entity = '';
+				  }
+
 				// Save recipients
 				const [query, params] = await manager
 					.createQueryBuilder()
@@ -280,8 +289,10 @@ export class ProgramSpecService {
 							"variant",
 							"supportentity",
 							"access_code",
+							"deployments",
 						],
-						"recipients_uniqueness_key",
+						["recipientid", "project"] 
+						//  "recipients_uniqueness_key"
 					)
 					.getQueryAndParameters();
 
@@ -530,8 +541,15 @@ export class ProgramSpecService {
 			Languages: "pub_languages.csv",
 		};
 
-		const client = new S3Client({ region: appConfig().aws.region });
-		try {
+		const client = new S3Client({
+			 region: appConfig().aws.region,
+			 credentials: {
+				accessKeyId: appConfig().aws.accessKeyId!,
+				secretAccessKey: appConfig().aws.secretId!,
+			  },
+			});
+
+		// try {
 			// Upload excel file
 			if (opts.format === "xlsx") {
 				await client.send(
@@ -559,11 +577,11 @@ export class ProgramSpecService {
 					);
 				}
 			}
-		} catch (error) {
-			throw new InternalServerErrorException(
-				"Failed to upload excel file to S3",
-			);
-		}
+		// } catch (error) {
+		// 	throw new InternalServerErrorException(
+		// 		"Failed to upload excel file to S3",
+		// 	);
+		// }
 	}
 
 	private async saveDeployments(
@@ -571,6 +589,21 @@ export class ProgramSpecService {
 		deployments: Record<string, any>[],
 		program: Program,
 	) {
+
+		
+		// validate required fields
+    const requiredFields = ['deploymentnumber', 'deploymentname', 'startdate', 'enddate', 'deployment'];
+    
+    for (const deployment of deployments) {
+        for (const field of requiredFields) {
+            if (!deployment[field]) {
+                throw new BadRequestException(
+                    `Field '${field}' is required for deployment ${deployment.deploymentnumber || ''}`
+                );
+            }
+        }
+    }
+
 		// Step 1: Fetch existing deployments from the database
 		const existingDeployments = await manager
 			.getRepository(Deployment)

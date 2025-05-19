@@ -10,6 +10,7 @@ export default () =>
 			secretId: process.env.AWS_SECRET_ID,
 			poolId: process.env.AWS_USER_POOL_ID,
 			poolClientId: (process.env.AWS_USER_POOL_CLIENT_ID || "").split(","),
+			accessKeyId: process.env.AWS_ACCESS_KEY_ID,
 		},
 		buckets: {
 			programSpec: "amplio-progspecs",
