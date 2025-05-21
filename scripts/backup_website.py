@@ -54,15 +54,14 @@ def backup_db():
     environ["PGPASSWORD"] = config["password"]
     subprocess.run(dump_command, shell=True, check=True)
 
+    bucket = getenv("S3_DB_BACKUP_BUCKET")
     subprocess.run(
-        f"aws s3 cp {backup_file} s3://{getenv('S3_DB_BACKUP_BUCKET')}/",
+        f"aws s3 cp {backup_file} s3://{bucket}/",
         shell=True,
         check=True,
     )
 
-    print(
-        f"Database backup uploaded to s3://{getenv('AWS_DB_BACKUP_BUCKET')}/{backup_file}"
-    )
+    print(f"Database backup uploaded to s3://{bucket}/{backup_file}")
 
 
 if __name__ == "__main__":
