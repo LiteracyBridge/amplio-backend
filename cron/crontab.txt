@@ -7,8 +7,8 @@
 # Run v2import every 4 hours at x:55. Import v2 stats.
 55 */4 * * * $HOME/amplio-backend/cron/tbv2cron.sh > $HOME/amplio-backend/cron/logs/cronjob-v2.log 2>&1
 
-# Backup website media daily at 01:10
-10 1 * * * just --justfile $HOME/amplio-backend/justfile sync-website
+# Backup website daily at 01:10
+10 1 * * * just --justfile $HOME/amplio-backend/justfile backup-website
 
 # Missing UF report daily at 01:00.
 #0 1 * * * /home/ubuntu/acm-stats/AWS-LB/bin/missing_uf.sh 2>&1 >>/home/ubuntu/work/missing_uf.log

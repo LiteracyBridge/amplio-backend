@@ -155,9 +155,9 @@ reboot:
 backup-db:
     cd {{ project_dir }} && just run-script scripts/backup_db.py
 
-[doc("Backup website media")]
-sync-website:
-    cd {{ project_dir }} && just run-script scripts/sync-website-media.py
+[doc("Backup website")]
+backup-website:
+    cd {{ project_dir }} && just run-script scripts/backup_website.py
 
 [group('deploy')]
 [doc("Deploy Nestjs app in test mode")]
