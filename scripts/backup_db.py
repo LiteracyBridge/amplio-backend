@@ -8,11 +8,16 @@ from config import config
 
 
 def main():
-    print(f"Running database backup at {datetime.now()}")
-
     load_dotenv()
 
-    dest = os.path.expanduser("~") + "/.db-backups"
+    print(f"Running database backup at {datetime.now()}")
+
+    dest = os.getenv("DB_BACKUP_DIR")
+    if dest is None:
+        print("DB_BACKUP_DIR is not set, existing ....")
+        exit(1)
+
+    dest = os.path.expanduser(dest)
     if not os.path.exists(dest):
         os.makedirs(dest)
 
