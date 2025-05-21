@@ -1,7 +1,6 @@
 import os
 import subprocess
 from datetime import datetime
-from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -26,7 +25,7 @@ def main():
     subprocess.run(dump_command, shell=True, check=True)
 
     subprocess.run(
-        f"aws s3 cp {backup_file} s3://{os.getenv('AWS_DB_BACKUP_BUCKET')}/",
+        f"aws s3 cp {backup_file} s3://{os.getenv('S3_DB_BACKUP_BUCKET')}/",
         shell=True,
         check=True,
     )
