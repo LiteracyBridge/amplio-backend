@@ -36,7 +36,7 @@ def main():
         check=True,
     )
 
-    print(f"Database backup uploaded to s3://{bucket}/{backup_file}")
+    print(f"Database backup uploaded to s3://{bucket}{backup_file}")
 
 
 if __name__ == "__main__":
