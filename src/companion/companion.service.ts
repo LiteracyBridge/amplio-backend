@@ -9,7 +9,11 @@ import { zipDirectory } from "src/utilities";
 
 @Injectable()
 export class CompanionAppService {
-  async verifyRecipientCode(code: string) {
+  async verifyRecipientCode(code?: string) {
+    if (code === '' || code == null ){
+      throw new BadRequestException("Recipient code is required!")
+    }
+
     const recipient = await Recipient.findOne({
       where: { access_code: code },
       relations: { project: true },

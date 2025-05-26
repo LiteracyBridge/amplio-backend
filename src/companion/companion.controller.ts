@@ -11,8 +11,8 @@ export class CompanionAppController {
 	constructor(private readonly service: CompanionAppService) {}
 
 	@SkipJwtAuth()
-	@Get(":code/recipient")
-	async getRecipient(@Param("code") code: string) {
+	@Post("recipients")
+	async getRecipient(@Body("code") code: string) {
 		return ApiResponse.Success({
 			data: await this.service.verifyRecipientCode(code),
 		});
