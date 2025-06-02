@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
 import { User, UserStatus } from "src/entities/user.entity";
 import { InvitationDto } from "./invitation.dto";
 import appConfig from "src/app.config";
@@ -40,6 +40,13 @@ export class UsersService {
 	}
 
 	async createInvitation(dto: InvitationDto, user: User) {
+
+		// Check if user already exists
+		 const existingUser = await User.findOne({ where: { email: dto.email } });
+		if (existingUser) {
+			throw new ConflictException("User with this email already exists");
+		}
+
 		const newUser = new User();
 		newUser.first_name = dto.first_name;
 		newUser.last_name = dto.last_name;
@@ -49,7 +56,13 @@ export class UsersService {
 		await newUser.save();
 
 		// Create user on cognito
-		const client = new CognitoIdentityProviderClient();
+		const client = new CognitoIdentityProviderClient({
+			region: appConfig().aws.region || "us-west-2",
+			credentials: {
+				accessKeyId: String(appConfig().aws.accessKeyId),
+				secretAccessKey: String(appConfig().aws.secretId),
+			},
+		});
 		const command = new AdminCreateUserCommand({
 			UserPoolId: appConfig().aws.poolId, // required
 			Username: dto.email, // required
