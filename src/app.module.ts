@@ -43,11 +43,12 @@ import { SentryGlobalFilter, SentryModule } from "@sentry/nestjs/setup";
 import { Log } from "./entities/log.entity";
 import { AcmCheckoutModule } from "./acm-checkout/acm-checkout.module";
 import { TalkingBookLoaderId } from "./entities/tbloader-ids.entity";
-import { TbLoaderModule } from './tb-loader/tb-loader.module';
+import { TbLoaderModule } from "./tb-loader/tb-loader.module";
 import { TalkingBookAnalyticsModule } from "./tb-analytics/tb-analytics.module";
 import { PublishedProgramSpecs } from "./entities/published_spec.entity";
 import { DeploymentMetadata } from "./entities/deployment_metadata.entity";
 import { CompanionAppModule } from "./companion/companion.module";
+import { ContentInPackage } from "./entities/content_in_package.entity";
 
 config();
 
@@ -61,7 +62,7 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 
 		TypeOrmModule.forRoot({
 			host: process.env.DB_HOST,
-			port: Number.parseInt(process.env.DB_PORT || '5432'),
+			port: Number.parseInt(process.env.DB_PORT || "5432"),
 			username: process.env.DB_USER,
 			password: process.env.DB_PASSWORD,
 			database: process.env.DB_NAME,
@@ -100,7 +101,8 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 				UserFeedbackMessage,
 				TalkingBookLoaderId,
 				PublishedProgramSpecs,
-        DeploymentMetadata
+				DeploymentMetadata,
+				ContentInPackage,
 			],
 			subscribers: [
 				PlaylistSubscriber,
@@ -110,18 +112,18 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 			],
 		}),
 
-    UsersModule,
-    UserfeedbackModule,
-    ProgramsModule,
-    Log,
-    AcmCheckoutModule,
-    TbLoaderModule,
-    TalkingBookAnalyticsModule,
-    CompanionAppModule
-  ],
-  controllers: [AppController, TableauController, CategoriesController],
-  providers: [
-    AppService,
+		UsersModule,
+		UserfeedbackModule,
+		ProgramsModule,
+		Log,
+		AcmCheckoutModule,
+		TbLoaderModule,
+		TalkingBookAnalyticsModule,
+		CompanionAppModule,
+	],
+	controllers: [AppController, TableauController, CategoriesController],
+	providers: [
+		AppService,
 
 		{
 			provide: APP_FILTER,

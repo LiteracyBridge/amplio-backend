@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { ContentInPackage } from "src/entities/content_in_package.entity";
 import {
 	ContentMetadata,
 	ContentType,
@@ -56,7 +57,7 @@ export class DeploymentMetadataService {
 
 					// Save messages
 					for (const m of messages) {
-						await this.saveContent(
+						await this.saveMetadata(
 							ContentType.message,
 							deployment!,
 							m,
@@ -66,7 +67,7 @@ export class DeploymentMetadataService {
 						);
 					}
 					for (const p of playlistPrompts) {
-						await this.saveContent(
+						await this.saveMetadata(
 							ContentType.playlist_prompt,
 							deployment!,
 							p,
@@ -82,7 +83,27 @@ export class DeploymentMetadataService {
 		return metadata;
 	}
 
-	private async saveContent(
+	private async saveMetadata(
+		type: ContentType,
+		deployment: Deployment,
+		data: Record<string, any>,
+		languageOrVariant: string,
+		metadata: DeploymentMetadata,
+		manager: EntityManager,
+	) {
+		await this.saveContentMetadata(
+			type,
+			deployment,
+			data,
+			languageOrVariant,
+			metadata,
+			manager,
+		);
+
+		await this.saveContentPackages(deployment, data);
+	}
+
+	private async saveContentMetadata(
 		type: ContentType,
 		deployment: Deployment,
 		data: Record<string, any>,
@@ -145,5 +166,20 @@ export class DeploymentMetadataService {
 			.values(content)
 			.orIgnore()
 			.execute();
+	}
+
+	private async saveContentPackages(
+		deployment: Deployment,
+		data: Record<string, any>,
+	) {
+		const content = new ContentInPackage();
+		content.position = data.position;
+		content.project_id = deployment.project_id;
+		content.contentpackage = data.revision;
+		content.contentid = data.acm_id;
+
+		// TODO: query db to get categoryid
+		content.categoryid = data.category;
+		await content.save();
 	}
 }

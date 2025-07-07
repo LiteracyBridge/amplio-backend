@@ -30,10 +30,17 @@ const { Choice } = require("../dist/entities/uf_choice.entity");
 const { Question } = require("../dist/entities/uf_question.entity");
 const { UserFeedbackMessage } = require("../dist/entities/uf_message.entity");
 const { TalkingBookLoaderId } = require("../dist/entities/tbloader-ids.entity");
-const { PublishedProgramSpecs } = require("../dist/entities/published_spec.entity");
+const {
+	PublishedProgramSpecs,
+} = require("../dist/entities/published_spec.entity");
 const { Role } = require("../dist/entities/role.entity");
 const { Log } = require("../dist/entities/log.entity");
-const { DeploymentMetadata } = require("../dist/entities/deployment_metadata.entity");
+const {
+	DeploymentMetadata,
+} = require("../dist/entities/deployment_metadata.entity");
+const {
+	ContentInPackage,
+} = require("../dist/entities/content_in_package.entity");
 
 dotenv.config();
 
@@ -46,8 +53,8 @@ const AppDataSource = new DataSource({
 	type: "postgres",
 	schema: "public",
 	entities: [
-    Role,
-    Log,
+		Role,
+		Log,
 		User,
 		UserRole,
 		// Invitation,
@@ -74,9 +81,10 @@ const AppDataSource = new DataSource({
 		Choice,
 		Question,
 		UserFeedbackMessage,
-    TalkingBookLoaderId,
-    PublishedProgramSpecs,
-    DeploymentMetadata,
+		TalkingBookLoaderId,
+		PublishedProgramSpecs,
+		DeploymentMetadata,
+		ContentInPackage,
 	],
 	migrations: ["./migrations/*.ts"],
 	// These two lines have been added:
