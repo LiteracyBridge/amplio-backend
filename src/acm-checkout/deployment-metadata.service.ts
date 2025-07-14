@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { Category } from "src/entities/category.entity";
+import { CategoryInPackage } from "src/entities/category_in_package.entity";
 import { ContentInPackage } from "src/entities/content_in_package.entity";
 import {
 	ContentMetadata,
@@ -52,21 +53,7 @@ export class DeploymentMetadataService {
 				await manager.save(DeploymentMetadata, metadata);
 
 				// Save categories
-				await manager
-					.createQueryBuilder()
-					.insert()
-					.into(Category)
-					.values(
-						dto.categories.map((c) => {
-							const cat = new Category();
-							cat.id = c.id;
-							cat.name = c.name;
-							cat.project_code = c.project;
-							return cat;
-						}),
-					)
-					.orIgnore()
-					.execute();
+				await this._saveCategories(manager, dto);
 
 				// Save contents
 				const languages = Object.keys(dto.contents);
@@ -100,6 +87,58 @@ export class DeploymentMetadataService {
 		);
 
 		return metadata;
+	}
+
+	private async _saveCategories(
+		manager: EntityManager,
+		dto: DeploymentMetadataDto,
+	) {
+		await manager.delete(Category, { project_code: dto.project });
+
+		// Save project categories
+		await manager
+			.createQueryBuilder()
+			.insert()
+			.into(Category)
+			.values(
+				dto.categories.map((c) => {
+					const cat = new Category();
+					cat.id = c.id;
+					cat.name = c.name;
+					cat.project_code = c.project;
+					return cat;
+				}),
+			)
+			.orIgnore()
+			.execute();
+
+		// Save categories in packages
+		for (const key in dto.contents) {
+			const contents = dto.contents[key];
+			const existingData = await manager.find<CategoryInPackage>(
+				CategoryInPackage,
+				{
+					where: { project: dto.project, contentpackage: contents.packageName },
+				},
+			);
+
+			let order = 1;
+			for (const m of contents.messages) {
+				// Skip if category id is not found
+				const id = dto.categories.find((c) => c.name === m.category)?.id;
+				if (id == null) continue;
+
+				// Skip duplicates
+				const exists = existingData.find((m) => m.categoryid === id);
+				if (exists != null) continue;
+
+				const row = new CategoryInPackage();
+				row.project = dto.project;
+				row.order = order++;
+				row.categoryid = id;
+				await manager.save(CategoryInPackage, row);
+			}
+		}
 	}
 
 	private async saveMetadata(

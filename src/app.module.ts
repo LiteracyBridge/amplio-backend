@@ -51,6 +51,7 @@ import { CompanionAppModule } from "./companion/companion.module";
 import { ContentInPackage } from "./entities/content_in_package.entity";
 import { PackageInDeployment } from "./entities/package_in_deployment.entity";
 import { Category } from "./entities/category.entity";
+import { CategoryInPackage } from "./entities/category_in_package.entity";
 
 config();
 
@@ -107,6 +108,7 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 				ContentInPackage,
 				PackageInDeployment,
 				Category,
+        CategoryInPackage
 			],
 			subscribers: [
 				PlaylistSubscriber,
