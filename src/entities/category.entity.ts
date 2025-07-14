@@ -10,7 +10,7 @@ import {
 
 @Entity("categories")
 export class Category extends BaseEntity {
-	@Column({ name: "categoryid", type: "varchar" })
+	@PrimaryColumn({ name: "categoryid", type: "varchar" })
 	id: string;
 
 	@Column({ name: "categoryname", type: "varchar" })

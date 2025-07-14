@@ -4,7 +4,7 @@ Companion App Support:
         ✔ contentmetadata2 @done(25-07-07 08:51)
         ✔ categories @done(25-07-14 16:35)
         ✔ contentinpackage @done(25-07-14 16:35)
-        ☐ packagesindeployment
+        ✔ packagesindeployment @done(25-07-14 16:51)
     ☐ insert stats into playstatistics
     ☐ insert feedbacks into uf_messages
 
