@@ -49,6 +49,7 @@ import { PublishedProgramSpecs } from "./entities/published_spec.entity";
 import { DeploymentMetadata } from "./entities/deployment_metadata.entity";
 import { CompanionAppModule } from "./companion/companion.module";
 import { ContentInPackage } from "./entities/content_in_package.entity";
+import { PackageInDeployment } from "./entities/package_in_deployment.entity";
 
 config();
 
@@ -103,6 +104,7 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 				PublishedProgramSpecs,
 				DeploymentMetadata,
 				ContentInPackage,
+				PackageInDeployment,
 			],
 			subscribers: [
 				PlaylistSubscriber,

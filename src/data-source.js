@@ -30,6 +30,7 @@ const { Choice } = require("../dist/entities/uf_choice.entity");
 const { Question } = require("../dist/entities/uf_question.entity");
 const { UserFeedbackMessage } = require("../dist/entities/uf_message.entity");
 const { TalkingBookLoaderId } = require("../dist/entities/tbloader-ids.entity");
+const { PackageInDeployment } = require("../dist/entities/package_in_deployment.entity");
 const {
 	PublishedProgramSpecs,
 } = require("../dist/entities/published_spec.entity");
@@ -85,6 +86,7 @@ const AppDataSource = new DataSource({
 		PublishedProgramSpecs,
 		DeploymentMetadata,
 		ContentInPackage,
+		PackageInDeployment,
 	],
 	migrations: ["./migrations/*.ts"],
 	// These two lines have been added:

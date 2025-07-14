@@ -32,7 +32,7 @@ export class DeploymentMetadata extends BaseEntity {
   created_at: Date;
 
   @Column({ type: 'varchar' })
-  computer_name: string;
+  computer_name?: string;
 
   @Column({ type: 'jsonb' })
   languages: string[];
