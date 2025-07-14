@@ -254,7 +254,7 @@ export class DeploymentMetadataService {
 			.insert()
 			.into(ContentMetadata)
 			.values(content)
-			.orIgnore()
+			// .orIgnore()
 			.execute();
 	}
 

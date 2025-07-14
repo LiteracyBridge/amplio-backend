@@ -1,7 +1,11 @@
-import { Entity, Column, BaseEntity, PrimaryColumn } from "typeorm";
+import { Entity, Column, BaseEntity, PrimaryColumn, OneToOne, ManyToOne, JoinColumn } from "typeorm";
+import { PackageInDeployment } from "./package_in_deployment.entity";
 
 @Entity("playedevents")
 export class PlayedEvent extends BaseEntity {
+	/**
+	 * Talking Book ID or Device Id (for companion app)
+	 */
 	@PrimaryColumn({ type: "text", name: "talkingbookid" })
 	talkingbookid: string;
 
@@ -40,11 +44,12 @@ export class PlayedEvent extends BaseEntity {
 
 	@Column({ type: "double precision", name: "minvolts" })
 	minvolts: number;
+
 	@Column({ type: "double precision", name: "steadystatevolts" })
 	steadystatevolts: number;
 
 	@Column({ type: "boolean", name: "isfinished" })
-	isfinished: string;
+	isfinished: boolean;
 
 	@Column({ type: "text", name: "packageid" })
 	packageid: string;
@@ -57,4 +62,8 @@ export class PlayedEvent extends BaseEntity {
 
 	@Column({ type: "time without time zone", name: "timeinday" })
 	timeinday: string;
+
+  @ManyToOne(() => PackageInDeployment)
+  @JoinColumn({ name: "packageid", referencedColumnName: "packagename" })
+  package: PackageInDeployment;
 }

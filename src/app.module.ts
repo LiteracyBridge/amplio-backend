@@ -52,7 +52,7 @@ import { ContentInPackage } from "./entities/content_in_package.entity";
 import { PackageInDeployment } from "./entities/package_in_deployment.entity";
 import { Category } from "./entities/category.entity";
 import { CategoryInPackage } from "./entities/category_in_package.entity";
-import { PlayStatistics } from "./entities/playstatistics.entity";
+import { PlayStatistic } from "./entities/playstatistics.entity";
 import { PlayedEvent } from "./entities/played_event.entity";
 
 config();
@@ -111,7 +111,7 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 				PackageInDeployment,
 				Category,
 				CategoryInPackage,
-				PlayStatistics,
+				PlayStatistic,
 				PlayedEvent,
 			],
 			subscribers: [

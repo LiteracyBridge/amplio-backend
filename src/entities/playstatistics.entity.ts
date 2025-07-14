@@ -1,7 +1,7 @@
 import { Entity, Column, BaseEntity, PrimaryColumn } from "typeorm";
 
 @Entity("playstatistics")
-export class PlayStatistics extends BaseEntity {
+export class PlayStatistic extends BaseEntity {
 	@Column({ type: "text", name: "project" })
 	project: string;
 
@@ -38,21 +38,39 @@ export class PlayStatistics extends BaseEntity {
 	@Column({ type: "text", name: "tbcid" })
 	tbcid: string;
 
+  /**
+   * The number of times the message was started, but didn't reach 1/4
+   */
 	@Column({ type: "integer", name: "started" })
 	started: number;
 
+  /**
+   * Tne number of times the message was played to 1/4, but not 1/2
+   */
 	@Column({ type: "integer", name: "quarter" })
-	quarter: number;
+	one_quarter: number;
 
+  /**
+   * The number of times the message was played to 1/2, but not 3/4
+   */
 	@Column({ type: "integer", name: "half" })
 	half: number;
 
+  /**
+   * The number of times the message was played to 3/4, but not completion
+   */
 	@Column({ type: "integer", name: "threequarters" })
 	threequarters: number;
 
+  /*
+   * The number of times the message was played to completion
+   */
 	@Column({ type: "integer", name: "completed" })
 	completed: number;
 
+  /**
+   * The total played seconds
+   */
 	@Column({ type: "integer", name: "played_seconds" })
 	played_seconds: number;
 
