@@ -57,9 +57,16 @@ export class DeploymentMetadataService {
 
 				// Save contents
 				const languages = Object.keys(dto.contents);
-				for (const l of languages) {
-					const messages = dto.contents[l].messages;
-					const playlistPrompts = dto.contents[l].playlistPrompts;
+				for (const l in dto.contents) {
+					const contents = dto.contents[l];
+					const messages = contents.messages;
+					const playlistPrompts = contents.playlistPrompts;
+
+					await this.saveDeploymentPackage(
+						deployment!,
+						{ package: contents.packageName, languageOrVariant: l },
+						manager,
+					);
 
 					// Save messages
 					for (const m of messages) {
@@ -89,6 +96,9 @@ export class DeploymentMetadataService {
 		return metadata;
 	}
 
+	/**
+	 * Creates categories, categoriesinpackage and contentsinpackage records
+	 */
 	private async _saveCategories(
 		manager: EntityManager,
 		dto: DeploymentMetadataDto,
@@ -156,6 +166,7 @@ export class DeploymentMetadataService {
 				pkg.contentpackage = contents.packageName;
 				pkg.contentid = m.contentId;
 				pkg.categoryid = categoryId;
+				pkg.order = order++;
 
 				await manager.save(ContentInPackage, pkg);
 			}
@@ -179,7 +190,7 @@ export class DeploymentMetadataService {
 			manager,
 		);
 
-		await this.saveContentPackages(deployment, data, metadata, manager);
+		// await this.saveContentPackages(deployment, data, metadata, manager);
 	}
 
 	private async saveContentMetadata(
@@ -247,47 +258,22 @@ export class DeploymentMetadataService {
 			.execute();
 	}
 
-	private async saveContentPackages(
-		deployment: Deployment,
-		data: MessageMetadataDto,
-		meta: DeploymentMetadata,
-		manager: EntityManager,
-	) {
-		const content = new ContentInPackage();
-		content.position = data.position;
-		content.project_id = deployment.project_id;
-		content.contentpackage = meta.revision;
-		content.contentid = data.contentId;
-
-		// TODO: query db to get categoryid
-		content.categoryid = data.category;
-
-		await manager
-			.createQueryBuilder()
-			.insert()
-			.into(ContentInPackage)
-			.values(content)
-			.orIgnore()
-			.execute();
-	}
-
 	private async saveDeploymentPackage(
 		deployment: Deployment,
-		data: Record<string, any>,
-		languageOrVariant: string,
+		opts: { package: string; languageOrVariant: string },
 		manager: EntityManager,
 	) {
 		const pkg = new PackageInDeployment();
 		pkg.project_code = deployment.project_id;
 		pkg.deployment_code = deployment.deploymentname ?? deployment.deployment;
-		pkg.contentpackage = data.revision;
-		pkg.packagename = data.revision;
+		pkg.contentpackage = opts.package;
+		pkg.packagename = opts.package;
 		pkg.startdate = deployment.start_date;
 		pkg.enddate = deployment.end_date;
 		pkg.enddate = deployment.end_date;
 		pkg.distribution = deployment.distribution;
-		pkg.groups = ""; // TODO: pick from recipients
-		pkg.languagecode = ""; // TODO: pick from data
+		pkg.groups = `default,${opts.languageOrVariant}`;
+		pkg.languagecode = opts.languageOrVariant;
 
 		await manager
 			.createQueryBuilder()
