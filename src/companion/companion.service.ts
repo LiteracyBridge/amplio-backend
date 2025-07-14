@@ -214,36 +214,52 @@ export class CompanionAppService {
 					playStat.talkingbookid = events[0].talkingbookid;
 					playStat.contentid = item.contentId;
 					playStat.community = events[0].village;
-					playStat.played_seconds = 0;
-					playStat.started = 0;
-					playStat.one_quarter = 0;
-					playStat.half = 0;
-					playStat.threequarters = 0;
-					playStat.completed = 0;
 
-					// Computation copied from scripts/v2_log_reader/tbstats/playstatistic.py
-					for (const e of events) {
-						playStat.played_seconds += e.timeplayed / 1000;
-						// Calculate the fraction completed. Note: at launch, the TB reported a completed play as less than the
-						// total time. Observed values are between 97% and 99.2% of the actual play. If the "played" is within
-						// 2 seconds of "duration", we'll call it "completed".
-						if (e.timeplayed > e.totaltime - 2000) {
-							playStat.completed += 1;
-						} else if (e.timeplayed > (e.totaltime - 2000) * 0.75) {
-							playStat.threequarters += 1;
-						} else if (e.timeplayed > (e.totaltime - 2000) * 0.5) {
-							playStat.half += 1;
-						} else if (e.timeplayed > (e.totaltime - 2000) * 0.25) {
-							playStat.one_quarter += 1;
-						} else if (e.timeplayed > 2000) {
-							playStat.started += 1;
-						}
-					}
+					const played = this.computePlayedStats(events);
+					playStat.played_seconds = played.played_seconds;
+					playStat.started = played.started;
+					playStat.one_quarter = played.one_quarter;
+					playStat.half = played.half;
+					playStat.threequarters = played.threequarters;
+					playStat.completed = played.completed;
 
 					await manager.save(PlayStatistic, playStat);
 				}
 			}
 		});
+	}
+
+	private computePlayedStats(events: PlayedEvent[]) {
+		const playStat = {
+			played_seconds: 0,
+			started: 0,
+			one_quarter: 0,
+			half: 0,
+			threequarters: 0,
+			completed: 0,
+		};
+
+		// Computation copied from scripts/v2_log_reader/tbstats/playstatistic.py
+		for (const e of events) {
+			playStat.played_seconds += e.timeplayed / 1000;
+
+			// Calculate the fraction completed. Note: at launch, the TB reported a completed play as less than the
+			// total time. Observed values are between 97% and 99.2% of the actual play. If the "played" is within
+			// 2 seconds of "duration", we'll call it "completed".
+			if (e.timeplayed > e.totaltime - 2000) {
+				playStat.completed += 1;
+			} else if (e.timeplayed > (e.totaltime - 2000) * 0.75) {
+				playStat.threequarters += 1;
+			} else if (e.timeplayed > (e.totaltime - 2000) * 0.5) {
+				playStat.half += 1;
+			} else if (e.timeplayed > (e.totaltime - 2000) * 0.25) {
+				playStat.one_quarter += 1;
+			} else if (e.timeplayed > 2000) {
+				playStat.started += 1;
+			}
+		}
+
+		return playStat;
 	}
 
 	private getRevisionPath(metadata: DeploymentMetadata) {
