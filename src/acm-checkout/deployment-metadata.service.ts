@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { Category } from "src/entities/category.entity";
 import { ContentInPackage } from "src/entities/content_in_package.entity";
 import {
 	ContentMetadata,
@@ -49,6 +50,23 @@ export class DeploymentMetadataService {
 				metadata.acm_metadata = dto;
 
 				await manager.save(DeploymentMetadata, metadata);
+
+				// Save categories
+				await manager
+					.createQueryBuilder()
+					.insert()
+					.into(Category)
+					.values(
+						dto.categories.map((c) => {
+							const cat = new Category();
+							cat.id = c.id;
+							cat.name = c.name;
+							cat.project_code = c.project;
+							return cat;
+						}),
+					)
+					.orIgnore()
+					.execute();
 
 				// Save contents
 				const languages = Object.keys(dto.contents);

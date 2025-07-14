@@ -10,7 +10,7 @@ import { UsersModule } from "./users/users.module";
 import { APP_FILTER, APP_GUARD, RouterModule, Routes } from "@nestjs/core";
 import { AuthGuard } from "./guards/jwt-auth.guard";
 import { Analysis } from "./entities/analysis.entity";
-import { SupportedCategory } from "./entities/category.entity";
+import { SupportedCategory } from "./entities/supported_category.entity";
 import { ContentMetadata } from "./entities/content_metadata.entity";
 import { Deployment } from "./entities/deployment.entity";
 import { Language, ProjectLanguage } from "./entities/language.entity";
@@ -50,6 +50,7 @@ import { DeploymentMetadata } from "./entities/deployment_metadata.entity";
 import { CompanionAppModule } from "./companion/companion.module";
 import { ContentInPackage } from "./entities/content_in_package.entity";
 import { PackageInDeployment } from "./entities/package_in_deployment.entity";
+import { Category } from "./entities/category.entity";
 
 config();
 
@@ -105,6 +106,7 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 				DeploymentMetadata,
 				ContentInPackage,
 				PackageInDeployment,
+				Category,
 			],
 			subscribers: [
 				PlaylistSubscriber,
