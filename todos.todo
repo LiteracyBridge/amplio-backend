@@ -2,7 +2,8 @@ Companion App Support:
     ☐ insert package contents into table
         ✔ contentpackage @done(25-07-07 08:51)
         ✔ contentmetadata2 @done(25-07-07 08:51)
-        ☐ categories
+        ✔ categories @done(25-07-14 16:35)
+        ✔ contentinpackage @done(25-07-14 16:35)
         ☐ packagesindeployment
     ☐ insert stats into playstatistics
     ☐ insert feedbacks into uf_messages

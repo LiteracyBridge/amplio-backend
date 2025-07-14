@@ -22,8 +22,8 @@ export class ContentInPackage extends BaseEntity {
 	@Column({ name: "categoryid", type: "varchar" })
 	categoryid: string;
 
-	@Column({ name: "position", type: "integer" })
-	position: number;
+	@Column({ name: "order", type: "integer" })
+	order: number;
 
 	@ManyToOne(() => Project)
 	@JoinColumn({ referencedColumnName: "code" })

@@ -112,8 +112,8 @@ export class DeploymentMetadataService {
 			.orIgnore()
 			.execute();
 
-		// Save categories in packages
 		for (const key in dto.contents) {
+			let order = 1;
 			const contents = dto.contents[key];
 			const existingData = await manager.find<CategoryInPackage>(
 				CategoryInPackage,
@@ -122,21 +122,42 @@ export class DeploymentMetadataService {
 				},
 			);
 
-			let order = 1;
-			for (const m of contents.messages) {
+			const categoryNames: Array<string | undefined> =
+				contents.messages.flatMap((m) => m.category);
+
+			// Save categories in packages
+			for (const name of categoryNames) {
 				// Skip if category id is not found
-				const id = dto.categories.find((c) => c.name === m.category)?.id;
-				if (id == null) continue;
+				const categoryId = dto.categories.find((c) => c.name === name)?.id;
+				if (categoryId == null) continue;
 
 				// Skip duplicates
-				const exists = existingData.find((m) => m.categoryid === id);
+				const exists = existingData.find((m) => m.categoryid === categoryId);
 				if (exists != null) continue;
 
 				const row = new CategoryInPackage();
 				row.project = dto.project;
 				row.order = order++;
-				row.categoryid = id;
+				row.categoryid = categoryId;
+
 				await manager.save(CategoryInPackage, row);
+			}
+
+			// Save content in package
+			order = 1;
+			for (const m of contents.messages) {
+				const categoryId = dto.categories.find(
+					(c) => c.name === m.category,
+				)?.id;
+				if (categoryId == null) continue;
+
+				const pkg = new ContentInPackage();
+				pkg.project_id = dto.project;
+				pkg.contentpackage = contents.packageName;
+				pkg.contentid = m.contentId;
+				pkg.categoryid = categoryId;
+
+				await manager.save(ContentInPackage, pkg);
 			}
 		}
 	}
