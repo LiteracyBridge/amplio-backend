@@ -4,6 +4,7 @@ import { CompanionAppService } from "./companion.service";
 import { ApiResponse } from "src/utilities/api_response";
 import { Response } from "express";
 import { createReadStream } from "node:fs";
+import { CompanionStatisticsDto } from "./companion.dto";
 
 // TODO: generate unique api key on verification, required in subsequent requests
 @Controller("companion")
@@ -23,11 +24,11 @@ export class CompanionAppController {
 	async getPrompts(
 		@Param("id") id: string,
 		@Param("language") language: string,
-    @Res() res: Response
+		@Res() res: Response,
 	) {
-    const path = await this.service.downloadPrompts(id, language)
-    const file = createReadStream(path);
-    file.pipe(res);
+		const path = await this.service.downloadPrompts(id, language);
+		const file = createReadStream(path);
+		file.pipe(res);
 	}
 
 	@SkipJwtAuth()
@@ -37,7 +38,14 @@ export class CompanionAppController {
 		@Param("language") language: string,
 		@Param("contentId") contentId: string,
 	) {
-    const url = await this.service.downloadContent({id, language, contentId})
-    return ApiResponse.Success({data: {url: url}})
+		const url = await this.service.downloadContent({ id, language, contentId });
+		return ApiResponse.Success({ data: { url: url } });
+	}
+
+	@SkipJwtAuth()
+	@Post("statistics")
+	async trackStats(@Body() body: CompanionStatisticsDto[]) {
+		await this.service.recordStats(body);
+		return ApiResponse.Success({ data: {} });
 	}
 }

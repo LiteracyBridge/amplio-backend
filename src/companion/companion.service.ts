@@ -206,7 +206,17 @@ export class CompanionAppService {
 				for (const key in groupedEvents) {
 					const events: PlayedEvent[] = groupedEvents[key];
 
-					const playStat = new PlayStatistic();
+					const playStat =
+						(await manager.findOne(PlayStatistic, {
+							where: {
+								contentid: item.contentId,
+								contentpackage: item.packageId,
+								community: events[0].village,
+								project: item.project,
+								talkingbookid: events[0].talkingbookid,
+							},
+						})) ?? new PlayStatistic();
+
 					playStat.timestamp = DateTime.now().toISO({ extendedZone: true });
 					playStat.project = item.project;
 					playStat.deployment = item.deployment;
@@ -223,7 +233,15 @@ export class CompanionAppService {
 					playStat.threequarters = played.threequarters;
 					playStat.completed = played.completed;
 
+					// if (playStat._id != null) {
 					await manager.save(PlayStatistic, playStat);
+					// } else {
+					// 	await manager.update(
+					// 		PlayStatistic,
+					// 		{ _id: playStat._id },
+					// 		playStat,
+					// 	);
+					// }
 				}
 			}
 		});
