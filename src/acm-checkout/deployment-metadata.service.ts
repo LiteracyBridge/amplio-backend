@@ -149,6 +149,7 @@ export class DeploymentMetadataService {
 				row.project = dto.project;
 				row.position = order++;
 				row.categoryid = categoryId;
+				row.contentpackage = contents.packageName;
 
 				await manager.save(CategoryInPackage, row);
 			}
