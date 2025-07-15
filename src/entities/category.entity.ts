@@ -16,6 +16,6 @@ export class Category extends BaseEntity {
 	@Column({ name: "categoryname", type: "varchar" })
 	name: string;
 
-	@Column({ name: "project_code", type: "varchar" })
+	@Column({ name: "projectcode", type: "varchar" })
 	project_code: string;
 }
