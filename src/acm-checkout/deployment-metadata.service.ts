@@ -147,7 +147,7 @@ export class DeploymentMetadataService {
 
 				const row = new CategoryInPackage();
 				row.project = dto.project;
-				row.order = order++;
+				row.position = order++;
 				row.categoryid = categoryId;
 
 				await manager.save(CategoryInPackage, row);

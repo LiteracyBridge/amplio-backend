@@ -19,6 +19,6 @@ export class CategoryInPackage extends BaseEntity {
 	@Column({ name: "categoryid", type: "varchar" })
 	categoryid: string;
 
-	@Column({ name: "order", type: "integer" })
-	order: number;
+	@Column({ name: "position", type: "integer" })
+	position: number;
 }
