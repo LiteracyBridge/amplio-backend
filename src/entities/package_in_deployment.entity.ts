@@ -40,7 +40,7 @@ export class PackageInDeployment extends BaseEntity {
 	@ManyToOne(() => Project)
 	@JoinColumn({
 		referencedColumnName: "code",
-		foreignKeyConstraintName: "project_code",
+		name: "project",
 	})
 	project?: Project;
 }

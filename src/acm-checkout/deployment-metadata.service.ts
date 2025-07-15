@@ -103,8 +103,6 @@ export class DeploymentMetadataService {
 		manager: EntityManager,
 		dto: DeploymentMetadataDto,
 	) {
-		await manager.delete(Category, { project_code: dto.project });
-
 		// Save project categories
 		await manager
 			.createQueryBuilder()
@@ -167,9 +165,15 @@ export class DeploymentMetadataService {
 				pkg.contentpackage = contents.packageName;
 				pkg.contentid = m.contentId;
 				pkg.categoryid = categoryId;
-				pkg.order = order++;
+				pkg.position = order++;
 
-				await manager.save(ContentInPackage, pkg);
+				await manager
+					.createQueryBuilder()
+					.insert()
+					.into(ContentInPackage)
+					.values(pkg)
+					.orIgnore()
+					.execute();
 			}
 		}
 	}
@@ -197,7 +201,7 @@ export class DeploymentMetadataService {
 	private async saveContentMetadata(
 		type: ContentType,
 		deployment: Deployment,
-		data: Record<string, any>,
+		data: MessageMetadataDto,
 		languageOrVariant: string,
 		metadata: DeploymentMetadata,
 		manager: EntityManager,
@@ -206,16 +210,16 @@ export class DeploymentMetadataService {
 		content.type = type;
 		content.deployment_metadata_id = metadata.id;
 		content.title = data.title;
-		content.content_id = data.acm_id;
+		content.content_id = data.contentId;
 		content.relative_path = data.path;
 		content.language_code = data.language;
 		content.size = data.size;
 		content.position = data.position;
 		content.dc_publisher = data.publisher;
-		content.source = data.source;
-		content.related_id = data.related_id;
-		content.dtb_revision = data.dtb_revision;
-		content.recorded_at = data.recorded_at;
+		content.source = data.source!;
+		content.related_id = data.relatedId;
+		content.dtb_revision = data.dtbRevision;
+		content.recorded_at = data.recordedAt;
 		content.keywords = data.keywords;
 		content.timing = data.timing;
 		content.speaker = data.speaker;
@@ -255,7 +259,7 @@ export class DeploymentMetadataService {
 			.insert()
 			.into(ContentMetadata)
 			.values(content)
-			// .orIgnore()
+			.orIgnore()
 			.execute();
 	}
 
