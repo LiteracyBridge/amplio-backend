@@ -46,6 +46,8 @@ export class CompanionAppController {
 	@Post("statistics")
 	async trackStats(@Body() body: CompanionStatisticsDto[]) {
 		await this.service.recordStats(body);
-		return ApiResponse.Success({ data: {} });
+		return ApiResponse.Success({
+			data: { message: "Statistics recorded successfully" },
+		});
 	}
 }

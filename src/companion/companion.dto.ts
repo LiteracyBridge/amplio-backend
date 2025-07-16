@@ -3,11 +3,11 @@ import { IsISO8601, IsNotEmpty, IsNumber, IsString } from "class-validator";
 export class CompanionStatisticsDto {
 	@IsNotEmpty()
 	@IsString()
-	project: string;
+	projectCode: string;
 
-	@IsNotEmpty()
-	@IsString()
-	deployment: string;
+	// @IsNotEmpty()
+	// @IsString()
+	// deployment: string;
 
 	@IsNotEmpty()
 	@IsString()
@@ -31,7 +31,7 @@ export class CompanionStatisticsDto {
 
 	@IsNotEmpty()
 	@IsNumber()
-	durationListened: number;
+	listenedDuration: number;
 
 	@IsNotEmpty()
 	@IsNumber()
@@ -43,5 +43,5 @@ export class CompanionStatisticsDto {
 
 	@IsNotEmpty()
 	@IsString()
-	packageId: string;
+	packageName: string;
 }

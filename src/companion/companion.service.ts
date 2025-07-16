@@ -144,7 +144,7 @@ export class CompanionAppService {
 			for (const stat of statistics) {
 				const timestamp = DateTime.fromISO(stat.timestamp);
 				const recipient = (await Recipient.findOne({
-					where: { program_id: stat.project, id: stat.recipientId },
+					where: { program_id: stat.projectCode, id: stat.recipientId },
 				}))!;
 				const event = new PlayedEvent();
 				event.talkingbookid = stat.deviceName;
@@ -152,11 +152,11 @@ export class CompanionAppService {
 				event.dayinperiod = timestamp.day;
 				event.year = timestamp.year;
 				event.timeinday = timestamp.toISOTime({ extendedZone: true })!;
-				event.timeplayed = stat.durationListened;
+				event.timeplayed = stat.listenedDuration;
 				event.totaltime = stat.audioDuration;
-				event.percentagedone = stat.durationListened / stat.audioDuration;
+				event.percentagedone = stat.listenedDuration / stat.audioDuration;
 				event.isfinished = event.percentagedone >= 1;
-				event.packageid = stat.packageId;
+				event.packageid = stat.packageName;
 				event.contentid = stat.contentId;
 				event.village = recipient.community_name;
 				if (
@@ -195,7 +195,7 @@ export class CompanionAppService {
 					.select("timeplayed, village, talkingbookid")
 					.where("contentid = :id", { id: id })
 					.andWhere("talkingbookid = :tbId", { tbId: item.deviceName })
-					.andWhere("packageid = :pkg", { pkg: item.packageId })
+					.andWhere("packageid = :pkg", { pkg: item.packageName })
 					.groupBy("village, talkingbookid")
 					.getMany();
 
@@ -210,17 +210,17 @@ export class CompanionAppService {
 						(await manager.findOne(PlayStatistic, {
 							where: {
 								contentid: item.contentId,
-								contentpackage: item.packageId,
+								contentpackage: item.packageName,
 								community: events[0].village,
-								project: item.project,
+								project: item.projectCode,
 								talkingbookid: events[0].talkingbookid,
 							},
 						})) ?? new PlayStatistic();
 
 					playStat.timestamp = DateTime.now().toISO({ extendedZone: true });
-					playStat.project = item.project;
-					playStat.deployment = item.deployment;
-					playStat.contentpackage = item.packageId;
+					playStat.project = item.projectCode;
+					playStat.deployment = item.deploymentName;
+					playStat.contentpackage = item.packageName;
 					playStat.talkingbookid = events[0].talkingbookid;
 					playStat.contentid = item.contentId;
 					playStat.community = events[0].village;
