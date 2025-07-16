@@ -56,7 +56,7 @@ export class CompanionAppService {
 		}
 
 		// Verify the language code is valid
-		if (metadata.acm_metadata.system_prompts[language] == null) {
+		if (metadata.acm_metadata.systemPrompts[language] == null) {
 			throw new BadRequestException("Invalid language provided");
 		}
 
@@ -114,7 +114,7 @@ export class CompanionAppService {
 			throw new BadRequestException("Invalid language provided");
 		}
 
-		const msg = contents.messages.find((m) => m.acm_id === contentId);
+		const msg = contents.messages.find((m) => m.contentId === contentId);
 		if (msg == null) {
 			throw new NotFoundException("Message cannot be found");
 		}
