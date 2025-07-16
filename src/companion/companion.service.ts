@@ -154,8 +154,8 @@ export class CompanionAppService {
 				event.timeinday = timestamp.toISOTime({ extendedZone: true })!;
 				event.timeplayed = stat.listenedDuration;
 				event.totaltime = stat.audioDuration;
-				event.percentagedone = stat.listenedDuration / stat.audioDuration;
-				event.isfinished = event.percentagedone >= 1;
+				event.percentdone = stat.listenedDuration / stat.audioDuration;
+				event.isfinished = event.percentdone >= 1;
 				event.packageid = stat.packageName;
 				event.contentid = stat.contentId;
 				event.village = recipient.community_name;

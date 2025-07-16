@@ -36,8 +36,8 @@ export class PlayedEvent extends BaseEntity {
 	@Column({ type: "smallint", name: "year" })
 	year: number;
 
-	@Column({ type: "double precision", name: "percentagedone" })
-	percentagedone: number;
+	@Column({ type: "double precision", name: "percentdone" })
+	percentdone: number;
 
 	@Column({ type: "double precision", name: "maxvolts" })
 	maxvolts: number;
