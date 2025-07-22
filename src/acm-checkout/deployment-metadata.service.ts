@@ -10,11 +10,15 @@ import { Deployment } from "src/entities/deployment.entity";
 import { DeploymentMetadata } from "src/entities/deployment_metadata.entity";
 import { PackageInDeployment } from "src/entities/package_in_deployment.entity";
 import { Playlist } from "src/entities/playlist.entity";
+import { TalkingBookLoaderId } from "src/entities/tbloader-ids.entity";
 import { User } from "src/entities/user.entity";
+import { TbLoaderService } from "src/tb-loader/tb-loader.service";
 import { EntityManager } from "typeorm";
 
 @Injectable()
 export class DeploymentMetadataService {
+	constructor(private tbloaderService: TbLoaderService) {}
+
 	async save(opts: {
 		dto: DeploymentMetadataDto;
 		currentUser: User;
@@ -92,6 +96,14 @@ export class DeploymentMetadataService {
 				}
 			},
 		);
+
+		// Allocate Talking Book Id to user
+		const tbidData = await TalkingBookLoaderId.findOne({
+			where: { email: currentUser.email },
+		});
+		if (tbidData == null) {
+			await this.tbloaderService.reserve(currentUser);
+		}
 
 		return metadata;
 	}

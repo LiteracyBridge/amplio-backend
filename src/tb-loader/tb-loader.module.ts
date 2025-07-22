@@ -4,6 +4,7 @@ import { TbLoaderService } from './tb-loader.service';
 
 @Module({
   controllers: [TbLoaderController],
-  providers: [TbLoaderService]
+  providers: [TbLoaderService],
+  exports: [TbLoaderService]
 })
 export class TbLoaderModule {}

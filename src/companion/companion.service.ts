@@ -18,6 +18,7 @@ import { DateTime } from "luxon";
 import { isNotEmpty } from "class-validator";
 import { groupBy, isNonNullish } from "remeda";
 import { PlayStatistic } from "src/entities/playstatistics.entity";
+import { TalkingBookLoaderId } from "src/entities/tbloader-ids.entity";
 
 @Injectable()
 export class CompanionAppService {
@@ -184,11 +185,34 @@ export class CompanionAppService {
 		});
 
 		// Generate play statistic
-		const contentIds: Set<string> = new Set(statistics.map((s) => s.contentId));
+		const contentPackageNames: Set<string> = new Set(
+			statistics.map((s) => `${s.contentId}-->${s.packageName}`),
+		);
 
-		for (const id of contentIds) {
-			const item = statistics.find((s) => s.contentId === id)!;
-			console.log(item);
+		for (const identifier of contentPackageNames) {
+			const [contentId, packageName] = identifier.split("-->"); // --> was chosen because package name contains '-'
+
+			const item = statistics.find(
+				(s) => s.contentId === contentId && s.packageName === packageName,
+			)!;
+
+			// Retrieve tb loader ID
+			const [tbId] = await TalkingBookLoaderId.getRepository().manager.query<
+				{
+					hex_id: string;
+				}[]
+			>(
+				`
+      SELECT hex_id FROM tb_loader_ids tb
+      INNER JOIN projects p ON p.projectcode = $1
+      INNER JOIN deployments dp ON dp.project = p.projectcode AND dp.deploymentname = $2
+      INNER JOIN deployment_metadata dm ON
+        dm.project_id = p._id AND dm.deployment_id = dp._id
+      INNER JOIN users u ON u._id = dm.user_id AND u.email = tb.email
+      LIMIT 1
+      `,
+				[item.projectCode, item.deploymentName],
+			);
 
 			const playEvents = await PlayedEvent.getRepository().manager.query<
 				{
@@ -212,27 +236,9 @@ export class CompanionAppService {
           village,
           talkingbookid
         `,
-				[id, item.deviceName, item.packageName],
+				[contentId, item.deviceName, item.packageName],
 			);
 
-			// .createQueryBuilder("p")
-			// .select("SUM(p.timeplayed) AS timeplayed, p.village, p.talkingbookid")
-			// .where("p.contentid = :id", { id: id })
-			// .andWhere("p.talkingbookid = :tbId", { tbId: item.deviceName })
-			// .andWhere("p.packageid = :pkg", { pkg: item.packageName })
-			// .groupBy("p.village, p.talkingbookid")
-			// .getMany();
-
-			// console.log(
-			// 	await await PlayedEvent.createQueryBuilder()
-			// 		.select("SUM(timeplayed) AS timeplayed, village, talkingbookid")
-			// 		.where("contentid = :id", { id: id })
-			// 		.andWhere("talkingbookid = :tbId", { tbId: item.deviceName })
-			// 		.andWhere("packageid = :pkg", { pkg: item.packageName })
-			// 		.groupBy("village, talkingbookid")
-			// 		.getSql(),
-			// );
-			console.log(playEvents);
 			const groupedEvents = groupBy(
 				playEvents,
 				(p) => `${p.village}-${p.talkingbookid}`,
@@ -258,28 +264,20 @@ export class CompanionAppService {
 				playStat.talkingbookid = events[0].talkingbookid;
 				playStat.contentid = item.contentId;
 				playStat.community = events[0].village;
+				playStat.tbcdid = tbId.hex_id;
 
 				const played = this.computePlayedStats(events);
-				playStat.played_seconds = played.played_seconds;
+				playStat.played_seconds = Math.round(played.played_seconds);
 				playStat.started = played.started;
 				playStat.one_quarter = played.one_quarter;
 				playStat.half = played.half;
 				playStat.threequarters = played.threequarters;
 				playStat.completed = played.completed;
 
-        console.log(playStat);
 				if (playStat._id == null) {
-					// await PlayStatistic.createQueryBuilder()
-					// 	.insert()
-					// 	.into(PlayStatistic)
-					// 	.values(playStat)
-					// 	.execute();
-					playStat.save();
+					await playStat.save();
 				} else {
-					await PlayStatistic.update(
-						{ _id: playStat._id },
-						playStat,
-					);
+					await PlayStatistic.update({ _id: playStat._id }, playStat);
 				}
 			}
 		}
