@@ -181,76 +181,108 @@ export class CompanionAppService {
 					.orIgnore()
 					.execute();
 			}
+		});
 
-			// Generate play statistic
-			const contentIds: Set<string> = new Set(
-				statistics.map((s) => s.contentId),
+		// Generate play statistic
+		const contentIds: Set<string> = new Set(statistics.map((s) => s.contentId));
+
+		for (const id of contentIds) {
+			const item = statistics.find((s) => s.contentId === id)!;
+			console.log(item);
+
+			const playEvents = await PlayedEvent.getRepository().manager.query<
+				{
+					timeplayed: number;
+					village: string;
+					talkingbookid: string;
+				}[]
+			>(
+				`
+        SELECT
+          SUM(timeplayed) AS timeplayed,
+          village,
+          talkingbookid
+        FROM
+          "playedevents"
+        WHERE
+          contentid = $1
+          AND talkingbookid = $2
+          AND packageid = $3
+        GROUP BY
+          village,
+          talkingbookid
+        `,
+				[id, item.deviceName, item.packageName],
 			);
-			for (const id of contentIds) {
-				const item = statistics.find((s) => s.contentId === id)!;
 
-				const playEvents = await manager
-					.getRepository(PlayedEvent)
-					.createQueryBuilder()
-					.select("SUM(timeplayed) AS timeplayed, village, talkingbookid")
-					.where("contentid = :id", { id: id })
-					.andWhere("talkingbookid = :tbId", { tbId: item.deviceName })
-					.andWhere("packageid = :pkg", { pkg: item.packageName })
-					.groupBy("village, talkingbookid")
-					.getMany();
+			// .createQueryBuilder("p")
+			// .select("SUM(p.timeplayed) AS timeplayed, p.village, p.talkingbookid")
+			// .where("p.contentid = :id", { id: id })
+			// .andWhere("p.talkingbookid = :tbId", { tbId: item.deviceName })
+			// .andWhere("p.packageid = :pkg", { pkg: item.packageName })
+			// .groupBy("p.village, p.talkingbookid")
+			// .getMany();
 
-				const groupedEvents = groupBy(
-					playEvents,
-					(p) => `${p.village}-${p.talkingbookid}`,
-				);
-				for (const key in groupedEvents) {
-					const events: PlayedEvent[] = groupedEvents[key];
+			// console.log(
+			// 	await await PlayedEvent.createQueryBuilder()
+			// 		.select("SUM(timeplayed) AS timeplayed, village, talkingbookid")
+			// 		.where("contentid = :id", { id: id })
+			// 		.andWhere("talkingbookid = :tbId", { tbId: item.deviceName })
+			// 		.andWhere("packageid = :pkg", { pkg: item.packageName })
+			// 		.groupBy("village, talkingbookid")
+			// 		.getSql(),
+			// );
+			console.log(playEvents);
+			const groupedEvents = groupBy(
+				playEvents,
+				(p) => `${p.village}-${p.talkingbookid}`,
+			);
+			for (const key in groupedEvents) {
+				const events: PlayedEvent[] = groupedEvents[key];
 
-					const playStat =
-						(await manager.findOne(PlayStatistic, {
-							where: {
-								contentid: item.contentId,
-								contentpackage: item.packageName,
-								community: events[0].village,
-								project: item.projectCode,
-								talkingbookid: events[0].talkingbookid,
-							},
-						})) ?? new PlayStatistic();
+				const playStat =
+					(await PlayStatistic.findOne({
+						where: {
+							contentid: item.contentId,
+							contentpackage: item.packageName,
+							community: events[0].village,
+							project: item.projectCode,
+							talkingbookid: events[0].talkingbookid,
+						},
+					})) ?? new PlayStatistic();
 
-					playStat.timestamp = DateTime.now().toISO({ extendedZone: true });
-					playStat.project = item.projectCode;
-					playStat.deployment = item.deploymentName;
-					playStat.contentpackage = item.packageName;
-					playStat.talkingbookid = events[0].talkingbookid;
-					playStat.contentid = item.contentId;
-					playStat.community = events[0].village;
+				playStat.timestamp = DateTime.now().toISO();
+				playStat.project = item.projectCode;
+				playStat.deployment = item.deploymentName;
+				playStat.contentpackage = item.packageName;
+				playStat.talkingbookid = events[0].talkingbookid;
+				playStat.contentid = item.contentId;
+				playStat.community = events[0].village;
 
-					const played = this.computePlayedStats(events);
-					playStat.played_seconds = played.played_seconds;
-					playStat.started = played.started;
-					playStat.one_quarter = played.one_quarter;
-					playStat.half = played.half;
-					playStat.threequarters = played.threequarters;
-					playStat.completed = played.completed;
+				const played = this.computePlayedStats(events);
+				playStat.played_seconds = played.played_seconds;
+				playStat.started = played.started;
+				playStat.one_quarter = played.one_quarter;
+				playStat.half = played.half;
+				playStat.threequarters = played.threequarters;
+				playStat.completed = played.completed;
 
-					// if (playStat._id == null) {
-					await manager
-						.createQueryBuilder()
-						.insert()
-						.into(PlayStatistic)
-						.values(playStat)
-						.execute();
-					// await manager.save(PlayStatistic, playStat);
-					// } else {
-					// 	await manager.update(
-					// 		PlayStatistic,
-					// 		{ _id: playStat._id },
-					// 		playStat,
-					// 	);
-					// }
+        console.log(playStat);
+				if (playStat._id == null) {
+					// await PlayStatistic.createQueryBuilder()
+					// 	.insert()
+					// 	.into(PlayStatistic)
+					// 	.values(playStat)
+					// 	.execute();
+					playStat.save();
+				} else {
+					await PlayStatistic.update(
+						{ _id: playStat._id },
+						playStat,
+					);
 				}
 			}
-		});
+		}
 	}
 
 	private computePlayedStats(events: PlayedEvent[]) {

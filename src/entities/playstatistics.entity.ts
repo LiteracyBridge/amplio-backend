@@ -39,8 +39,8 @@ export class PlayStatistic extends BaseEntity {
 	@Column({ type: "text", name: "contentid" })
 	contentid: string;
 
-	@Column({ type: "text", name: "tbcid" })
-	tbcid: string;
+	@Column({ type: "text", name: "tbcdid" })
+	tbcdid: string;
 
 	/**
 	 * The number of times the message was started, but didn't reach 1/4
