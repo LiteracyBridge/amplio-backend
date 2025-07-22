@@ -140,7 +140,6 @@ export class CompanionAppService {
 	async recordStats(statistics: CompanionStatisticsDto[]) {
 		await PlayedEvent.getRepository().manager.transaction(async (manager) => {
 			// Save played event for each stats
-			const events: PlayedEvent[] = [];
 			for (const stat of statistics) {
 				const timestamp = DateTime.fromISO(stat.timestamp);
 				const recipient = (await Recipient.findOne({
@@ -149,9 +148,10 @@ export class CompanionAppService {
 				const event = new PlayedEvent();
 				event.talkingbookid = stat.deviceName;
 				event.cycle = 0;
+				event.updateinyear = 0;
 				event.dayinperiod = timestamp.day;
 				event.year = timestamp.year;
-				event.timeinday = timestamp.toISOTime({ extendedZone: true })!;
+				event.timeinday = timestamp.toISOTime({ extendedZone: false })!;
 				event.timeplayed = stat.listenedDuration;
 				event.totaltime = stat.audioDuration;
 				event.percentdone = stat.listenedDuration / stat.audioDuration;
@@ -172,15 +172,15 @@ export class CompanionAppService {
 				event.maxvolts = 0;
 				event.minvolts = 0;
 				event.steadystatevolts = 0;
-				events.push(event);
-			}
 
-			await manager
-				.createQueryBuilder()
-				.insert()
-				.into(PlayedEvent)
-				.values(events)
-				.execute();
+				await manager
+					.createQueryBuilder()
+					.insert()
+					.into(PlayedEvent)
+					.values(event)
+					.orIgnore()
+					.execute();
+			}
 
 			// Generate play statistic
 			const contentIds: Set<string> = new Set(
@@ -192,7 +192,7 @@ export class CompanionAppService {
 				const playEvents = await manager
 					.getRepository(PlayedEvent)
 					.createQueryBuilder()
-					.select("timeplayed, village, talkingbookid")
+					.select("SUM(timeplayed) AS timeplayed, village, talkingbookid")
 					.where("contentid = :id", { id: id })
 					.andWhere("talkingbookid = :tbId", { tbId: item.deviceName })
 					.andWhere("packageid = :pkg", { pkg: item.packageName })
@@ -233,8 +233,14 @@ export class CompanionAppService {
 					playStat.threequarters = played.threequarters;
 					playStat.completed = played.completed;
 
-					// if (playStat._id != null) {
-					await manager.save(PlayStatistic, playStat);
+					// if (playStat._id == null) {
+					await manager
+						.createQueryBuilder()
+						.insert()
+						.into(PlayStatistic)
+						.values(playStat)
+						.execute();
+					// await manager.save(PlayStatistic, playStat);
 					// } else {
 					// 	await manager.update(
 					// 		PlayStatistic,
