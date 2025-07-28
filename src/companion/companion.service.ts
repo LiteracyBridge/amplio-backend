@@ -9,7 +9,7 @@ import { Recipient } from "src/entities/recipient.entity";
 import os from "node:os";
 import fs from "node:fs";
 import { execSync } from "node:child_process";
-import { zipDirectory } from "src/utilities";
+import { zipDirectory, unzipFile } from "src/utilities";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { CompanionStatisticsDto } from "./companion.dto";
@@ -19,6 +19,7 @@ import { isNotEmpty } from "class-validator";
 import { groupBy, isNonNullish } from "remeda";
 import { PlayStatistic } from "src/entities/playstatistics.entity";
 import { TalkingBookLoaderId } from "src/entities/tbloader-ids.entity";
+import path from "node:path";
 
 @Injectable()
 export class CompanionAppService {
@@ -281,6 +282,16 @@ export class CompanionAppService {
 				}
 			}
 		}
+	}
+	async saveUserFeedback(file: Express.Multer.File) {
+		const destination = path.join(
+			os.tmpdir(),
+			`userfeedback-${DateTime.now().toUnixInteger()}`,
+		);
+		await unzipFile({ path: file.buffer, destination });
+		console.log(destination);
+		// TODO: upload files to s3
+		// TODO: save metadata to db
 	}
 
 	private computePlayedStats(events: PlayedEvent[]) {

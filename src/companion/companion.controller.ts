@@ -1,10 +1,21 @@
-import { Body, Controller, Get, Param, Post, Query, Res } from "@nestjs/common";
+import {
+	Body,
+	Controller,
+	Get,
+	Param,
+	Post,
+	Query,
+	Res,
+	UploadedFile,
+	UseInterceptors,
+} from "@nestjs/common";
 import { SkipJwtAuth } from "src/decorators/skip-jwt-auth.decorator";
 import { CompanionAppService } from "./companion.service";
 import { ApiResponse } from "src/utilities/api_response";
 import { Response } from "express";
 import { createReadStream } from "node:fs";
 import { CompanionStatisticsDto } from "./companion.dto";
+import { FileInterceptor } from "@nestjs/platform-express";
 
 // TODO: generate unique api key on verification, required in subsequent requests
 @Controller("companion")
@@ -48,6 +59,20 @@ export class CompanionAppController {
 		await this.service.recordStats(body);
 		return ApiResponse.Success({
 			data: { message: "Statistics recorded successfully" },
+		});
+	}
+
+	@SkipJwtAuth()
+	@Post("user-feedback")
+	@UseInterceptors(FileInterceptor("file"))
+	async userFeedback(
+		@UploadedFile() file: Express.Multer.File,
+		// @Body() body: CompanionStatisticsDto[],
+	) {
+		console.log(file);
+		await this.service.saveUserFeedback(file);
+		return ApiResponse.Success({
+			data: { message: "User feedback uploaded successfully" },
 		});
 	}
 }
