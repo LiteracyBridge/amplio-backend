@@ -1,6 +1,12 @@
+FROM jrottenberg/ffmpeg:7-scratch AS ffmpeg_builder
+
 FROM node:lts
 
-RUN apt-get install -y --no-install-recommends ffmpeg
+# Install ffpeg
+# Copy FFmpeg and its libraries from the ffmpeg_builder stage
+COPY --from=ffmpeg_builder /bin/ffmpeg /usr/bin/ffmpeg
+COPY --from=ffmpeg_builder /bin/ffprobe /usr/bin/ffprobe
+COPY --from=ffmpeg_builder /usr/lib/ /usr/lib/
 
 WORKDIR /app
 
