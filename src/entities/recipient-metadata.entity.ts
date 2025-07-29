@@ -31,8 +31,8 @@ export class RecipientMetadata extends BaseEntity {
 	@Column({ type: "integer" })
 	age: number;
 
-	@Column({ type: "integer" })
-	number_of_people: number;
+	// @Column({ type: "integer" })
+	// number_of_people: number;
 
 	@ManyToOne(() => Recipient)
 	@JoinColumn({ name: "recipient_id", referencedColumnName: "id" })

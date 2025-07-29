@@ -66,14 +66,16 @@ export class CompanionAppService {
 		await RecipientMetadata.createQueryBuilder()
 			.insert()
 			.values({
-				name: dto.name,
-				gender: dto.gender,
+				name: dto.name.trim(),
+				gender: dto.gender.trim(),
 				age: dto.age,
 				recipientId: dto.recipientId,
-				number_of_people: dto.numberOfPeople,
+				// number_of_people: dto.numberOfPeople,
 			})
 			.orIgnore()
 			.execute();
+
+		return { saved: true };
 	}
 
 	async downloadPrompts(id: string, language: string) {

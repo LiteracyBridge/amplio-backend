@@ -63,7 +63,7 @@ export class RecipientDto {
 	@IsNumber()
 	age: number;
 
-	@IsNotEmpty()
-	@IsNumber()
-	numberOfPeople: number;
+	// @IsNotEmpty()
+	// @IsNumber()
+	// numberOfPeople: number;
 }
