@@ -325,7 +325,7 @@ export class CompanionAppService {
 		const savedFeedback: string[] = [];
 
 		for (const key in grouped) {
-			const audioName = grouped[key].find((a) => a.endsWith(".m4a"));
+			const audioName = grouped[key].find((a) => a.endsWith(AUDIO_EXT));
 			const audioPath = `${destination}/${audioName}`;
 
 			// No need to store metadata if audio is not found
@@ -390,7 +390,7 @@ export class CompanionAppService {
 					).hex_id,
 					talkingbookid: json.device,
 				})
-				.orIgnore()
+				// .orIgnore()
 				.execute();
 
 			// Save file to s3
@@ -402,22 +402,28 @@ export class CompanionAppService {
 				},
 			});
 
-      // TODO: convert audio from m4a to .mp3
+			// TODO: convert audio from m4a to .mp3
+			// Convert m4a to mp3 with ffmpeg
+			const mp3 = audioName.replace(AUDIO_EXT, ".mp3");
+			execSync(`${appConfig().ffmpeg} -i ${audioPath} ${destination}/${mp3}`);
+
 			await client.send(
 				new PutObjectCommand({
 					Bucket: appConfig().buckets.userFeedback,
-					Key: `collected/${json.program_code}/${json.deployment_number}/${audioName}.mp3`,
+					Key: `collected/${json.program_code}/${json.deployment_number}/${mp3}`,
 					Body: fs.readFileSync(audioPath),
 					// Metadata: Object.keys(json),
 				}),
+			);
+			console.log(
+				`collected/${json.program_code}/${json.deployment_number}/${mp3}`,
 			);
 			// TODO: write files to s3
 			savedFeedback.push(json.uuid);
 		}
 
 		console.log(destination);
-		// TODO: upload files to s3
-		// TODO: save metadata to db
+		return savedFeedback;
 	}
 
 	private computePlayedStats(events: PlayedEvent[]) {

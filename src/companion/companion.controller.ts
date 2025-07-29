@@ -65,14 +65,9 @@ export class CompanionAppController {
 	@SkipJwtAuth()
 	@Post("user-feedback")
 	@UseInterceptors(FileInterceptor("file"))
-	async userFeedback(
-		@UploadedFile() file: Express.Multer.File,
-		// @Body() body: CompanionStatisticsDto[],
-	) {
-		console.log(file);
-		await this.service.saveUserFeedback(file);
+	async userFeedback(@UploadedFile() file: Express.Multer.File) {
 		return ApiResponse.Success({
-			data: { message: "User feedback uploaded successfully" },
+			data: { saved: await this.service.saveUserFeedback(file) },
 		});
 	}
 }

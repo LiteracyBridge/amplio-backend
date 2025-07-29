@@ -14,11 +14,12 @@ export default () =>
 		},
 		buckets: {
 			programSpec: "amplio-progspecs",
-      content: "amplio-program-content",
-      userFeedback: "amplio-uf"
+			content: "amplio-program-content",
+			userFeedback: "amplio-uf",
 		},
 		emails: {
 			support: "techsupport@amplio.org",
 		},
 		sentry: process.env.SENTRY_DSN,
+		ffmpeg: process.env.FFMPEG_PATH || "/usr/bin/ffmpeg",
 	}) as const;
