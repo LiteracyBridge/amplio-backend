@@ -366,6 +366,17 @@ export class CompanionAppService {
 				relations: { user: true },
 			}))!;
 
+			const isDuplicate =
+				(await UserFeedbackMessage.findOne({
+					where: { message_uuid: json.uuid, program_id: json.program_code },
+				})) != null;
+
+			if (isDuplicate) {
+				savedFeedback.push(json.uuid);
+				// TODO: check if file exists on s3, if not upload
+				continue;
+			}
+
 			await UserFeedbackMessage.createQueryBuilder()
 				.insert()
 				.values({
@@ -402,7 +413,6 @@ export class CompanionAppService {
 				},
 			});
 
-			// TODO: convert audio from m4a to .mp3
 			// Convert m4a to mp3 with ffmpeg
 			const mp3 = audioName.replace(AUDIO_EXT, ".mp3");
 			execSync(`${appConfig().ffmpeg} -i ${audioPath} ${destination}/${mp3}`);
@@ -418,7 +428,6 @@ export class CompanionAppService {
 			console.log(
 				`collected/${json.program_code}/${json.deployment_number}/${mp3}`,
 			);
-			// TODO: write files to s3
 			savedFeedback.push(json.uuid);
 		}
 
