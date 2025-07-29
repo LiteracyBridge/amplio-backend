@@ -14,7 +14,8 @@ export default () =>
 		},
 		buckets: {
 			programSpec: "amplio-progspecs",
-      content: "amplio-program-content"
+      content: "amplio-program-content",
+      userFeedback: "amplio-uf"
 		},
 		emails: {
 			support: "techsupport@amplio.org",

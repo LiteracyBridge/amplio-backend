@@ -11,7 +11,11 @@ import fs from "node:fs";
 import { execSync } from "node:child_process";
 import { zipDirectory, unzipFile } from "src/utilities";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+	S3Client,
+	GetObjectCommand,
+	PutObjectCommand,
+} from "@aws-sdk/client-s3";
 import { CompanionStatisticsDto } from "./companion.dto";
 import { PlayedEvent } from "src/entities/played_event.entity";
 import { DateTime } from "luxon";
@@ -20,6 +24,8 @@ import { groupBy, isNonNullish } from "remeda";
 import { PlayStatistic } from "src/entities/playstatistics.entity";
 import { TalkingBookLoaderId } from "src/entities/tbloader-ids.entity";
 import path from "node:path";
+import { UserFeedbackMessage } from "src/entities/uf_message.entity";
+import { Deployment } from "src/entities/deployment.entity";
 
 @Injectable()
 export class CompanionAppService {
@@ -197,23 +203,10 @@ export class CompanionAppService {
 				(s) => s.contentId === contentId && s.packageName === packageName,
 			)!;
 
-			// Retrieve tb loader ID
-			const [tbId] = await TalkingBookLoaderId.getRepository().manager.query<
-				{
-					hex_id: string;
-				}[]
-			>(
-				`
-      SELECT hex_id FROM tb_loader_ids tb
-      INNER JOIN projects p ON p.projectcode = $1
-      INNER JOIN deployments dp ON dp.project = p.projectcode AND dp.deploymentname = $2
-      INNER JOIN deployment_metadata dm ON
-        dm.project_id = p._id AND dm.deployment_id = dp._id
-      INNER JOIN users u ON u._id = dm.user_id AND u.email = tb.email
-      LIMIT 1
-      `,
-				[item.projectCode, item.deploymentName],
-			);
+			const tbId = await this.getTBLoaderID({
+				projectCode: item.projectCode,
+				deploymentName: item.deploymentName,
+			});
 
 			const playEvents = await PlayedEvent.getRepository().manager.query<
 				{
@@ -283,12 +276,145 @@ export class CompanionAppService {
 			}
 		}
 	}
+
+	/**
+	 * Saves user feedback messages to database and S3
+	 *
+	 * The incoming file is a zip of *.m4a* (audio recording) and *.json* (metadata) files.
+	 * Each audio file has an associated json metadata file with same file name (UUID string).
+	 * Eg.  2fca9762-dce5-40af-ad1e-22b07af937f1.json -> metadata
+	 *      2fca9762-dce5-40af-ad1e-22b07af937f1.m4a  -> audio
+	 *
+	 * The audio is uploaded to S3 and metadata saved to uf_messages table.
+	 */
 	async saveUserFeedback(file: Express.Multer.File) {
+		interface Metadata {
+			id: number;
+			uuid: string;
+			content_id?: string;
+			created_at: string;
+			path: string;
+			recipient_id: string;
+			device: string;
+			program_code: string;
+			deployment_name: string;
+			deployment_number: number;
+			package_name?: string;
+			synced: boolean;
+
+			/**
+			 * Duration in seconds
+			 */
+			duration: number;
+		}
+
 		const destination = path.join(
 			os.tmpdir(),
 			`userfeedback-${DateTime.now().toUnixInteger()}`,
 		);
 		await unzipFile({ path: file.buffer, destination });
+		const files: string[] = fs.readdirSync(destination);
+		console.log(files);
+
+		// Group files by (audio, metadata) by the file name
+		const grouped = groupBy(files, (f) => f.replace(/\.(json|m4a)/, ""));
+		const collectionTime = DateTime.now().toISO();
+		const AUDIO_EXT = ".m4a";
+
+		// Tracks Ids of saved feedbacks
+		const savedFeedback: string[] = [];
+
+		for (const key in grouped) {
+			const audioName = grouped[key].find((a) => a.endsWith(".m4a"));
+			const audioPath = `${destination}/${audioName}`;
+
+			// No need to store metadata if audio is not found
+			if (audioName == null) {
+				continue;
+			}
+
+			let jsonFile = grouped[key].find((a) => a.endsWith(".json"));
+
+			// If metadata is not found, we assume the messages belongs to the same recipient/deployment
+			// and message (hopefully but could be wrong).
+			// Lookup for metadata of another audio and use it.
+			if (jsonFile == null) {
+				jsonFile = files.find((a) => a.endsWith(".json"));
+				if (jsonFile == null) {
+					// All hope is lost at this point, ignore the audio
+					continue;
+				}
+			}
+
+			const json: Metadata = JSON.parse(
+				fs.readFileSync(`${destination}/${jsonFile}`, { encoding: "utf-8" }),
+			);
+
+			const recipient = await Recipient.findOne({
+				where: { id: json.recipient_id, program_id: json.program_code },
+			});
+			if (recipient == null) continue;
+
+			const deploymentMeta = (await DeploymentMetadata.findOne({
+				where: {
+					project: { code: json.program_code },
+					deployment: {
+						deploymentname: json.deployment_name,
+						deploymentnumber: json.deployment_number,
+					},
+				},
+				relations: { user: true },
+			}))!;
+
+			await UserFeedbackMessage.createQueryBuilder()
+				.insert()
+				.values({
+					message_uuid: json.uuid,
+					program_id: json.program_code,
+					deployment_number: json.deployment_number.toString(),
+					language: recipient.language,
+					length_seconds: json.duration,
+					length_bytes: fs.statSync(audioPath).size,
+					recipient_id: json.recipient_id,
+					relation: json.content_id,
+					collection_timestamp: collectionTime,
+					date_recorded: DateTime.fromISO(json.created_at).toJSDate(),
+					test_deployment: false,
+					deployment_timestamp: deploymentMeta.created_at.toISOString(),
+					deployment_user: deploymentMeta.user.email,
+					deployment_tbcdid: (
+						await this.getTBLoaderID({
+							projectCode: json.program_code,
+							deploymentName: json.deployment_name,
+						})
+					).hex_id,
+					talkingbookid: json.device,
+				})
+				.orIgnore()
+				.execute();
+
+			// Save file to s3
+			const client = new S3Client({
+				region: appConfig().aws.region,
+				credentials: {
+					accessKeyId: appConfig().aws.accessKeyId!,
+					secretAccessKey: appConfig().aws.secretId!,
+				},
+			});
+
+      // TODO: convert audio from m4a to .mp3
+			await client.send(
+				new PutObjectCommand({
+					Bucket: appConfig().buckets.userFeedback,
+					Key: `collected/${json.program_code}/${json.deployment_number}/${audioName}.mp3`,
+					Body: fs.readFileSync(audioPath),
+					// Metadata: Object.keys(json),
+				}),
+			);
+			// TODO: write files to s3
+			savedFeedback.push(json.uuid);
+		}
+
 		console.log(destination);
 		// TODO: upload files to s3
 		// TODO: save metadata to db
@@ -329,5 +455,30 @@ export class CompanionAppService {
 
 	private getRevisionPath(metadata: DeploymentMetadata) {
 		return `${metadata.project.code}/TB-Loaders/published/${metadata.revision}`;
+	}
+
+	private async getTBLoaderID(opts: {
+		projectCode: string;
+		deploymentName: string;
+	}) {
+		// Retrieve tb loader ID
+		const [tbId] = await TalkingBookLoaderId.getRepository().manager.query<
+			{
+				hex_id: string;
+			}[]
+		>(
+			`
+      SELECT hex_id FROM tb_loader_ids tb
+      INNER JOIN projects p ON p.projectcode = $1
+      INNER JOIN deployments dp ON dp.project = p.projectcode AND dp.deploymentname = $2
+      INNER JOIN deployment_metadata dm ON
+        dm.project_id = p._id AND dm.deployment_id = dp._id
+      INNER JOIN users u ON u._id = dm.user_id AND u.email = tb.email
+      LIMIT 1
+      `,
+			[opts.projectCode, opts.deploymentName],
+		);
+
+		return tbId;
 	}
 }
