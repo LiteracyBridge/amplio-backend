@@ -29,6 +29,7 @@ const { TalkingBookDeployed } = require("../dist/entities/tb_deployed.entity");
 const { Choice } = require("../dist/entities/uf_choice.entity");
 const { Question } = require("../dist/entities/uf_question.entity");
 const { UserFeedbackMessage } = require("../dist/entities/uf_message.entity");
+const { RecipientMetadata } = require("../dist/entities/recipient-metadata.entity");
 const { TalkingBookLoaderId } = require("../dist/entities/tbloader-ids.entity");
 const { PackageInDeployment } = require("../dist/entities/package_in_deployment.entity");
 const {
@@ -58,7 +59,7 @@ const AppDataSource = new DataSource({
 		Log,
 		User,
 		UserRole,
-		// Invitation,
+		RecipientMetadata,
 		Organisation,
 		Analysis,
 		SupportedCategory,

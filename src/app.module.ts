@@ -54,6 +54,7 @@ import { Category } from "./entities/category.entity";
 import { CategoryInPackage } from "./entities/category_in_package.entity";
 import { PlayStatistic } from "./entities/playstatistics.entity";
 import { PlayedEvent } from "./entities/played_event.entity";
+import { RecipientMetadata } from "./entities/recipient-metadata.entity";
 
 config();
 
@@ -113,6 +114,7 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 				CategoryInPackage,
 				PlayStatistic,
 				PlayedEvent,
+				RecipientMetadata,
 			],
 			subscribers: [
 				PlaylistSubscriber,
