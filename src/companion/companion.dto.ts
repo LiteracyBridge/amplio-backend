@@ -45,3 +45,25 @@ export class CompanionStatisticsDto {
 	@IsString()
 	packageName: string;
 }
+
+export class RecipientDto {
+	@IsNotEmpty()
+	@IsString()
+	recipientId: string;
+
+	@IsNotEmpty()
+	@IsString()
+	name: string;
+
+	@IsNotEmpty()
+	@IsString()
+	gender: string;
+
+	@IsNotEmpty()
+	@IsNumber()
+	age: number;
+
+	// @IsNotEmpty()
+	// @IsNumber()
+	// numberOfPeople: number;
+}

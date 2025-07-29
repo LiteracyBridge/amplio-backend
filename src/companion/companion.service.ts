@@ -16,7 +16,7 @@ import {
 	GetObjectCommand,
 	PutObjectCommand,
 } from "@aws-sdk/client-s3";
-import { CompanionStatisticsDto } from "./companion.dto";
+import { CompanionStatisticsDto, RecipientDto } from "./companion.dto";
 import { PlayedEvent } from "src/entities/played_event.entity";
 import { DateTime } from "luxon";
 import { isNotEmpty } from "class-validator";
@@ -26,6 +26,7 @@ import { TalkingBookLoaderId } from "src/entities/tbloader-ids.entity";
 import path from "node:path";
 import { UserFeedbackMessage } from "src/entities/uf_message.entity";
 import { Deployment } from "src/entities/deployment.entity";
+import { RecipientMetadata } from "src/entities/recipient-metadata.entity";
 
 @Injectable()
 export class CompanionAppService {
@@ -51,6 +52,30 @@ export class CompanionAppService {
 				order: { created_at: "DESC" },
 			}),
 		};
+	}
+
+	async saveRecipientInformation(dto: RecipientDto) {
+		const recipient = await Recipient.findOne({
+			where: { id: dto.recipientId },
+		});
+
+		if (recipient == null) {
+			throw new NotFoundException("Recipient cannot be found");
+		}
+
+		await RecipientMetadata.createQueryBuilder()
+			.insert()
+			.values({
+				name: dto.name.trim(),
+				gender: dto.gender.trim(),
+				age: dto.age,
+				recipientId: dto.recipientId,
+				// number_of_people: dto.numberOfPeople,
+			})
+			.orIgnore()
+			.execute();
+
+		return { saved: true };
 	}
 
 	async downloadPrompts(id: string, language: string) {

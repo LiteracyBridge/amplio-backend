@@ -14,7 +14,7 @@ import { CompanionAppService } from "./companion.service";
 import { ApiResponse } from "src/utilities/api_response";
 import { Response } from "express";
 import { createReadStream } from "node:fs";
-import { CompanionStatisticsDto } from "./companion.dto";
+import { CompanionStatisticsDto, RecipientDto } from "./companion.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 
 // TODO: generate unique api key on verification, required in subsequent requests
@@ -27,6 +27,14 @@ export class CompanionAppController {
 	async getRecipient(@Body("code") code: string) {
 		return ApiResponse.Success({
 			data: await this.service.verifyRecipientCode(code),
+		});
+	}
+
+	@SkipJwtAuth()
+	@Post("recipients/save")
+	async saveRecipient(@Body() dto: RecipientDto) {
+		return ApiResponse.Success({
+			data: await this.service.saveRecipientInformation(dto),
 		});
 	}
 
