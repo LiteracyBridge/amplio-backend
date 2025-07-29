@@ -10,7 +10,7 @@ import { UsersModule } from "./users/users.module";
 import { APP_FILTER, APP_GUARD, RouterModule, Routes } from "@nestjs/core";
 import { AuthGuard } from "./guards/jwt-auth.guard";
 import { Analysis } from "./entities/analysis.entity";
-import { SupportedCategory } from "./entities/category.entity";
+import { SupportedCategory } from "./entities/supported_category.entity";
 import { ContentMetadata } from "./entities/content_metadata.entity";
 import { Deployment } from "./entities/deployment.entity";
 import { Language, ProjectLanguage } from "./entities/language.entity";
@@ -43,11 +43,17 @@ import { SentryGlobalFilter, SentryModule } from "@sentry/nestjs/setup";
 import { Log } from "./entities/log.entity";
 import { AcmCheckoutModule } from "./acm-checkout/acm-checkout.module";
 import { TalkingBookLoaderId } from "./entities/tbloader-ids.entity";
-import { TbLoaderModule } from './tb-loader/tb-loader.module';
+import { TbLoaderModule } from "./tb-loader/tb-loader.module";
 import { TalkingBookAnalyticsModule } from "./tb-analytics/tb-analytics.module";
 import { PublishedProgramSpecs } from "./entities/published_spec.entity";
 import { DeploymentMetadata } from "./entities/deployment_metadata.entity";
 import { CompanionAppModule } from "./companion/companion.module";
+import { ContentInPackage } from "./entities/content_in_package.entity";
+import { PackageInDeployment } from "./entities/package_in_deployment.entity";
+import { Category } from "./entities/category.entity";
+import { CategoryInPackage } from "./entities/category_in_package.entity";
+import { PlayStatistic } from "./entities/playstatistics.entity";
+import { PlayedEvent } from "./entities/played_event.entity";
 
 config();
 
@@ -61,7 +67,7 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 
 		TypeOrmModule.forRoot({
 			host: process.env.DB_HOST,
-			port: Number.parseInt(process.env.DB_PORT || '5432'),
+			port: Number.parseInt(process.env.DB_PORT || "5432"),
 			username: process.env.DB_USER,
 			password: process.env.DB_PASSWORD,
 			database: process.env.DB_NAME,
@@ -100,7 +106,13 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 				UserFeedbackMessage,
 				TalkingBookLoaderId,
 				PublishedProgramSpecs,
-        DeploymentMetadata
+				DeploymentMetadata,
+				ContentInPackage,
+				PackageInDeployment,
+				Category,
+				CategoryInPackage,
+				PlayStatistic,
+				PlayedEvent,
 			],
 			subscribers: [
 				PlaylistSubscriber,
@@ -110,18 +122,18 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 			],
 		}),
 
-    UsersModule,
-    UserfeedbackModule,
-    ProgramsModule,
-    Log,
-    AcmCheckoutModule,
-    TbLoaderModule,
-    TalkingBookAnalyticsModule,
-    CompanionAppModule
-  ],
-  controllers: [AppController, TableauController, CategoriesController],
-  providers: [
-    AppService,
+		UsersModule,
+		UserfeedbackModule,
+		ProgramsModule,
+		Log,
+		AcmCheckoutModule,
+		TbLoaderModule,
+		TalkingBookAnalyticsModule,
+		CompanionAppModule,
+	],
+	controllers: [AppController, TableauController, CategoriesController],
+	providers: [
+		AppService,
 
 		{
 			provide: APP_FILTER,
