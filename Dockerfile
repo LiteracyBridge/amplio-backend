@@ -1,5 +1,7 @@
 FROM node:lts
 
+RUN apt-get install -y --no-install-recommends ffmpeg
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./
