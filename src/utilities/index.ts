@@ -1,7 +1,6 @@
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import { createHash } from "node:crypto";
 import appConfig from "src/app.config";
-import * as AdmZip from "adm-zip";
 import * as unzipper from "unzipper";
 import { createWriteStream } from "node:fs";
 import {
@@ -56,6 +55,7 @@ export async function sendSes(opts: {
  * @returns {Promise}
  */
 export function zipDirectory(sourceDir: string, outputPath: string) {
+  const AdmZip = require("adm-zip");
 	const zip = AdmZip();
 	zip.addLocalFolder(sourceDir); // Add the entire directory
 	zip.writeZip(outputPath); // Write the ZIP file to disk
