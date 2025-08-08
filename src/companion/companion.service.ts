@@ -108,7 +108,7 @@ export class CompanionAppService {
 		const key = `${this.getRevisionPath(metadata)}/system-prompts/${language}/`;
 		const output1 = await s3Sync({
 			s3Key: key,
-			destinationDir: path.join(promptsDir, "playlists"),
+			destinationDir: path.join(promptsDir, "system"),
 			bucket: appConfig().buckets.content,
 		});
 		console.log("downloaded system prompts:", output1);
@@ -117,7 +117,7 @@ export class CompanionAppService {
 		const key2 = `${this.getRevisionPath(metadata)}/contents/${language}/playlist-prompts/`;
 		const output = await s3Sync({
 			s3Key: key2,
-			destinationDir: path.join(promptsDir, "system"),
+			destinationDir: path.join(promptsDir, "playlists"),
 			bucket: appConfig().buckets.content,
 		});
 		console.log("downloaded playlist prompts:", output);
