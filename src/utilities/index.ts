@@ -56,7 +56,7 @@ export async function sendSes(opts: {
  * @returns {Promise}
  */
 export function zipDirectory(sourceDir: string, outputPath: string) {
-	const zip = new AdmZip();
+	const zip = AdmZip();
 	zip.addLocalFolder(sourceDir); // Add the entire directory
 	zip.writeZip(outputPath); // Write the ZIP file to disk
 	console.log(
