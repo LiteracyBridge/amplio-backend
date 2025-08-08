@@ -1,7 +1,7 @@
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import { createHash } from "node:crypto";
 import appConfig from "src/app.config";
-import * as archiver from "archiver";
+import * as AdmZip from "adm-zip";
 import * as unzipper from "unzipper";
 import { createWriteStream } from "node:fs";
 import {
@@ -55,19 +55,26 @@ export async function sendSes(opts: {
  * @param {String} outPath: /path/to/created.zip
  * @returns {Promise}
  */
-export function zipDirectory(sourceDir: string, outPath: string) {
-	const archive = archiver("zip", { zlib: { level: 9 } });
-	const stream = createWriteStream(outPath);
+export function zipDirectory(sourceDir: string, outputPath: string) {
+	const zip = new AdmZip();
+	zip.addLocalFolder(sourceDir); // Add the entire directory
+	zip.writeZip(outputPath); // Write the ZIP file to disk
+	console.log(
+		`Directory "${sourceDir}" successfully zipped to "${outputPath}"`,
+	);
 
-	return new Promise<void>((resolve, reject) => {
-		archive
-			.directory(sourceDir, false)
-			.on("error", (err) => reject(err))
-			.pipe(stream);
+	// const archive = archiver("zip", { zlib: { level: 9 } });
+	// const stream = createWriteStream(outPath);
 
-		stream.on("close", () => resolve());
-		archive.finalize();
-	});
+	// return new Promise<void>((resolve, reject) => {
+	// 	archive
+	// 		.directory(sourceDir, false)
+	// 		.on("error", (err) => reject(err))
+	// 		.pipe(stream);
+
+	// 	stream.on("close", () => resolve());
+	// 	archive.finalize();
+	// });
 }
 
 export async function unzipFile(opts: {
