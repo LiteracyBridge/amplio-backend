@@ -88,6 +88,7 @@ export async function unzipFile(opts: {
 export async function s3Sync(opts: {
 	s3Key: string;
 	destinationDir: string;
+  bucket: string
 }): Promise<string[]> {
   console.log(opts)
 
@@ -102,7 +103,7 @@ export async function s3Sync(opts: {
 	// List all objects under the system prompts prefix
 	const listObjects = async (prefix: string) => {
 		const command = new ListObjectsV2Command({
-			Bucket: appConfig().buckets.content,
+			Bucket: opts.bucket,
 			Prefix: prefix,
 		});
 		const response = await s3Client.send(command);
@@ -118,7 +119,7 @@ export async function s3Sync(opts: {
 
 	const downloadObject = async (key: string) => {
 		const command = new GetObjectCommand({
-			Bucket: appConfig().buckets.content,
+			Bucket: opts.bucket,
 			Key: key,
 		});
 		const response = await s3Client.send(command);
@@ -149,6 +150,7 @@ export async function s3Sync(opts: {
 			await s3Sync({
 				s3Key: objKey,
 				destinationDir: path.join(opts.destinationDir, path.basename(objKey)),
+        bucket: opts.bucket
 			});
 		} // skip folders
 

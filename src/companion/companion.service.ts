@@ -104,28 +104,29 @@ export class CompanionAppService {
 			fs.mkdirSync(promptsDir);
 		}
 
-		const bucket = `s3://${appConfig().buckets.content}`;
-
 		// Download system prompts
 		const key = `${this.getRevisionPath(metadata)}/system-prompts/${language}/`;
 		const output1 = await s3Sync({
-			s3Key: `${bucket}/${key}`,
+			s3Key: key,
 			destinationDir: promptsDir,
+			bucket: appConfig().buckets.content,
 		});
 		console.log("downloaded system prompts:", output1);
 
 		// Download playlist prompts
 		const key2 = `${this.getRevisionPath(metadata)}/contents/${language}/playlist-prompts/`;
 		const output = await s3Sync({
-			s3Key: `${bucket}/${key2}`,
+			s3Key: key2,
 			destinationDir: promptsDir,
+			bucket: appConfig().buckets.content,
 		});
 		console.log("downloaded playlist prompts:", output);
 
 		// Download ebo prompts
 		const output2 = await s3Sync({
-			s3Key: `${bucket}/ebo-prompts/${language}/`,
+			s3Key: `ebo-prompts/${language}/`,
 			destinationDir: `${promptsDir}/ebo/`,
+			bucket: appConfig().buckets.content,
 		});
 		console.log("downloaded ebo prompts:", output2);
 
