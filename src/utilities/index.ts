@@ -55,7 +55,7 @@ export async function sendSes(opts: {
  * @returns {Promise}
  */
 export function zipDirectory(sourceDir: string, outputPath: string) {
-  const AdmZip = require("adm-zip");
+	const AdmZip = require("adm-zip");
 	const zip = AdmZip();
 	zip.addLocalFolder(sourceDir); // Add the entire directory
 	zip.writeZip(outputPath); // Write the ZIP file to disk
@@ -114,13 +114,13 @@ export async function s3Sync(opts: {
 		fs.mkdirSync(opts.destinationDir);
 	}
 
-	const downloadObject = async () => {
+	const downloadObject = async (key: string) => {
 		const command = new GetObjectCommand({
 			Bucket: appConfig().buckets.content,
-			Key: opts.s3Key,
+			Key: key,
 		});
 		const response = await s3Client.send(command);
-		const fileName = path.basename(opts.s3Key);
+		const fileName = path.basename(key);
 		const filePath = path.join(opts.destinationDir, fileName);
 
 		if (fs.existsSync(filePath)) return filePath;
@@ -139,9 +139,12 @@ export async function s3Sync(opts: {
 	const outputs: string[] = [];
 
 	for (const objKey of promptKeys) {
-		if (objKey.endsWith("/")) continue; // skip folders
+		if (objKey.endsWith("/")) {
+			// Directory download contents
+			s3Sync({ s3Key: objKey, destinationDir: opts.destinationDir });
+		} // skip folders
 
-		const filePath = await downloadObject();
+		const filePath = await downloadObject(objKey);
 		outputs.push(filePath);
 	}
 
