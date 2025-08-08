@@ -89,6 +89,8 @@ export async function s3Sync(opts: {
 	s3Key: string;
 	destinationDir: string;
 }): Promise<string[]> {
+  console.log(opts)
+
 	const s3Client = new S3Client({
 		region: appConfig().aws.region,
 		credentials: {
