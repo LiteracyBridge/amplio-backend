@@ -136,12 +136,18 @@ export async function s3Sync(opts: {
 	};
 
 	const promptKeys = await listObjects(opts.s3Key);
+  console.log(promptKeys);
 	const outputs: string[] = [];
 
 	for (const objKey of promptKeys) {
+		console.log(objKey);
+
 		if (objKey.endsWith("/")) {
 			// Directory download contents
-			s3Sync({ s3Key: objKey, destinationDir: opts.destinationDir });
+			await s3Sync({
+				s3Key: objKey,
+				destinationDir: path.join(opts.destinationDir, path.basename(objKey)),
+			});
 		} // skip folders
 
 		const filePath = await downloadObject(objKey);
