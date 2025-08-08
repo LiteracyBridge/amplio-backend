@@ -103,7 +103,7 @@ export async function s3Sync(opts: {
 		);
 	};
 
-	if (fs.existsSync(opts.destinationDir)) {
+	if (!fs.existsSync(opts.destinationDir)) {
 		fs.mkdirSync(opts.destinationDir);
 	}
 
@@ -115,6 +115,8 @@ export async function s3Sync(opts: {
 		const response = await s3Client.send(command);
 		const fileName = path.basename(opts.s3Key);
 		const filePath = path.join(opts.destinationDir, fileName);
+
+		if (fs.existsSync(filePath)) return filePath;
 
 		const stream = response.Body as NodeJS.ReadableStream;
 		const writeStream = fs.createWriteStream(filePath);
@@ -128,6 +130,7 @@ export async function s3Sync(opts: {
 
 	const promptKeys = await listObjects(opts.s3Key);
 	const outputs: string[] = [];
+
 	for (const objKey of promptKeys) {
 		if (objKey.endsWith("/")) continue; // skip folders
 
