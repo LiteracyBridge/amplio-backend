@@ -9,7 +9,7 @@ import { Recipient } from "src/entities/recipient.entity";
 import os from "node:os";
 import fs from "node:fs";
 import { execSync } from "node:child_process";
-import { zipDirectory, unzipFile } from "src/utilities";
+import { zipDirectory, unzipFile, s3Sync } from "src/utilities";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import {
 	S3Client,
@@ -104,21 +104,30 @@ export class CompanionAppService {
 			fs.mkdirSync(promptsDir);
 		}
 
+		const bucket = `s3://${appConfig().buckets.content}`;
+
 		// Download system prompts
 		const key = `${this.getRevisionPath(metadata)}/system-prompts/${language}/`;
-		const output1 = await execSync(`
-    aws s3 sync s3://${appConfig().buckets.content}/${key} ${promptsDir}
-    `);
-		console.log("stdout:", output1);
+		const output1 = await s3Sync({
+			s3Key: `${bucket}/${key}`,
+			destinationDir: promptsDir,
+		});
+		console.log("downloaded system prompts:", output1);
 
 		// Download playlist prompts
 		const key2 = `${this.getRevisionPath(metadata)}/contents/${language}/playlist-prompts/`;
-		const cmd = `
-      aws s3 sync \
-      s3://${appConfig().buckets.content}/${key2} ${promptsDir}
-    `;
-		const output = await execSync(cmd);
-		console.log("stdout:", output);
+		const output = await s3Sync({
+			s3Key: `${bucket}/${key2}`,
+			destinationDir: promptsDir,
+		});
+		console.log("downloaded playlist prompts:", output);
+
+		// Download ebo prompts
+		const output2 = await s3Sync({
+			s3Key: `${bucket}/ebo-prompts/${language}`,
+			destinationDir: `${promptsDir}/ebo`,
+		});
+		console.log("downloaded ebo prompts:", output2);
 
 		await zipDirectory(promptsDir, promptsCache);
 

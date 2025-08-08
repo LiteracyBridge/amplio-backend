@@ -4,6 +4,13 @@ import appConfig from "src/app.config";
 import * as archiver from "archiver";
 import * as unzipper from "unzipper";
 import { createWriteStream } from "node:fs";
+import {
+	GetObjectCommand,
+	ListObjectsV2Command,
+	S3Client,
+} from "@aws-sdk/client-s3";
+import path from "node:path";
+import fs from "node:fs";
 
 export function hashString(input: string): string {
 	return createHash("sha256").update(input).digest("hex");
@@ -63,7 +70,70 @@ export function zipDirectory(sourceDir: string, outPath: string) {
 	});
 }
 
-export async function unzipFile(opts: { path: string | Buffer; destination: string }) {
+export async function unzipFile(opts: {
+	path: string | Buffer;
+	destination: string;
+}) {
 	const directory = await unzipper.Open.buffer(opts.path);
 	await directory.extract({ path: opts.destination });
+}
+
+export async function s3Sync(opts: {
+	s3Key: string;
+	destinationDir: string;
+}): Promise<string[]> {
+	const s3Client = new S3Client({
+		region: appConfig().aws.region,
+		credentials: {
+			accessKeyId: appConfig().aws.accessKeyId!,
+			secretAccessKey: appConfig().aws.secretId!,
+		},
+	});
+
+	// List all objects under the system prompts prefix
+	const listObjects = async (prefix: string) => {
+		const command = new ListObjectsV2Command({
+			Bucket: appConfig().buckets.content,
+			Prefix: prefix,
+		});
+		const response = await s3Client.send(command);
+		return (
+			(response.Contents?.map((obj) => obj.Key).filter(Boolean) as string[]) ??
+			[]
+		);
+	};
+
+	if (fs.existsSync(opts.destinationDir)) {
+		fs.mkdirSync(opts.destinationDir);
+	}
+
+	const downloadObject = async () => {
+		const command = new GetObjectCommand({
+			Bucket: appConfig().buckets.content,
+			Key: opts.s3Key,
+		});
+		const response = await s3Client.send(command);
+		const fileName = path.basename(opts.s3Key);
+		const filePath = path.join(opts.destinationDir, fileName);
+
+		const stream = response.Body as NodeJS.ReadableStream;
+		const writeStream = fs.createWriteStream(filePath);
+		await new Promise((resolve, reject) => {
+			stream.pipe(writeStream);
+			stream.on("end", resolve);
+			stream.on("error", reject);
+		});
+		return filePath;
+	};
+
+	const promptKeys = await listObjects(opts.s3Key);
+	const outputs: string[] = [];
+	for (const objKey of promptKeys) {
+		if (objKey.endsWith("/")) continue; // skip folders
+
+		const filePath = await downloadObject();
+		outputs.push(filePath);
+	}
+
+	return outputs;
 }
