@@ -140,10 +140,10 @@ export async function s3Sync(opts: {
 
 	const promptKeys = await listObjects(opts.s3Key);
   console.log(promptKeys);
+
 	const outputs: string[] = [];
 
 	for (const objKey of promptKeys) {
-		console.log(objKey);
 
 		if (objKey.endsWith("/")) {
 			// Directory download contents
