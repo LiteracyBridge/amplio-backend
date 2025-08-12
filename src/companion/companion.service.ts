@@ -299,8 +299,8 @@ export class CompanionAppService {
 				playStat.recipientid = item.recipientId;
 
 				const played = this.computePlayedStats(events);
-        console.log("Event: ", events);
-        console.log("Played: ", played);
+				console.log("Event: ", events);
+				console.log("Played: ", played);
 
 				playStat.played_seconds = Math.round(played.played_seconds);
 				playStat.started = played.started;
@@ -382,7 +382,7 @@ export class CompanionAppService {
 			if (jsonFile == null) {
 				jsonFile = files.find((a) => a.endsWith(".json"));
 				if (jsonFile == null) {
-					// All hope is lost at this point, ignore the audio
+					// All hope is lost at this point, move on to the next item
 					continue;
 				}
 			}
@@ -456,7 +456,9 @@ export class CompanionAppService {
 
 			// Convert m4a to mp3 with ffmpeg
 			const mp3 = audioName.replace(AUDIO_EXT, ".mp3");
-			execSync(`${appConfig().ffmpeg} -i ${audioPath} ${destination}/${mp3}`);
+			execSync(`
+        ${appConfig().ffmpeg} -i ${audioPath} -f mp3 -sn -dn -ignore_unknown ${destination}/${mp3}
+      `);
 
 			await client.send(
 				new PutObjectCommand({
