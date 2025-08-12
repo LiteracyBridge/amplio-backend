@@ -358,9 +358,9 @@ export class CompanionAppService {
 		console.log(files);
 
 		// Group files by (audio, metadata) by the file name
-		const grouped = groupBy(files, (f) => f.replace(/\.(json|m4a)/, ""));
+		const grouped = groupBy(files, (f) => f.replace(/\.(json|wav)/, ""));
 		const collectionTime = DateTime.now().toISO();
-		const AUDIO_EXT = ".m4a";
+		const AUDIO_EXT = ".wav";
 
 		// Tracks Ids of saved feedbacks
 		const savedFeedback: string[] = [];
@@ -445,6 +445,12 @@ export class CompanionAppService {
 				// .orIgnore()
 				.execute();
 
+			// Convert m4a to mp3 with ffmpeg
+			const mp3 = audioName.replace(AUDIO_EXT, ".mp3");
+			execSync(`
+        ${appConfig().ffmpeg} -i ${audioPath}  -ab 320k ${destination}/${mp3}
+      `);
+
 			// Save file to s3
 			const client = new S3Client({
 				region: appConfig().aws.region,
@@ -453,12 +459,6 @@ export class CompanionAppService {
 					secretAccessKey: appConfig().aws.secretId!,
 				},
 			});
-
-			// Convert m4a to mp3 with ffmpeg
-			const mp3 = audioName.replace(AUDIO_EXT, ".mp3");
-			execSync(`
-        ${appConfig().ffmpeg} -i ${audioPath}  -ab 320k ${destination}/${mp3}
-      `);
 
 			await client.send(
 				new PutObjectCommand({
