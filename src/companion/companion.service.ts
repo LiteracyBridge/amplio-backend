@@ -252,6 +252,7 @@ export class CompanionAppService {
 				`
         SELECT
           SUM(timeplayed) AS timeplayed,
+          totaltime,
           village,
           talkingbookid
         FROM
@@ -262,7 +263,8 @@ export class CompanionAppService {
           AND packageid = $3
         GROUP BY
           village,
-          talkingbookid
+          talkingbookid,
+          totaltime
         `,
 				[contentId, item.deviceName, item.packageName],
 			);
