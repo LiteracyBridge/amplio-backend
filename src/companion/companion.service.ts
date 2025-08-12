@@ -457,7 +457,9 @@ export class CompanionAppService {
 			// Convert m4a to mp3 with ffmpeg
 			const mp3 = audioName.replace(AUDIO_EXT, ".mp3");
 			execSync(`
-        ${appConfig().ffmpeg} -i ${audioPath} -f mp3 -sn -dn -ignore_unknown ${destination}/${mp3}
+        ${appConfig().ffmpeg} -i ${audioPath} -f mp3 -sn -dn -ignore_unknown \
+          -c:a aac -profile:a aac_low \
+        ${destination}/${mp3}
       `);
 
 			await client.send(
