@@ -296,6 +296,9 @@ export class CompanionAppService {
 				playStat.recipientid = item.recipientId;
 
 				const played = this.computePlayedStats(events);
+        console.log("Event: ", events);
+        console.log("Played: ", played);
+
 				playStat.played_seconds = Math.round(played.played_seconds);
 				playStat.started = played.started;
 				playStat.one_quarter = played.one_quarter;
@@ -487,7 +490,7 @@ export class CompanionAppService {
 			// Calculate the fraction completed. Note: at launch, the TB reported a completed play as less than the
 			// total time. Observed values are between 97% and 99.2% of the actual play. If the "played" is within
 			// 2 seconds of "duration", we'll call it "completed".
-			if (e.timeplayed > e.totaltime - 2000) {
+			if (e.timeplayed >= e.totaltime - 2000) {
 				playStat.completed += 1;
 			} else if (e.timeplayed > (e.totaltime - 2000) * 0.75) {
 				playStat.threequarters += 1;
