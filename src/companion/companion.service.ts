@@ -358,7 +358,7 @@ export class CompanionAppService {
 		console.log(files);
 
 		// Group files by (audio, metadata) by the file name
-		const grouped = groupBy(files, (f) => f.replace(/\.(json|wav)/, ""));
+		const grouped = groupBy(files, (f) => f.replace(/\.(json|wav|flac|m4a|ogg|opus)/, ""));
 		const collectionTime = DateTime.now().toISO();
 		const AUDIO_EXT = ".wav";
 
