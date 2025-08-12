@@ -245,6 +245,7 @@ export class CompanionAppService {
 			const playEvents = await PlayedEvent.getRepository().manager.query<
 				{
 					timeplayed: number;
+					totaltime: number;
 					village: string;
 					talkingbookid: string;
 				}[]
