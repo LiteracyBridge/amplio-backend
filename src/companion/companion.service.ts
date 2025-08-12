@@ -360,7 +360,7 @@ export class CompanionAppService {
 		// Group files by (audio, metadata) by the file name
 		const grouped = groupBy(files, (f) => f.replace(/\.(json|wav|flac|m4a|ogg|opus)/, ""));
 		const collectionTime = DateTime.now().toISO();
-		const AUDIO_EXT = ".wav";
+		const AUDIO_EXT = ".opus";
 
 		// Tracks Ids of saved feedbacks
 		const savedFeedback: string[] = [];
