@@ -358,9 +358,9 @@ export class CompanionAppService {
 		console.log(files);
 
 		// Group files by (audio, metadata) by the file name
-		const grouped = groupBy(files, (f) => f.replace(/\.(json|m4a)/, ""));
+		const grouped = groupBy(files, (f) => f.replace(/\.(json|flac)/, ""));
 		const collectionTime = DateTime.now().toISO();
-		const AUDIO_EXT = ".m4a";
+		const AUDIO_EXT = ".flac";
 
 		// Tracks Ids of saved feedbacks
 		const savedFeedback: string[] = [];
@@ -457,7 +457,7 @@ export class CompanionAppService {
 			// Convert m4a to mp3 with ffmpeg
 			const mp3 = audioName.replace(AUDIO_EXT, ".mp3");
 			execSync(`
-        ${appConfig().ffmpeg} -i ${audioPath} -f mp3 -sn -dn -ignore_unknown -c:a aac -profile:a aac_low ${destination}/${mp3}
+        ${appConfig().ffmpeg} -i ${audioPath} -f mp3 -sn -dn -ignore_unknown ${destination}/${mp3}
       `);
 
 			await client.send(
