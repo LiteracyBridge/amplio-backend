@@ -463,7 +463,7 @@ export class CompanionAppService {
 			await client.send(
 				new PutObjectCommand({
 					Bucket: appConfig().buckets.userFeedback,
-					Key: `collected/${json.program_code}/${json.deployment_number}/${mp3}`,
+					Key: `collected/${json.program_code}/${json.deployment_number}/${audioName}`,
 					Body: fs.readFileSync(audioPath),
 					// Metadata: Object.keys(json),
 				}),
