@@ -25,7 +25,6 @@ import { PlayStatistic } from "src/entities/playstatistics.entity";
 import { TalkingBookLoaderId } from "src/entities/tbloader-ids.entity";
 import path from "node:path";
 import { UserFeedbackMessage } from "src/entities/uf_message.entity";
-import { Deployment } from "src/entities/deployment.entity";
 import { RecipientMetadata } from "src/entities/recipient-metadata.entity";
 
 @Injectable()
@@ -294,6 +293,7 @@ export class CompanionAppService {
 				playStat.contentid = item.contentId;
 				playStat.community = events[0].village;
 				playStat.tbcdid = tbId.hex_id;
+				playStat.recipientid = item.recipientId;
 
 				const played = this.computePlayedStats(events);
 				playStat.played_seconds = Math.round(played.played_seconds);
