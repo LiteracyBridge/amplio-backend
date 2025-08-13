@@ -39,7 +39,13 @@ export async function sendSes(opts: {
 				? { Html: { Data: body_text } }
 				: { Text: { Data: body_text } },
 	};
-	const client = new SESClient({ region: appConfig().aws.region });
+	const client = new SESClient({
+		region: appConfig().aws.region,
+		credentials: {
+			accessKeyId: appConfig().aws.accessKeyId!,
+			secretAccessKey: appConfig().aws.secretId!,
+		},
+	});
 
 	const command = new SendEmailCommand({
 		Source: fromaddr,
@@ -88,9 +94,9 @@ export async function unzipFile(opts: {
 export async function s3Sync(opts: {
 	s3Key: string;
 	destinationDir: string;
-  bucket: string
+	bucket: string;
 }): Promise<string[]> {
-  console.log(opts)
+	console.log(opts);
 
 	const s3Client = new S3Client({
 		region: appConfig().aws.region,
@@ -139,18 +145,17 @@ export async function s3Sync(opts: {
 	};
 
 	const promptKeys = await listObjects(opts.s3Key);
-  console.log(promptKeys);
+	console.log(promptKeys);
 
 	const outputs: string[] = [];
 
 	for (const objKey of promptKeys) {
-
 		if (objKey.endsWith("/")) {
 			// Directory download contents
 			await s3Sync({
 				s3Key: objKey,
 				destinationDir: path.join(opts.destinationDir, path.basename(objKey)),
-        bucket: opts.bucket
+				bucket: opts.bucket,
 			});
 		} // skip folders
 
