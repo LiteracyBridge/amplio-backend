@@ -53,13 +53,13 @@ export class NewAcmService {
 			},
 			{
 				flags: "--parent-org <value>",
-				required: true,
+				required: false,
 				description: "The program's organization's parent.",
 				defaultValue: "Amplio",
 			},
 			{
 				flags: "--salesforce-id <value>",
-				required: true,
+				required: false,
 				description: "The program's organization's parent.",
 				defaultValue: "Amplio",
 			},
@@ -155,7 +155,7 @@ export class NewAcmService {
 	): Promise<boolean> {
 		console.log(`Creating program record for '${opts.programCode}'....`);
 
-		const project = (await Project.findOne({
+		const project = (await manager.getRepository(Project).findOne({
 			where: { code: opts.programCode },
 		}))!;
 
@@ -236,10 +236,12 @@ export class NewAcmService {
 
 		const project = new Project();
 		project.code = opts.programCode.trim();
-		project.name = opts.name;
+	  project.name = opts.name;
+    project.active = true
+
 		await manager.save(Project, project);
 
-		console.log("ok");
+		process.stdout.write("ok");
 		return true;
 	}
 

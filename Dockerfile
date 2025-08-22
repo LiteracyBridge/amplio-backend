@@ -1,13 +1,24 @@
-FROM python:3.8
+FROM node:lts
 
-ADD ./src ./app
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip
+RUN ./aws/install
 
-# COPY .//requirements.txt ./requirements.txt
+RUN aws --version
 WORKDIR /app
 
-RUN pip install -r ./requirements.txt
+COPY package.json package-lock.json ./
 
-ENV HOST="0.0.0.0"
-ENV PORT=5000
+RUN npm clean-install
 
-CMD uvicorn app:app --host ${HOST} --port ${PORT}
+COPY . .
+
+RUN npm run build
+RUN npm prune --omit dev
+
+ARG PORT=5000
+ENV PORT=${PORT}
+
+EXPOSE ${PORT}
+
+CMD ["node", "dist/main.js"]
