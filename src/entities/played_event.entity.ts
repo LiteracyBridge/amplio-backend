@@ -1,0 +1,69 @@
+import { Entity, Column, BaseEntity, PrimaryColumn, OneToOne, ManyToOne, JoinColumn } from "typeorm";
+import { PackageInDeployment } from "./package_in_deployment.entity";
+
+@Entity("playedevents")
+export class PlayedEvent extends BaseEntity {
+	/**
+	 * Talking Book ID or Device Id (for companion app)
+	 */
+	@PrimaryColumn({ type: "text", name: "talkingbookid" })
+	talkingbookid: string;
+
+	@Column({ type: "integer", name: "cycle" })
+	cycle: number;
+
+	@Column({ type: "integer", name: "dayinperiod" })
+	dayinperiod: number;
+
+	@Column({ type: "integer", name: "householdrotation" })
+	householdrotation: number;
+
+	@Column({ type: "integer", name: "period" })
+	period: number;
+
+	@Column({ type: "smallint", name: "timeplayed" })
+	timeplayed: number;
+
+	@Column({ type: "smallint", name: "totaltime" })
+	totaltime: number;
+
+	@Column({ type: "smallint", name: "volume" })
+	volume: number;
+
+	@Column({ type: "smallint", name: "updateinyear" })
+	updateinyear: number;
+
+	@Column({ type: "smallint", name: "year" })
+	year: number;
+
+	@Column({ type: "double precision", name: "percentdone" })
+	percentdone: number;
+
+	@Column({ type: "double precision", name: "maxvolts" })
+	maxvolts: number;
+
+	@Column({ type: "double precision", name: "minvolts" })
+	minvolts: number;
+
+	@Column({ type: "double precision", name: "steadystatevolts" })
+	steadystatevolts: number;
+
+	@Column({ type: "boolean", name: "isfinished" })
+	isfinished: boolean;
+
+	@Column({ type: "text", name: "packageid" })
+	packageid: string;
+
+	@Column({ type: "text", name: "village" })
+	village: string;
+
+	@Column({ type: "text", name: "contentid" })
+	contentid: string;
+
+	@Column({ type: "time without time zone", name: "timeinday" })
+	timeinday: string;
+
+  @ManyToOne(() => PackageInDeployment)
+  @JoinColumn({ name: "packageid", referencedColumnName: "packagename" })
+  package: PackageInDeployment;
+}

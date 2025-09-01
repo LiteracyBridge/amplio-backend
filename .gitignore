@@ -70,7 +70,7 @@ tools/company-onboarding-appscript/tsconfig.tsbuildinfo
 queries.sh
 
 .cache
-
+.mypy_cache
 docker/*
 
 # Test files

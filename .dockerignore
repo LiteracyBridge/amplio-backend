@@ -5,3 +5,8 @@ __pycache__
 .git
 node_modules
 scripts
+tests
+justfile
+acm-stats
+dist
+cron

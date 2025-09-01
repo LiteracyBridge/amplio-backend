@@ -32,7 +32,7 @@ export class DeploymentMetadata extends BaseEntity {
   created_at: Date;
 
   @Column({ type: 'varchar' })
-  computer_name: string;
+  computer_name?: string;
 
   @Column({ type: 'jsonb' })
   languages: string[];
@@ -41,7 +41,7 @@ export class DeploymentMetadata extends BaseEntity {
   variants: string[];
 
   @Column({ type: 'jsonb' })
-  acm_metadata: Record<string, any> = []
+  acm_metadata: DeploymentMetadataDto
 
   @ManyToOne(() => Project)
   @JoinColumn({ referencedColumnName: "_id", name: "project_id" })

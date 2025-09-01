@@ -1,18 +1,26 @@
 import { Injectable } from "@nestjs/common";
+import { Category } from "src/entities/category.entity";
+import { CategoryInPackage } from "src/entities/category_in_package.entity";
+import { ContentInPackage } from "src/entities/content_in_package.entity";
 import {
 	ContentMetadata,
 	ContentType,
 } from "src/entities/content_metadata.entity";
 import { Deployment } from "src/entities/deployment.entity";
 import { DeploymentMetadata } from "src/entities/deployment_metadata.entity";
+import { PackageInDeployment } from "src/entities/package_in_deployment.entity";
 import { Playlist } from "src/entities/playlist.entity";
+import { TalkingBookLoaderId } from "src/entities/tbloader-ids.entity";
 import { User } from "src/entities/user.entity";
+import { TbLoaderService } from "src/tb-loader/tb-loader.service";
 import { EntityManager } from "typeorm";
 
 @Injectable()
 export class DeploymentMetadataService {
+	constructor(private tbloaderService: TbLoaderService) {}
+
 	async save(opts: {
-		dto: Record<string, any>;
+		dto: DeploymentMetadataDto;
 		currentUser: User;
 	}) {
 		const { dto, currentUser } = opts;
@@ -33,11 +41,11 @@ export class DeploymentMetadataService {
 				metadata.platform = dto.platform;
 				metadata.deployment_id = deployment!._id;
 				metadata.project_id = deployment!.project._id;
-				metadata.created_at = dto.created_at;
+				metadata.created_at = dto.createdAt;
 				metadata.user_id = currentUser._id;
-				metadata.computer_name = dto.computer_name;
+				metadata.computer_name = dto.computerName;
 				metadata.revision = dto.revision;
-				metadata.published = dto.published ?? true;
+				metadata.published = dto.published === "true";
 				metadata.languages = Object.keys(dto.contents).filter(
 					(k) => k.indexOf("-") === -1,
 				); // en, fr, dga
@@ -48,15 +56,25 @@ export class DeploymentMetadataService {
 
 				await manager.save(DeploymentMetadata, metadata);
 
+				// Save categories
+				await this._saveCategories(manager, dto);
+
 				// Save contents
 				const languages = Object.keys(dto.contents);
-				for (const l of languages) {
-					const messages = dto.contents[l].messages;
-					const playlistPrompts = dto.contents[l].playlist_prompts;
+				for (const l in dto.contents) {
+					const contents = dto.contents[l];
+					const messages = contents.messages;
+					const playlistPrompts = contents.playlistPrompts;
+
+					await this.saveDeploymentPackage(
+						deployment!,
+						{ package: contents.packageName, languageOrVariant: l },
+						manager,
+					);
 
 					// Save messages
 					for (const m of messages) {
-						await this.saveContent(
+						await this.saveMetadata(
 							ContentType.message,
 							deployment!,
 							m,
@@ -66,7 +84,7 @@ export class DeploymentMetadataService {
 						);
 					}
 					for (const p of playlistPrompts) {
-						await this.saveContent(
+						await this.saveMetadata(
 							ContentType.playlist_prompt,
 							deployment!,
 							p,
@@ -79,13 +97,123 @@ export class DeploymentMetadataService {
 			},
 		);
 
+		// Allocate Talking Book Id to user
+		const tbidData = await TalkingBookLoaderId.findOne({
+			where: { email: currentUser.email },
+		});
+		if (tbidData == null) {
+			await this.tbloaderService.reserve(currentUser);
+		}
+
 		return metadata;
 	}
 
-	private async saveContent(
+	/**
+	 * Creates categories, categoriesinpackage and contentsinpackage records
+	 */
+	private async _saveCategories(
+		manager: EntityManager,
+		dto: DeploymentMetadataDto,
+	) {
+		// Save project categories
+		await manager
+			.createQueryBuilder()
+			.insert()
+			.into(Category)
+			.values(
+				dto.categories.map((c) => {
+					const cat = new Category();
+					cat.id = c.id;
+					cat.name = c.name;
+					cat.project_code = c.project;
+					return cat;
+				}),
+			)
+			.orIgnore()
+			.execute();
+
+		for (const key in dto.contents) {
+			let order = 1;
+			const contents = dto.contents[key];
+			const existingData = await manager.find<CategoryInPackage>(
+				CategoryInPackage,
+				{
+					where: { project: dto.project, contentpackage: contents.packageName },
+				},
+			);
+
+			const categoryNames: Array<string | undefined> =
+				contents.messages.flatMap((m) => m.category);
+
+			// Save categories in packages
+			for (const name of categoryNames) {
+				// Skip if category id is not found
+				const categoryId = dto.categories.find((c) => c.name === name)?.id;
+				if (categoryId == null) continue;
+
+				// Skip duplicates
+				const exists = existingData.find((m) => m.categoryid === categoryId);
+				if (exists != null) continue;
+
+				const row = new CategoryInPackage();
+				row.project = dto.project;
+				row.position = order++;
+				row.categoryid = categoryId;
+				row.contentpackage = contents.packageName;
+
+				await manager.save(CategoryInPackage, row);
+			}
+
+			// Save content in package
+			order = 1;
+			for (const m of contents.messages) {
+				const categoryId = dto.categories.find(
+					(c) => c.name === m.category,
+				)?.id;
+				if (categoryId == null) continue;
+
+				const pkg = new ContentInPackage();
+				pkg.project_id = dto.project;
+				pkg.contentpackage = contents.packageName;
+				pkg.contentid = m.contentId;
+				pkg.categoryid = categoryId;
+				pkg.position = order++;
+
+				await manager
+					.createQueryBuilder()
+					.insert()
+					.into(ContentInPackage)
+					.values(pkg)
+					.orIgnore()
+					.execute();
+			}
+		}
+	}
+
+	private async saveMetadata(
 		type: ContentType,
 		deployment: Deployment,
-		data: Record<string, any>,
+		data: MessageMetadataDto,
+		languageOrVariant: string,
+		metadata: DeploymentMetadata,
+		manager: EntityManager,
+	) {
+		await this.saveContentMetadata(
+			type,
+			deployment,
+			data,
+			languageOrVariant,
+			metadata,
+			manager,
+		);
+
+		// await this.saveContentPackages(deployment, data, metadata, manager);
+	}
+
+	private async saveContentMetadata(
+		type: ContentType,
+		deployment: Deployment,
+		data: MessageMetadataDto,
 		languageOrVariant: string,
 		metadata: DeploymentMetadata,
 		manager: EntityManager,
@@ -94,16 +222,16 @@ export class DeploymentMetadataService {
 		content.type = type;
 		content.deployment_metadata_id = metadata.id;
 		content.title = data.title;
-		content.content_id = data.acm_id;
+		content.content_id = data.contentId;
 		content.relative_path = data.path;
 		content.language_code = data.language;
 		content.size = data.size;
 		content.position = data.position;
 		content.dc_publisher = data.publisher;
-		content.source = data.source;
-		content.related_id = data.related_id;
-		content.dtb_revision = data.dtb_revision;
-		content.recorded_at = data.recorded_at;
+		content.source = data.source!;
+		content.related_id = data.relatedId;
+		content.dtb_revision = data.dtbRevision;
+		content.recorded_at = data.recordedAt;
 		content.keywords = data.keywords;
 		content.timing = data.timing;
 		content.speaker = data.speaker;
@@ -143,6 +271,32 @@ export class DeploymentMetadataService {
 			.insert()
 			.into(ContentMetadata)
 			.values(content)
+			.orIgnore()
+			.execute();
+	}
+
+	private async saveDeploymentPackage(
+		deployment: Deployment,
+		opts: { package: string; languageOrVariant: string },
+		manager: EntityManager,
+	) {
+		const pkg = new PackageInDeployment();
+		pkg.project_code = deployment.project_id;
+		pkg.deployment_code = deployment.deploymentname ?? deployment.deployment;
+		pkg.contentpackage = opts.package;
+		pkg.packagename = opts.package;
+		pkg.startdate = deployment.start_date;
+		pkg.enddate = deployment.end_date;
+		pkg.enddate = deployment.end_date;
+		pkg.distribution = deployment.distribution;
+		pkg.groups = `default,${opts.languageOrVariant}`;
+		pkg.languagecode = opts.languageOrVariant;
+
+		await manager
+			.createQueryBuilder()
+			.insert()
+			.into(PackageInDeployment)
+			.values(pkg)
 			.orIgnore()
 			.execute();
 	}
