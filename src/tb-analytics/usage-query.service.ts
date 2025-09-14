@@ -55,10 +55,11 @@ export class UsageQueryService {
 		let query = `SELECT DISTINCT ${columns} FROM ${TEMP_VIEW}`;
 		if (
 			opts.date !== "undefined" &&
+			opts.date !== "null" &&
 			isNonNullish(opts.date) &&
 			!keywordRegex.test(opts.date!)
 		) {
-			query += ` WHERE deployment_timestamp::DATE = '${opts.date}'`;
+			query += ` WHERE timestamp::DATE = '${opts.date}'`;
 		}
 		if (group.length > 0) {
 			query += `\n GROUP BY ${group} ORDER BY ${group};`;

@@ -11,7 +11,7 @@ import {
 	BaseEntity,
 	EntitySubscriberInterface,
 } from "typeorm";
-import { SupportedCategory } from "./category.entity";
+import { SupportedCategory } from "./supported_category.entity";
 import { Playlist } from "./playlist.entity";
 import { instanceToPlain } from "class-transformer";
 

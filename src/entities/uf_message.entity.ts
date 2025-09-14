@@ -35,8 +35,29 @@ export class UserFeedbackMessage extends BaseEntity {
 	@Column({ type: "varchar", nullable: true })
 	transcription?: string;
 
+	@Column({ type: "varchar", nullable: true })
+	deployment_tbcdid?: string;
+
+	@Column({ type: "varchar", nullable: true })
+	deployment_user?: string;
+
+	@Column({ type: "timestamp", nullable: true })
+	deployment_timestamp?: string;
+
+	@Column({ type: "boolean", default: false })
+	test_deployment: boolean;
+
 	@Column({ type: "boolean", default: false })
 	is_useless: boolean;
+
+	@Column({ type: "varchar", nullable: true })
+	collection_timestamp: string;
+
+	@Column({ type: "date", nullable: true })
+	date_recorded: Date;
+
+	@Column({ type: "varchar", nullable: false })
+	talkingbookid: string;
 
 	@Column({ type: "varchar", nullable: true })
 	relation: string;
@@ -59,7 +80,7 @@ export class UserFeedbackMessage extends BaseEntity {
 	@JoinColumn({ referencedColumnName: "message_uuid" })
 	analysis: Analysis[];
 
-  @Expose()
+	@Expose()
 	get url(): string {
 		return `https://amplio-uf.s3.us-west-2.amazonaws.com/collected/${this.program_id}/${this.deployment_number}/${this.message_uuid}.mp3`;
 	}

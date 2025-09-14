@@ -1,7 +1,6 @@
 import os
 import subprocess
 from datetime import datetime
-from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -9,31 +8,36 @@ from config import config
 
 
 def main():
-    print(f"Running database backup at {datetime.now()}")
-
     load_dotenv()
 
-    dest = os.path.expanduser("~") + "/.db-backups"
+    print(f"Running database backup at {datetime.now()}")
+
+    dest = os.getenv("DB_BACKUP_DIR")
+    if dest is None:
+        print("DB_BACKUP_DIR is not set, existing ....")
+        exit(1)
+
+    dest = os.path.expanduser(dest)
     if not os.path.exists(dest):
         os.makedirs(dest)
 
     timestamp = datetime.now().strftime("%Y%m%d")
-    backup_file = f"{dest}/{config.db_name}_backup_{timestamp}.sql"
+    schema_file = f"{dest}/{config.db_name}_backup_{timestamp}.schema"
 
-    # Create a backup of the database
-    dump_command = f"pg_dump --host {config.db_host} --port {config.db_port} --username {config.db_user} --format=custom --blobs --verbose --file {backup_file} {config.db_name}"
+    # Create a schema of the database
+    data_file = f"{dest}/{config.db_name}_backup_{timestamp}.data"
+    dump_command = f"pg_dump --host {config.db_host} --port {config.db_port} --username {config.db_user} --format=directory --disable-triggers --no-privileges --verbose --file {data_file} {config.db_name}"
     os.environ["PGPASSWORD"] = config.db_password
     subprocess.run(dump_command, shell=True, check=True)
 
+    bucket = os.getenv("S3_DB_BACKUP_BUCKET")
     subprocess.run(
-        f"aws s3 cp {backup_file} s3://{os.getenv('AWS_DB_BACKUP_BUCKET')}/",
+        f"aws s3 cp {backup_file} s3://{bucket}/",
         shell=True,
         check=True,
     )
 
-    print(
-        f"Database backup uploaded to s3://{os.getenv('AWS_DB_BACKUP_BUCKET')}/{backup_file}"
-    )
+    print(f"Database backup uploaded to s3://{bucket}{backup_file}")
 
 
 if __name__ == "__main__":

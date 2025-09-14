@@ -29,7 +29,7 @@ export class TbLoaderService {
 			where: { email: user.email },
 		});
 
-		// # if so, use it, otherwise try to allocate one
+		// if so, use it, otherwise try to allocate one
 		let item: TalkingBookLoaderId | null = null;
 		if (tbid_data != null) {
 			item = tbid_data;

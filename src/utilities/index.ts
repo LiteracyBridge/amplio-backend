@@ -1,6 +1,9 @@
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import { createHash } from "node:crypto";
 import appConfig from "src/app.config";
+import * as archiver from "archiver";
+import * as unzipper from "unzipper";
+import { createWriteStream } from "node:fs";
 
 export function hashString(input: string): string {
 	return createHash("sha256").update(input).digest("hex");
@@ -26,7 +29,7 @@ export async function sendSes(opts: {
 	const message = {
 		Subject: { Data: subject },
 		Body:
-			html ?? false
+			(html ?? false)
 				? { Html: { Data: body_text } }
 				: { Text: { Data: body_text } },
 	};
@@ -38,4 +41,29 @@ export async function sendSes(opts: {
 		Message: message,
 	});
 	return await client.send(command);
+}
+
+/**
+ * @param {String} sourceDir: /some/folder/to/compress
+ * @param {String} outPath: /path/to/created.zip
+ * @returns {Promise}
+ */
+export function zipDirectory(sourceDir: string, outPath: string) {
+	const archive = archiver("zip", { zlib: { level: 9 } });
+	const stream = createWriteStream(outPath);
+
+	return new Promise<void>((resolve, reject) => {
+		archive
+			.directory(sourceDir, false)
+			.on("error", (err) => reject(err))
+			.pipe(stream);
+
+		stream.on("close", () => resolve());
+		archive.finalize();
+	});
+}
+
+export async function unzipFile(opts: { path: string | Buffer; destination: string }) {
+	const directory = await unzipper.Open.buffer(opts.path);
+	await directory.extract({ path: opts.destination });
 }

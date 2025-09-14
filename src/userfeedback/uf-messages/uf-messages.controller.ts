@@ -81,7 +81,13 @@ export class UfMessagesController {
 			)
 			.getMany();
 
-		return ApiResponse.Success({ data: result });
+		const data = result.map((m) => {
+			return {
+				...m,
+				url: `https://amplio-uf.s3.us-west-2.amazonaws.com/collected/${m.program_id}/${m.deployment_number}/${m.message_uuid}.mp3`,
+			};
+		});
+		return ApiResponse.Success({ data: data });
 	}
 
 	@Post(":program_id/transcribe")

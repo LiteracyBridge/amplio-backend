@@ -10,13 +10,16 @@ export default () =>
 			secretId: process.env.AWS_SECRET_ID,
 			poolId: process.env.AWS_USER_POOL_ID,
 			poolClientId: (process.env.AWS_USER_POOL_CLIENT_ID || "").split(","),
+			accessKeyId: process.env.AWS_ACCESS_KEY_ID,
 		},
 		buckets: {
 			programSpec: "amplio-progspecs",
-      content: "amplio-program-content"
+			content: "amplio-program-content",
+			userFeedback: "amplio-uf",
 		},
 		emails: {
 			support: "techsupport@amplio.org",
 		},
 		sentry: process.env.SENTRY_DSN,
+		ffmpeg: process.env.FFMPEG_PATH || "/usr/bin/ffmpeg",
 	}) as const;

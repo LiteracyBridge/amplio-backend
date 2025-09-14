@@ -95,6 +95,10 @@ import-v2-stats *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/v2_log_reader/main.py "$@"
     just update-usage-info
 
+[doc("Restore deleted s3 objects")]
+restore-s3-objects *args='': venv
+    {{ PYTHONPATH }} {{ python }} scripts/restore_s3_objects.py "$@"
+
 [group("docker")]
 [doc("Builds the audio converter docker image")]
 docker-build-audio-converter:
@@ -134,8 +138,6 @@ migration-revert *args='': venv
 migration-create *args='': venv
     cd src/alembic; {{ VIRTUAL_ENV }}/bin/alembic revision --message "$@"
 
-
-
 [doc("Disables IPv6 in other for aws congnito verification to work. NB: Run this command with caution!")]
 disable-ipv6:
     #!/usr/bin/env bash
@@ -155,41 +157,27 @@ reboot:
 backup-db:
     cd {{ project_dir }} && just run-script scripts/backup_db.py
 
+[doc("Backup website")]
+backup-website:
+    cd {{ project_dir }} && just run-script scripts/backup_website.py
+
+[group('deploy')]
+[doc("Deploy Nestjs app in test mode")]
+deploy-testing:
+    docker build --tag test-api-server --build-arg PORT=6000 .
+    docker run --publish 127.0.0.1:6000:6000 \
+        --restart always \
+        --env-file .env.staging \
+        --detach test-api-server
+
+[group('deploy')]
 [doc("Deploy Nestjs app in production mode")]
-deploy:
-    #!/usr/bin/env bash
-    set -euxo pipefail
-
-    tmpdir=$(mktemp -d)
-
-    # Run build
-    cd $tmpdir
-    git clone --branch stable git@github:LiteracyBridge/amplio-backend.git api-server
-    cd api-server
-
-    npm clean-install --no-fund --no-audit
-    npm run build
-    npm clean-install --omit dev
-    rm --force --recursive .git
-
-    if [ -d /var/www/api-server ]; then
-        sudo rm --force --recursive /var/www/api-server
-    fi
-
-    cd ..
-
-    # Stop the server
-    pm2 stop api_server || true
-
-    sudo mv api-server /var/www/
-    cd /var/www/api-server
-
-    # Start the server
-    pm2 start dist/main.js \
-        --force \
-        --name api_server
-
-    rm -rf $tmpdir
+deploy-prod:
+    docker build --tag prod-api-server .
+    docker run --publish 127.0.0.1:5000:5000 \
+        --restart always \
+        --env-file .env \
+        --detach prod-api-server
 
 
 [group("cron jobs")]

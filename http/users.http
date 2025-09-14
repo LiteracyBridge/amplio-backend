@@ -19,3 +19,17 @@ domain: {{ domain }}
     "last_name": "Doe",
     "email": "janedoe1@mailinator.com"
 }
+
+
+
+### Test 1
+GET https://ghost.amplio.org/programs?for-acm=true HTTP/1.1
+Host: ghost.amplio.org
+User-Agent: Java/1.8.0_392
+Accept: application/json
+Cache-Control: no-cache
+Pragma: no-cache
+X-Forwarded-For: 154.160.26.104
+X-Forwarded-Host: ghost.amplio.org
+X-Forwarded-Proto: https
+Accept-Encoding: gzip
