@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiResponse } from './utilities/api_response';
-import { SupportedCategory } from './entities/category.entity';
+import { SupportedCategory } from './entities/supported_category.entity';
 
 @Controller('categories')
 export class CategoriesController {

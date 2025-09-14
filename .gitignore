@@ -1,3 +1,4 @@
+
 # compiled output
 /dist
 /node_modules
@@ -39,6 +40,7 @@ api_test_server.pid
 .env
 firebaseAccountKey.json
 .firebase/hosting.**
+.aws
 
 # public/docs
 public/docs/swagger-*.json
@@ -82,6 +84,8 @@ __pycache__
 # local env files
 .env
 .env.local
+.env.staging
+.env.production
 .env.*.local
 .env.*
 .venv

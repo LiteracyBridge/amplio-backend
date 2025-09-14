@@ -1,40 +1,14 @@
-Rewrite:
-    ✔ models @done(24-09-20 07:09)
-    ✔ users route @done(24-09-20 17:40)
-    ✔ surveys route @done(24-09-24 06:58)
-    ✔ programs spec route @done(24-10-08 06:00)
-    ✔ tabluea route @done(24-09-24 07:09)
-    ✔ tb route @done(24-09-24 14:40)
-    ✔ categories route @done(24-09-24 14:40)
-    ✔ program route @done(24-09-24 16:47)
-    ✔ acm checkout route @done(24-10-18 07:52)
-    ☐ rewrite new acm script
-    ✔ analysis route @done(24-09-24 09:56)
-    ✔ uf messages route @done(24-09-24 08:57)
-    ✔ dasboard queries @done(24-09-24 08:01)
-    ☐ save latest s3 revision to psql (ACM)
+Companion App Support:
+    ☐ insert package contents into table
+        ✔ contentpackage @done(25-07-07 08:51)
+        ✔ contentmetadata2 @done(25-07-07 08:51)
+        ✔ categories @done(25-07-14 16:35)
+        ✔ contentinpackage @done(25-07-14 16:35)
+        ✔ packagesindeployment @done(25-07-14 16:51)
+    ☐ insert stats into playstatistics
+    ☐ insert feedbacks into uf_messages
 
-Pending Integration Updates:
-    ✔ update ACM login/program fetch to use api @done(24-10-18 08:07)
 
-Bugs:
-    ☐ update IAM role to create new user: amplio-suite-api-production-lambda
-    ✔ refetch user info on page refresh @done(24-09-24 14:23)
-
-Settings:
-    User roles:
-        ☐ add user profile page
-        ☐ re-import user programs
-            ☐ roles
-        ☐ fix new role creation bug
-        ☐ fix invite login bug
-        ☐ fix program spec message language update
-            ☐ use program language in publishing spec
-
-    Programs:
-        ✔ permissions check @done(24-03-12 10:38)
-        add /programs/acm endpoint
-        ☐ archive program
 
 Program Language Selection:
     ☐ database update on spec-put
@@ -45,11 +19,46 @@ Program Language Selection:
         ☐ add validation to ensure message languages are also in program languages
 
     Update via ui:
-        ✔ update ui to support adding new languages @done(24-03-12 10:39)
             ☐ diff and update program languages on update
 
-
 Archive:
+  ✔ Rewrite: @done(25-06-26 09:41)
+  ✔ rewrite new acm script @done(25-06-26 09:41)
+  ✔ save latest s3 revision to psql (ACM) @done(25-06-26 09:41)
+  ✔ @done(25-06-26 09:41)
+  ✔ @done(25-06-26 09:41)
+  ✔ Bugs: @done(25-06-26 09:41)
+  ✔ update IAM role to create new user: amplio-suite-api-production-lambda @done(25-06-26 09:41)
+  ✔ @done(25-06-26 09:41)
+  ✔ Settings: @done(25-06-26 09:41)
+  ✔ User roles: @done(25-06-26 09:41)
+  ✔ add user profile page @done(25-06-26 09:41)
+  ✔ re-import user programs @done(25-06-26 09:41)
+  ✔ roles @done(25-06-26 09:41)
+  ✔ fix new role creation bug @done(25-06-26 09:41)
+  ✔ fix invite login bug @done(25-06-26 09:41)
+  ✔ fix program spec message language update @done(25-06-26 09:41)
+  ✔ use program language in publishing spec @done(25-06-26 09:41)
+  ✔ @done(25-06-26 09:41)
+  ✔ Programs: @done(25-06-26 09:41)
+  ✔ add /programs/acm endpoint @done(25-06-26 09:41)
+  ✔ archive program @done(25-06-26 09:41)
+  ✔ models @done(24-09-20 07:09) @project(Rewrite)
+  ✔ users route @done(24-09-20 17:40) @project(Rewrite)
+  ✔ surveys route @done(24-09-24 06:58) @project(Rewrite)
+  ✔ programs spec route @done(24-10-08 06:00) @project(Rewrite)
+  ✔ tabluea route @done(24-09-24 07:09) @project(Rewrite)
+  ✔ tb route @done(24-09-24 14:40) @project(Rewrite)
+  ✔ categories route @done(24-09-24 14:40) @project(Rewrite)
+  ✔ program route @done(24-09-24 16:47) @project(Rewrite)
+  ✔ acm checkout route @done(24-10-18 07:52) @project(Rewrite)
+  ✔ analysis route @done(24-09-24 09:56) @project(Rewrite)
+  ✔ uf messages route @done(24-09-24 08:57) @project(Rewrite)
+  ✔ dasboard queries @done(24-09-24 08:01) @project(Rewrite)
+  ✔ update ACM login/program fetch to use api @done(24-10-18 08:07) @project(Pending Integration Updates)
+  ✔ refetch user info on page refresh @done(24-09-24 14:23) @project(Bugs)
+  ✔ permissions check @done(24-03-12 10:38) @project(Settings.Programs)
+  ✔ update ui to support adding new languages @done(24-03-12 10:39) @project(Program Language Selection.Update via ui)
   ✔ vue3 migration @done(24-02-19 22:56) @project(Program Language Selection)
   ✔ program spec -> deployments & content -># draggable not updating deployments order @done(24-02-19 22:56) @project(Program Language Selection)
   ✔ remove `program_id` from user_roles table @done(24-02-19 22:55) @project(Settings.User roles)

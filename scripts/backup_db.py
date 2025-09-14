@@ -22,10 +22,11 @@ def main():
         os.makedirs(dest)
 
     timestamp = datetime.now().strftime("%Y%m%d")
-    backup_file = f"{dest}/{config.db_name}_backup_{timestamp}.sql"
+    schema_file = f"{dest}/{config.db_name}_backup_{timestamp}.schema"
 
-    # Create a backup of the database
-    dump_command = f"pg_dump --host {config.db_host} --port {config.db_port} --username {config.db_user} --format=custom --blobs --verbose --file {backup_file} {config.db_name}"
+    # Create a schema of the database
+    data_file = f"{dest}/{config.db_name}_backup_{timestamp}.data"
+    dump_command = f"pg_dump --host {config.db_host} --port {config.db_port} --username {config.db_user} --format=directory --disable-triggers --no-privileges --verbose --file {data_file} {config.db_name}"
     os.environ["PGPASSWORD"] = config.db_password
     subprocess.run(dump_command, shell=True, check=True)
 

@@ -16,8 +16,6 @@ import {
 import { TalkingBookDeployed } from "./tb_deployed.entity";
 import { Project } from "./project.entity";
 import { createHash } from "node:crypto";
-// import { TalkingBookDeployed } from './tb_deployed_model';
-// import { Point } from 'geojson';
 
 @Entity("recipients")
 @Unique("recipients_uniqueness_key", [
@@ -64,7 +62,7 @@ export class Recipient extends BaseEntity {
 	@Column({ name: "numtbs", type: "int" })
 	numtbs: number;
 
-	@Column({ name: "supportentity", type: "varchar" })
+	@Column({ name: "supportentity", type: "varchar", nullable: true })
 	support_entity: string;
 
 	@Column({ type: "varchar" })
@@ -96,6 +94,12 @@ export class Recipient extends BaseEntity {
 
 	@Column({ type: "varchar", nullable: true })
 	agent_gender: string;
+
+  /**
+   * Companion app access code
+   */
+	@Column({ type: "varchar", nullable: true })
+	access_code: string;
 
 	@Column({ type: "int", nullable: true, name: "direct_beneficiaries" })
 	direct_beneficiaries: number;
