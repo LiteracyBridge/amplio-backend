@@ -75,8 +75,11 @@ export class TalkingBookAnalyticsService {
       filter.recipient.push(`r.communityname = '${dto.community}'`)
       filter.usg.push(` usg.communityname = '${dto.community}'`)
     }
+
+    if (dto.languageCode) {
+      filter.recipient.push(` r.language = '${dto.languageCode}'`)
+    }
     if (dto.language) {
-      filter.recipient.push(` r.language = '${dto.language}'`)
       filter.usg.push(` usg.language = '${dto.language}'`)
     }
     if (dto.deployment) {
@@ -91,9 +94,9 @@ export class TalkingBookAnalyticsService {
       filter.usg.push(` usg.playlist = '${dto.playlist}'`)
     }
 
-    const f_recipient = filter.recipient.length == 0 ? '' : ` AND ${filter.recipient.join(' AND ')}`
-    const f_tbsdeployed = filter.tbsdeployed.length == 0 ? '' : ` AND ${filter.tbsdeployed.join(' AND ')}`
-    const f_usage = filter.usg.length == 0 ? '' : ` AND ${filter.usg.join(' AND ')}`
+    const f_recipient = filter.recipient.length === 0 ? '' : ` AND ${filter.recipient.join(' AND ')}`
+    const f_tbsdeployed = filter.tbsdeployed.length === 0 ? '' : ` AND ${filter.tbsdeployed.join(' AND ')}`
+    const f_usage = filter.usg.length === 0 ? '' : ` AND ${filter.usg.join(' AND ')}`
 
 
     const [tbs] = await TalkingBookDeployed.query(
