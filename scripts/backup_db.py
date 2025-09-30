@@ -32,12 +32,12 @@ def main():
 
     bucket = os.getenv("S3_DB_BACKUP_BUCKET")
     subprocess.run(
-        f"aws s3 cp {backup_file} s3://{bucket}/",
+        f"aws s3 cp {data_file} s3://{bucket}/",
         shell=True,
         check=True,
     )
 
-    print(f"Database backup uploaded to s3://{bucket}{backup_file}")
+    print(f"Database backup uploaded to s3://{bucket}{data_file}")
 
 
 if __name__ == "__main__":
