@@ -9,6 +9,7 @@ import {
 	UploadedFile,
 	UseInterceptors,
 } from "@nestjs/common";
+import { In } from "typeorm";
 import { SkipJwtAuth } from "src/decorators/skip-jwt-auth.decorator";
 import { CompanionAppService } from "./companion.service";
 import { ApiResponse } from "src/utilities/api_response";
@@ -18,6 +19,7 @@ import { CompanionStatisticsDto, RecipientDto } from "./companion.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 import appConfig from "src/app.config";
 import { sendSes } from "src/utilities";
+import { DeploymentMetadata } from "src/entities/deployment_metadata.entity";
 
 // TODO: generate unique api key on verification, required in subsequent requests
 @Controller("companion")
@@ -94,6 +96,25 @@ export class CompanionAppController {
 
 		return ApiResponse.Success({
 			data: {},
+		});
+	}
+
+	@SkipJwtAuth()
+	@Get("library")
+	async publicLibrary() {
+		const packageIds: { id: string }[] = await DeploymentMetadata.query(`
+      SELECT DISTINCT ON (meta.project_id) meta.id
+      FROM deployment_metadata meta
+      WHERE meta.published = true AND platform = 'CompanionApp'
+      ORDER BY meta.project_id, meta.revision DESC;
+    `);
+
+		const metadata = DeploymentMetadata.find({
+			where: { id: In(packageIds.map((p) => p.id)) },
+			relations: { project: true },
+		});
+		return ApiResponse.Success({
+			data: metadata,
 		});
 	}
 }
