@@ -82,7 +82,7 @@ export class CompanionAppController {
 	}
 
 	@SkipJwtAuth()
-	@Post("library")
+	@Get("library")
 	async publicLibrary() {
 		const packageIds: { id: string }[] = await DeploymentMetadata.query(`
       SELECT DISTINCT ON (meta.project_id) meta.id
