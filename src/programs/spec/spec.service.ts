@@ -205,6 +205,17 @@ export class ProgramSpecService {
 						for (const code of newLanguages) {
 							if (code === "") continue;
 
+							// Clear previous entries
+							await manager
+								.createQueryBuilder()
+								.delete()
+								.from(MessageLanguages)
+								.where("language_code = :code", { code: code })
+								.andWhere("message_id = :id", { id: insertedMsg.raw[0].id })
+								// .orIgnore()
+								.execute();
+
+							// Save new entry
 							await manager
 								.createQueryBuilder()
 								.insert()
@@ -254,13 +265,13 @@ export class ProgramSpecService {
 					row.id = Recipient.generateId(row as any);
 				}
 
-				if (!row.group_size){
-					row.group_size = 0; 
-				}  
+				if (!row.group_size) {
+					row.group_size = 0;
+				}
 
 				if (!row.support_entity) {
-					row.support_entity = '';
-				  }
+					row.support_entity = "";
+				}
 
 				// Save recipients
 				const [query, params] = await manager
@@ -290,7 +301,7 @@ export class ProgramSpecService {
 							"access_code",
 							"deployments",
 						],
-						["recipientid", "project"] 
+						["recipientid", "project"],
 						//  "recipients_uniqueness_key"
 					)
 					.getQueryAndParameters();
@@ -541,41 +552,41 @@ export class ProgramSpecService {
 		};
 
 		const client = new S3Client({
-			 region: appConfig().aws.region,
-			 credentials: {
+			region: appConfig().aws.region,
+			credentials: {
 				accessKeyId: appConfig().aws.accessKeyId!,
 				secretAccessKey: appConfig().aws.secretId!,
-			  },
-			});
+			},
+		});
 
 		// try {
-			// Upload excel file
-			if (opts.format === "xlsx") {
+		// Upload excel file
+		if (opts.format === "xlsx") {
+			await client.send(
+				new PutObjectCommand({
+					Bucket: appConfig().buckets.programSpec,
+					Key: `${opts.projectCode}/pub_progspec.xlsx`,
+					Body: Buffer.from(await opts.xlsx.xlsx.writeBuffer()),
+					Metadata: metadata,
+				}),
+			);
+		}
+
+		// Upload csv files
+		if (opts.format === "csv") {
+			for (const k in names) {
 				await client.send(
 					new PutObjectCommand({
 						Bucket: appConfig().buckets.programSpec,
-						Key: `${opts.projectCode}/pub_progspec.xlsx`,
-						Body: Buffer.from(await opts.xlsx.xlsx.writeBuffer()),
+						Key: `${opts.projectCode}/${names[k]}`,
+						Body: Buffer.from(
+							await opts.xlsx.csv.writeBuffer({ sheetName: k }),
+						),
 						Metadata: metadata,
 					}),
 				);
 			}
-
-			// Upload csv files
-			if (opts.format === "csv") {
-				for (const k in names) {
-					await client.send(
-						new PutObjectCommand({
-							Bucket: appConfig().buckets.programSpec,
-							Key: `${opts.projectCode}/${names[k]}`,
-							Body: Buffer.from(
-								await opts.xlsx.csv.writeBuffer({ sheetName: k }),
-							),
-							Metadata: metadata,
-						}),
-					);
-				}
-			}
+		}
 		// } catch (error) {
 		// 	throw new InternalServerErrorException(
 		// 		"Failed to upload excel file to S3",
@@ -588,20 +599,24 @@ export class ProgramSpecService {
 		deployments: Record<string, any>[],
 		program: Program,
 	) {
-
-		
 		// validate required fields
-    const requiredFields = ['deploymentnumber', 'deploymentname', 'startdate', 'enddate', 'deployment'];
-    
-    for (const deployment of deployments) {
-        for (const field of requiredFields) {
-            if (!deployment[field]) {
-                throw new BadRequestException(
-                    `Field '${field}' is required for deployment ${deployment.deploymentnumber || ''}`
-                );
-            }
-        }
-    }
+		const requiredFields = [
+			"deploymentnumber",
+			"deploymentname",
+			"startdate",
+			"enddate",
+			"deployment",
+		];
+
+		for (const deployment of deployments) {
+			for (const field of requiredFields) {
+				if (!deployment[field]) {
+					throw new BadRequestException(
+						`Field '${field}' is required for deployment ${deployment.deploymentnumber || ""}`,
+					);
+				}
+			}
+		}
 
 		// Step 1: Fetch existing deployments from the database
 		const existingDeployments = await manager
