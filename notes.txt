@@ -17,3 +17,7 @@ spec diff => tbs can be deployed more than specified in the program spec
 * lame
 * ffmpeg
 * pm2
+
+
+acm-content/ebo-prompts
+    /[langcode]/messages.mp3

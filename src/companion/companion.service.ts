@@ -9,7 +9,7 @@ import { Recipient } from "src/entities/recipient.entity";
 import os from "node:os";
 import fs from "node:fs";
 import { execSync } from "node:child_process";
-import { zipDirectory, unzipFile } from "src/utilities";
+import { zipDirectory, unzipFile, s3Sync } from "src/utilities";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import {
 	S3Client,
@@ -25,7 +25,6 @@ import { PlayStatistic } from "src/entities/playstatistics.entity";
 import { TalkingBookLoaderId } from "src/entities/tbloader-ids.entity";
 import path from "node:path";
 import { UserFeedbackMessage } from "src/entities/uf_message.entity";
-import { Deployment } from "src/entities/deployment.entity";
 import { RecipientMetadata } from "src/entities/recipient-metadata.entity";
 
 @Injectable()
@@ -106,19 +105,29 @@ export class CompanionAppService {
 
 		// Download system prompts
 		const key = `${this.getRevisionPath(metadata)}/system-prompts/${language}/`;
-		const output1 = await execSync(`
-    aws s3 sync s3://${appConfig().buckets.content}/${key} ${promptsDir}
-    `);
-		console.log("stdout:", output1);
+		const output1 = await s3Sync({
+			s3Key: key,
+			destinationDir: path.join(promptsDir, "system"),
+			bucket: appConfig().buckets.content,
+		});
+		console.log("downloaded system prompts:", output1);
 
 		// Download playlist prompts
 		const key2 = `${this.getRevisionPath(metadata)}/contents/${language}/playlist-prompts/`;
-		const cmd = `
-      aws s3 sync \
-      s3://${appConfig().buckets.content}/${key2} ${promptsDir}
-    `;
-		const output = await execSync(cmd);
-		console.log("stdout:", output);
+		const output = await s3Sync({
+			s3Key: key2,
+			destinationDir: path.join(promptsDir, "playlists"),
+			bucket: appConfig().buckets.content,
+		});
+		console.log("downloaded playlist prompts:", output);
+
+		// Download ebo prompts
+		const output2 = await s3Sync({
+			s3Key: `ebo-prompts/${language}/`,
+			destinationDir: path.join(promptsDir, "ebo"),
+			bucket: appConfig().buckets.content,
+		});
+		console.log("downloaded ebo prompts:", output2);
 
 		await zipDirectory(promptsDir, promptsCache);
 
@@ -236,6 +245,7 @@ export class CompanionAppService {
 			const playEvents = await PlayedEvent.getRepository().manager.query<
 				{
 					timeplayed: number;
+					totaltime: number;
 					village: string;
 					talkingbookid: string;
 				}[]
@@ -243,6 +253,7 @@ export class CompanionAppService {
 				`
         SELECT
           SUM(timeplayed) AS timeplayed,
+          totaltime,
           village,
           talkingbookid
         FROM
@@ -253,7 +264,8 @@ export class CompanionAppService {
           AND packageid = $3
         GROUP BY
           village,
-          talkingbookid
+          talkingbookid,
+          totaltime
         `,
 				[contentId, item.deviceName, item.packageName],
 			);
@@ -284,8 +296,12 @@ export class CompanionAppService {
 				playStat.contentid = item.contentId;
 				playStat.community = events[0].village;
 				playStat.tbcdid = tbId.hex_id;
+				playStat.recipientid = item.recipientId;
 
 				const played = this.computePlayedStats(events);
+				console.log("Event: ", events);
+				console.log("Played: ", played);
+
 				playStat.played_seconds = Math.round(played.played_seconds);
 				playStat.started = played.started;
 				playStat.one_quarter = played.one_quarter;
@@ -342,9 +358,9 @@ export class CompanionAppService {
 		console.log(files);
 
 		// Group files by (audio, metadata) by the file name
-		const grouped = groupBy(files, (f) => f.replace(/\.(json|m4a)/, ""));
+		const grouped = groupBy(files, (f) => f.replace(/\.(json|wav|flac|m4a|ogg|opus)/, ""));
 		const collectionTime = DateTime.now().toISO();
-		const AUDIO_EXT = ".m4a";
+		const AUDIO_EXT = ".wav";
 
 		// Tracks Ids of saved feedbacks
 		const savedFeedback: string[] = [];
@@ -366,7 +382,7 @@ export class CompanionAppService {
 			if (jsonFile == null) {
 				jsonFile = files.find((a) => a.endsWith(".json"));
 				if (jsonFile == null) {
-					// All hope is lost at this point, ignore the audio
+					// All hope is lost at this point, move on to the next item
 					continue;
 				}
 			}
@@ -429,6 +445,12 @@ export class CompanionAppService {
 				// .orIgnore()
 				.execute();
 
+			// Convert m4a to mp3 with ffmpeg
+			const mp3 = audioName.replace(AUDIO_EXT, ".mp3");
+			execSync(`
+        ${appConfig().ffmpeg} -i ${audioPath}  -ab 320k ${destination}/${mp3}
+      `);
+
 			// Save file to s3
 			const client = new S3Client({
 				region: appConfig().aws.region,
@@ -437,10 +459,6 @@ export class CompanionAppService {
 					secretAccessKey: appConfig().aws.secretId!,
 				},
 			});
-
-			// Convert m4a to mp3 with ffmpeg
-			const mp3 = audioName.replace(AUDIO_EXT, ".mp3");
-			execSync(`${appConfig().ffmpeg} -i ${audioPath} ${destination}/${mp3}`);
 
 			await client.send(
 				new PutObjectCommand({
@@ -477,7 +495,7 @@ export class CompanionAppService {
 			// Calculate the fraction completed. Note: at launch, the TB reported a completed play as less than the
 			// total time. Observed values are between 97% and 99.2% of the actual play. If the "played" is within
 			// 2 seconds of "duration", we'll call it "completed".
-			if (e.timeplayed > e.totaltime - 2000) {
+			if (e.timeplayed >= e.totaltime - 2000) {
 				playStat.completed += 1;
 			} else if (e.timeplayed > (e.totaltime - 2000) * 0.75) {
 				playStat.threequarters += 1;
