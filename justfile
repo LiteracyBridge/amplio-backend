@@ -168,6 +168,8 @@ deploy-testing:
     docker run --publish 127.0.0.1:6000:6000 \
         --restart always \
         --env-file .env.staging \
+        --name test-api
+        --remove
         --detach test-api-server
 
 [group('deploy')]
