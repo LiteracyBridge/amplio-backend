@@ -109,7 +109,7 @@ export class CompanionAppController {
       ORDER BY meta.project_id, meta.revision DESC;
     `);
 
-		const metadata = DeploymentMetadata.find({
+		const metadata = await DeploymentMetadata.find({
 			where: { id: In(packageIds.map((p) => p.id)) },
 			relations: { project: true },
 		});
