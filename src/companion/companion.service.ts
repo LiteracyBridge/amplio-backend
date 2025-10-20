@@ -135,9 +135,13 @@ export class CompanionAppService {
 		return promptsCache;
 	}
 
-	async downloadSurveys(id: string) {
+  /**
+   * Download all survey files as a zip
+   *
+   */
+	async downloadSurveys(metadataId: string) {
 		const metadata = await DeploymentMetadata.findOne({
-			where: { id: id, published: true },
+			where: { id: metadataId, published: true },
 			relations: { project: true, deployment: { playlists: true } },
 		});
 
@@ -145,34 +149,10 @@ export class CompanionAppService {
 			throw new NotFoundException("Invalid deployment ID");
 		}
 
-		// Verify the language code is valid
-		// if (metadata.acm_metadata.systemPrompts[language] == null) {
-		// 	throw new BadRequestException("Invalid language provided");
-		// }
-
-		// const promptsCache = `${os.tmpdir()}/prompts-${metadata.revision}-${language}.zip`;
-		// if (fs.existsSync(promptsCache)) {
-		// 	return promptsCache;
-		// }
-
-		// // No cache exists, download from s3
-		// const promptsDir = `${os.tmpdir()}/prompts-${metadata.revision}-${language}`;
-		// if (!fs.existsSync(promptsDir)) {
-		// 	fs.mkdirSync(promptsDir);
-		// }
-
 		// Download system prompts
 		const key = `${metadata.project.code}/programspec/`;
 
-		const client = s3Client();
-
-		// const command =
-		// const output1 = await s3Sync({
-		// 	s3Key: key,
-		// 	destinationDir: path.join(promptsDir, "system"),
-		// 	bucket: appConfig().buckets.content,
-		// });
-		const result = await client.send(
+		const result = await s3Client().send(
 			new ListObjectsV2Command({
 				Bucket: `${appConfig().buckets.content}`,
 				Prefix: key,
@@ -195,9 +175,6 @@ export class CompanionAppService {
 			surveyKeys.push(c.Key);
 		}
 
-		// Download all survey files as a zip
-		console.log("downloaded system prompts:", result.KeyCount);
-
 		// No cache exists, download from s3
 		const dir = `${os.tmpdir()}/surveys-${metadata.revision}`;
 		const cache = `${dir}.zip`;
@@ -209,20 +186,11 @@ export class CompanionAppService {
 			fs.mkdirSync(dir);
 		}
 
-		const output = await s3Sync({
+		await s3Sync({
 			s3Key: surveyKeys,
 			destinationDir: dir,
 			bucket: appConfig().buckets.content,
 		});
-		console.log("downloaded playlist prompts:", output);
-
-		// // Download ebo prompts
-		// const output2 = await s3Sync({
-		// 	s3Key: `ebo-prompts/${language}/`,
-		// 	destinationDir: path.join(promptsDir, "ebo"),
-		// 	bucket: appConfig().buckets.content,
-		// });
-		// console.log("downloaded ebo prompts:", output2);
 
 		await zipDirectory(dir, cache);
 

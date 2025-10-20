@@ -58,14 +58,11 @@ export class CompanionAppController {
 	@Get("packages/:id/surveys")
 	async getSurveys(
 		@Param("id") id: string,
-		// @Res() res: Response,
+		@Res() res: Response,
 	) {
-		// const path = await this.service.downloadPrompts(id, language);
-		// const file = createReadStream(path);
-		// file.pipe(res);
-		return ApiResponse.Success({
-			data: await this.service.downloadSurveys(id),
-		});
+		const path = await this.service.downloadSurveys(id);
+		const file = createReadStream(path);
+		file.pipe(res);
 	}
 
 	@SkipJwtAuth()
