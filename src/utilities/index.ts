@@ -91,6 +91,16 @@ export async function unzipFile(opts: {
 	await directory.extract({ path: opts.destination });
 }
 
+export function s3Client() {
+	return new S3Client({
+		region: appConfig().aws.region,
+		credentials: {
+			accessKeyId: appConfig().aws.accessKeyId!,
+			secretAccessKey: appConfig().aws.secretId!,
+		},
+	});
+}
+
 export async function s3Sync(opts: {
 	s3Key: string;
 	destinationDir: string;
@@ -98,13 +108,7 @@ export async function s3Sync(opts: {
 }): Promise<string[]> {
 	console.log(opts);
 
-	const s3Client = new S3Client({
-		region: appConfig().aws.region,
-		credentials: {
-			accessKeyId: appConfig().aws.accessKeyId!,
-			secretAccessKey: appConfig().aws.secretId!,
-		},
-	});
+	const client = s3Client();
 
 	// List all objects under the system prompts prefix
 	const listObjects = async (prefix: string) => {
@@ -112,7 +116,7 @@ export async function s3Sync(opts: {
 			Bucket: opts.bucket,
 			Prefix: prefix,
 		});
-		const response = await s3Client.send(command);
+		const response = await client.send(command);
 		return (
 			(response.Contents?.map((obj) => obj.Key).filter(Boolean) as string[]) ??
 			[]
@@ -128,7 +132,7 @@ export async function s3Sync(opts: {
 			Bucket: opts.bucket,
 			Key: key,
 		});
-		const response = await s3Client.send(command);
+		const response = await client.send(command);
 		const fileName = path.basename(key);
 		const filePath = path.join(opts.destinationDir, fileName);
 

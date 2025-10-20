@@ -9,12 +9,13 @@ import { Recipient } from "src/entities/recipient.entity";
 import os from "node:os";
 import fs from "node:fs";
 import { execSync } from "node:child_process";
-import { zipDirectory, unzipFile, s3Sync } from "src/utilities";
+import { zipDirectory, unzipFile, s3Sync, s3Client } from "src/utilities";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import {
 	S3Client,
 	GetObjectCommand,
 	PutObjectCommand,
+  ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { CompanionStatisticsDto, RecipientDto } from "./companion.dto";
 import { PlayedEvent } from "src/entities/played_event.entity";
@@ -134,6 +135,72 @@ export class CompanionAppService {
 		return promptsCache;
 	}
 
+	async downloadSurveys(id: string) {
+		const metadata = await DeploymentMetadata.findOne({
+			where: { id: id, published: true },
+			relations: { project: true },
+		});
+
+		if (metadata == null) {
+			throw new NotFoundException("Invalid deployment ID");
+		}
+
+		// Verify the language code is valid
+		// if (metadata.acm_metadata.systemPrompts[language] == null) {
+		// 	throw new BadRequestException("Invalid language provided");
+		// }
+
+		// const promptsCache = `${os.tmpdir()}/prompts-${metadata.revision}-${language}.zip`;
+		// if (fs.existsSync(promptsCache)) {
+		// 	return promptsCache;
+		// }
+
+		// // No cache exists, download from s3
+		// const promptsDir = `${os.tmpdir()}/prompts-${metadata.revision}-${language}`;
+		// if (!fs.existsSync(promptsDir)) {
+		// 	fs.mkdirSync(promptsDir);
+		// }
+
+		// Download system prompts
+		const key = `${metadata.project.code}/programspec/`;
+
+		const client = s3Client();
+
+		const command = new ListObjectsV2Command({
+			Bucket: `${appConfig().buckets.content}`,
+			Prefix: key,
+		});
+		// const output1 = await s3Sync({
+		// 	s3Key: key,
+		// 	destinationDir: path.join(promptsDir, "system"),
+		// 	bucket: appConfig().buckets.content,
+		// });
+		const output1 = await client.send(command);
+		console.log("downloaded system prompts:", output1.KeyCount);
+
+		// Download playlist prompts
+		// const key2 = `${this.getRevisionPath(metadata)}/contents/${language}/playlist-prompts/`;
+		// const output = await s3Sync({
+		// 	s3Key: key2,
+		// 	destinationDir: path.join(promptsDir, "playlists"),
+		// 	bucket: appConfig().buckets.content,
+		// });
+		// console.log("downloaded playlist prompts:", output);
+
+		// // Download ebo prompts
+		// const output2 = await s3Sync({
+		// 	s3Key: `ebo-prompts/${language}/`,
+		// 	destinationDir: path.join(promptsDir, "ebo"),
+		// 	bucket: appConfig().buckets.content,
+		// });
+		// console.log("downloaded ebo prompts:", output2);
+
+		// await zipDirectory(promptsDir, promptsCache);
+
+		// return promptsCache;
+		return output1;
+	}
+
 	async downloadContent(opts: {
 		id: string;
 		language: string;
@@ -162,19 +229,12 @@ export class CompanionAppService {
 		}
 
 		// Generates a presigned url
-		const client = new S3Client({
-			region: appConfig().aws.region,
-			credentials: {
-				accessKeyId: appConfig().aws.accessKeyId!,
-				secretAccessKey: appConfig().aws.secretId!,
-			},
-		});
 		const command = new GetObjectCommand({
 			Bucket: `${appConfig().buckets.content}`,
 			Key: `${this.getRevisionPath(metadata)}/${msg.path}`,
 		});
 		// @ts-ignore
-		const url = await getSignedUrl(client, command, { expiresIn: 604800 });
+		const url = await getSignedUrl(s3Client(), command, { expiresIn: 604800 });
 
 		return url;
 	}
@@ -358,7 +418,9 @@ export class CompanionAppService {
 		console.log(files);
 
 		// Group files by (audio, metadata) by the file name
-		const grouped = groupBy(files, (f) => f.replace(/\.(json|wav|flac|m4a|ogg|opus)/, ""));
+		const grouped = groupBy(files, (f) =>
+			f.replace(/\.(json|wav|flac|m4a|ogg|opus)/, ""),
+		);
 		const collectionTime = DateTime.now().toISO();
 		const AUDIO_EXT = ".wav";
 
