@@ -15,7 +15,7 @@ import {
 	S3Client,
 	GetObjectCommand,
 	PutObjectCommand,
-  ListObjectsV2Command,
+	ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { CompanionStatisticsDto, RecipientDto } from "./companion.dto";
 import { PlayedEvent } from "src/entities/played_event.entity";
@@ -138,7 +138,7 @@ export class CompanionAppService {
 	async downloadSurveys(id: string) {
 		const metadata = await DeploymentMetadata.findOne({
 			where: { id: id, published: true },
-			relations: { project: true },
+			relations: { project: true, deployment: { playlists: true } },
 		});
 
 		if (metadata == null) {
@@ -166,26 +166,55 @@ export class CompanionAppService {
 
 		const client = s3Client();
 
-		const command = new ListObjectsV2Command({
-			Bucket: `${appConfig().buckets.content}`,
-			Prefix: key,
-		});
+		// const command =
 		// const output1 = await s3Sync({
 		// 	s3Key: key,
 		// 	destinationDir: path.join(promptsDir, "system"),
 		// 	bucket: appConfig().buckets.content,
 		// });
-		const output1 = await client.send(command);
-		console.log("downloaded system prompts:", output1.KeyCount);
+		const result = await client.send(
+			new ListObjectsV2Command({
+				Bucket: `${appConfig().buckets.content}`,
+				Prefix: key,
+			}),
+		);
+		const surveyKeys: string[] = [];
 
-		// Download playlist prompts
-		// const key2 = `${this.getRevisionPath(metadata)}/contents/${language}/playlist-prompts/`;
-		// const output = await s3Sync({
-		// 	s3Key: key2,
-		// 	destinationDir: path.join(promptsDir, "playlists"),
-		// 	bucket: appConfig().buckets.content,
-		// });
-		// console.log("downloaded playlist prompts:", output);
+		for (const c of result.Contents ?? []) {
+			if (!c.Key?.endsWith(".survey")) continue;
+
+			// Retrieve the file name from key
+			const name = c.Key.split("/").at(-1)!.replace(".survey", ""); // AMPBUZ-DEV/programspec/Health.survey -> Health
+
+			// The survey name must also be a playlist title in this  deployment
+			const exists = metadata.deployment.playlists.find(
+				(p) => p.title === name,
+			);
+			if (exists == null) continue;
+
+			surveyKeys.push(c.Key);
+		}
+
+		// Download all survey files as a zip
+		console.log("downloaded system prompts:", result.KeyCount);
+
+		// No cache exists, download from s3
+		const dir = `${os.tmpdir()}/surveys-${metadata.revision}`;
+		const cache = `${dir}.zip`;
+		if (fs.existsSync(cache)) {
+			return cache;
+		}
+
+		if (!fs.existsSync(dir)) {
+			fs.mkdirSync(dir);
+		}
+
+		const output = await s3Sync({
+			s3Key: surveyKeys,
+			destinationDir: dir,
+			bucket: appConfig().buckets.content,
+		});
+		console.log("downloaded playlist prompts:", output);
 
 		// // Download ebo prompts
 		// const output2 = await s3Sync({
@@ -195,10 +224,9 @@ export class CompanionAppService {
 		// });
 		// console.log("downloaded ebo prompts:", output2);
 
-		// await zipDirectory(promptsDir, promptsCache);
+		await zipDirectory(dir, cache);
 
-		// return promptsCache;
-		return output1;
+		return cache;
 	}
 
 	async downloadContent(opts: {

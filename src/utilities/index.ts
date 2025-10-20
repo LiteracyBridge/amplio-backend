@@ -101,13 +101,16 @@ export function s3Client() {
 	});
 }
 
+/**
+ * Downloads all objects under [s3Key] to the [destinationDir]
+ * If [s3Key] is an array, then it is assumed the objects can be downloaded
+ *   directly without calling ListObjectsV2Command first
+ */
 export async function s3Sync(opts: {
-	s3Key: string;
+	s3Key: string | string[];
 	destinationDir: string;
 	bucket: string;
 }): Promise<string[]> {
-	console.log(opts);
-
 	const client = s3Client();
 
 	// List all objects under the system prompts prefix
@@ -148,12 +151,14 @@ export async function s3Sync(opts: {
 		return filePath;
 	};
 
-	const promptKeys = await listObjects(opts.s3Key);
-	console.log(promptKeys);
+  // Don't call listObjects if s3Key is an array. Go ahead and download the objects
+	const filesToDownloadKeys = Array.isArray(opts.s3Key)
+		? opts.s3Key
+		: await listObjects(opts.s3Key);
 
 	const outputs: string[] = [];
 
-	for (const objKey of promptKeys) {
+	for (const objKey of filesToDownloadKeys) {
 		if (objKey.endsWith("/")) {
 			// Directory download contents
 			await s3Sync({
