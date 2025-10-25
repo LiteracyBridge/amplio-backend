@@ -17,7 +17,11 @@ import {
 	PutObjectCommand,
 	ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
-import { CompanionStatisticsDto, RecipientDto } from "./companion.dto";
+import {
+	CompanionStatisticsDto,
+	RecipientDto,
+	SurveyResponseDto,
+} from "./companion.dto";
 import { PlayedEvent } from "src/entities/played_event.entity";
 import { DateTime } from "luxon";
 import { isNotEmpty } from "class-validator";
@@ -27,6 +31,8 @@ import { TalkingBookLoaderId } from "src/entities/tbloader-ids.entity";
 import path from "node:path";
 import { UserFeedbackMessage } from "src/entities/uf_message.entity";
 import { RecipientMetadata } from "src/entities/recipient-metadata.entity";
+import { TalkingBookSurvey } from "src/entities/tb_survey.entity";
+import { TalkingBookSurveyResponse } from "src/entities/tb_survey_response.entity";
 
 @Injectable()
 export class CompanionAppService {
@@ -135,10 +141,10 @@ export class CompanionAppService {
 		return promptsCache;
 	}
 
-  /**
-   * Download all survey files as a zip
-   *
-   */
+	/**
+	 * Download all survey files as a zip
+	 *
+	 */
 	async downloadSurveys(metadataId: string) {
 		const metadata = await DeploymentMetadata.findOne({
 			where: { id: metadataId, published: true },
@@ -372,6 +378,59 @@ export class CompanionAppService {
 				}
 			}
 		}
+	}
+
+	async saveSurveyResponses(responses: SurveyResponseDto[]) {
+		const grouped = groupBy(responses, (r) => r.surveyId);
+
+		await TalkingBookSurvey.getRepository().manager.transaction(
+			async (manager) => {
+				// Save played event for each stats
+				for (const surveyId in grouped) {
+					const data = grouped[surveyId];
+
+					// const timestamp = DateTime.fromISO(stat.timestamp);
+					// const recipient = (await Recipient.findOne({
+					// 	where: { program_id: stat.projectCode, id: stat.recipientId },
+					// }))!;
+					const survey = new TalkingBookSurvey();
+					survey.survey_uuid = surveyId;
+					survey.talkingBookId = data[0].deviceName;
+					survey.programId = data[0].project;
+					survey.surveyId = data[0].playlist;
+					survey.timestamp = DateTime.fromISO(data[0].timestamp).toJSDate();
+					// deployment_uuid
+					// collection_uuid
+
+					await manager
+						.createQueryBuilder()
+						.insert()
+						.into(TalkingBookSurvey)
+						.values(survey)
+						.orIgnore()
+						.execute();
+
+					// Save responses
+					await manager
+						.createQueryBuilder()
+						.insert()
+						.into(TalkingBookSurveyResponse)
+						.values(
+							data.map((d) => {
+								const resp = new TalkingBookSurveyResponse();
+								resp.survey_uuid = d.surveyId;
+								resp.question = d.questionNo;
+								resp.response = (d.response || d.recordingPath)!;
+								return resp;
+							}),
+						)
+						.orIgnore()
+						.execute();
+
+					// TODO: save recorded responses
+				}
+			},
+		);
 	}
 
 	/**

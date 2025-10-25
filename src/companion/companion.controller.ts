@@ -15,7 +15,11 @@ import { CompanionAppService } from "./companion.service";
 import { ApiResponse } from "src/utilities/api_response";
 import { Response } from "express";
 import { createReadStream } from "node:fs";
-import { CompanionStatisticsDto, RecipientDto } from "./companion.dto";
+import {
+	CompanionStatisticsDto,
+	RecipientDto,
+	SurveyResponseDto,
+} from "./companion.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 import appConfig from "src/app.config";
 import { sendSes } from "src/utilities";
@@ -56,10 +60,7 @@ export class CompanionAppController {
 
 	@SkipJwtAuth()
 	@Get("packages/:id/surveys")
-	async getSurveys(
-		@Param("id") id: string,
-		@Res() res: Response,
-	) {
+	async getSurveys(@Param("id") id: string, @Res() res: Response) {
 		const path = await this.service.downloadSurveys(id);
 		const file = createReadStream(path);
 		file.pipe(res);
@@ -78,10 +79,23 @@ export class CompanionAppController {
 
 	@SkipJwtAuth()
 	@Post("statistics")
-	async trackStats(@Body() body: CompanionStatisticsDto[]) {
+	async trackStats(
+		@Body() body: CompanionStatisticsDto[],
+	) {
 		await this.service.recordStats(body);
 		return ApiResponse.Success({
 			data: { message: "Statistics recorded successfully" },
+		});
+	}
+
+	@SkipJwtAuth()
+	@Post("survey-responses")
+	async surveyResponses(
+		@Body() surveys: SurveyResponseDto[],
+	) {
+		// await this.service.recordStats(oldBody);
+		return ApiResponse.Success({
+			data: { message: "Responses saved successfully" },
 		});
 	}
 
