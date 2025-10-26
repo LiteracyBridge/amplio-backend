@@ -33,6 +33,7 @@ import { UserFeedbackMessage } from "src/entities/uf_message.entity";
 import { RecipientMetadata } from "src/entities/recipient-metadata.entity";
 import { TalkingBookSurvey } from "src/entities/tb_survey.entity";
 import { TalkingBookSurveyResponse } from "src/entities/tb_survey_response.entity";
+import { randomUUID } from "node:crypto";
 
 @Injectable()
 export class CompanionAppService {
@@ -381,26 +382,31 @@ export class CompanionAppService {
 	}
 
 	async saveSurveyResponses(responses: SurveyResponseDto[]) {
-		const grouped = groupBy(responses, (r) => r.surveyId);
+		if (responses.length === 0) return;
 
+		const grouped = groupBy(responses, (r) => r.surveyId);
+		const collectionId = randomUUID();
+		const deployment = await DeploymentMetadata.findOne({
+			where: {
+				project: { code: responses[0].project },
+				revision: responses[0].revision,
+			},
+		});
 		await TalkingBookSurvey.getRepository().manager.transaction(
 			async (manager) => {
 				// Save played event for each stats
 				for (const surveyId in grouped) {
 					const data = grouped[surveyId];
 
-					// const timestamp = DateTime.fromISO(stat.timestamp);
-					// const recipient = (await Recipient.findOne({
-					// 	where: { program_id: stat.projectCode, id: stat.recipientId },
-					// }))!;
 					const survey = new TalkingBookSurvey();
 					survey.survey_uuid = surveyId;
 					survey.talkingBookId = data[0].deviceName;
 					survey.programId = data[0].project;
 					survey.surveyId = data[0].playlist;
-					survey.timestamp = DateTime.fromISO(data[0].timestamp).toJSDate();
-					// deployment_uuid
-					// collection_uuid
+					survey.recipientId = data[0].recipientId;
+					survey.timestamp = DateTime.fromISO(data[0].createdAt).toJSDate();
+					survey.collection_uuid = collectionId;
+					survey.deployment_uuid = deployment!.id;
 
 					await manager
 						.createQueryBuilder()
@@ -431,6 +437,8 @@ export class CompanionAppService {
 				}
 			},
 		);
+
+    return true;
 	}
 
 	/**

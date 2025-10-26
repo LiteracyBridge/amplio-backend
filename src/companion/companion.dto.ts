@@ -77,7 +77,7 @@ export class SurveyResponseDto {
 
 	@IsNotEmpty()
 	@IsString()
-	packageName: string;
+	revision: string;
 
 	@IsNotEmpty()
 	@IsString()
@@ -95,10 +95,6 @@ export class SurveyResponseDto {
 	@IsNotEmpty()
 	@IsISO8601()
 	createdAt: string;
-
-	@IsNotEmpty()
-	@IsISO8601()
-	timestamp: string;
 
 	@IsOptional()
 	@IsString()

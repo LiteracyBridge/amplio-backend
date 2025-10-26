@@ -93,7 +93,7 @@ export class CompanionAppController {
 	async surveyResponses(
 		@Body() surveys: SurveyResponseDto[],
 	) {
-		// await this.service.recordStats(oldBody);
+		await this.service.saveSurveyResponses(surveys);
 		return ApiResponse.Success({
 			data: { message: "Responses saved successfully" },
 		});
