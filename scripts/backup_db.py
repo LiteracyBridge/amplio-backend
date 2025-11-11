@@ -26,18 +26,18 @@ def main():
 
     # Create a schema of the database
     data_file = f"{dest}/{config.db_name}_backup_{timestamp}.data"
-    dump_command = f"pg_dump --host {config.db_host} --port {config.db_port} --username {config.db_user} --format=directory --disable-triggers --no-privileges --verbose --file {data_file} {config.db_name}"
+    dump_command = f"pg_dump --host {config.db_host} --port {config.db_port} --username {config.db_user} --format=custom --disable-triggers --no-privileges --verbose --file {data_file} {config.db_name}"
     os.environ["PGPASSWORD"] = config.db_password
     subprocess.run(dump_command, shell=True, check=True)
 
     bucket = os.getenv("S3_DB_BACKUP_BUCKET")
     subprocess.run(
-        f"aws s3 cp {backup_file} s3://{bucket}/",
+        f"aws s3 cp {data_file} s3://{bucket}/",
         shell=True,
         check=True,
     )
 
-    print(f"Database backup uploaded to s3://{bucket}{backup_file}")
+    print(f"Database backup uploaded to s3://{bucket}{data_file}")
 
 
 if __name__ == "__main__":

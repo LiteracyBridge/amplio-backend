@@ -62,7 +62,7 @@ export class Recipient extends BaseEntity {
 	@Column({ name: "numtbs", type: "int" })
 	numtbs: number;
 
-	@Column({ name: "supportentity", type: "varchar" })
+	@Column({ name: "supportentity", type: "varchar", nullable: true })
 	support_entity: string;
 
 	@Column({ type: "varchar" })

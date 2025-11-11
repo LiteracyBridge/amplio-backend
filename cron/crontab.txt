@@ -1,5 +1,6 @@
 # Backup database everyday at 11:59am in the midnight
 59 23 * * * just --justfile $HOME/amplio-backend/justfile backup-db
+10 01 * * * just --justfile $HOME/amplio-backend/justfile backup-website
 
 # Run cronjob.sh every 6 hours at x:00. Import v1 stats.
 0 */6 * * * $HOME/amplio-backend/cron/cronjob.sh > $HOME/amplio-backend/cron/logs/cronjob.log 2>&1
