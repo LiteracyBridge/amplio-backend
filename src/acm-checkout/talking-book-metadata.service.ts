@@ -61,14 +61,12 @@ export class TalkingBookMetadataService {
 					const csv = `${tmpdir()}/${randomUUID()}.csv`;
 					writeFileSync(csv, dto.categories);
 
-					console.log(csv);
 					const workbook = new Excel.Workbook();
 					const worksheet = await workbook.csv.readFile(csv);
 
 					worksheet.eachRow(async (row: Excel.Row, rowNumber: number) => {
 						if (rowNumber === 1) return;
 
-						console.log(row.values, rowNumber);
 						await manager
 							.createQueryBuilder()
 							.insert()
@@ -81,18 +79,41 @@ export class TalkingBookMetadataService {
 							.orIgnore();
 					});
 				}
+
+				// Save packages In Deployment
+				if (dto.packagesInDeployment) {
+					const csv = `${tmpdir()}/${randomUUID()}.csv`;
+					writeFileSync(csv, dto.packagesInDeployment);
+
+					console.log(csv);
+					const workbook = new Excel.Workbook();
+					const worksheet = await workbook.csv.readFile(csv);
+
+					worksheet.eachRow(async (row: Excel.Row, rowNumber: number) => {
+						console.log(row.values, rowNumber);
+
+						if (rowNumber === 1) return;
+
+						await manager
+							.createQueryBuilder()
+							.insert()
+							.into(PackageInDeployment)
+							.values({
+								project_code: row.values[1],
+								deployment_code: row.values[2],
+								contentpackage: row.values[3],
+								packagename: row.values[3],
+								startdate: row.values[3],
+								enddate: row.values[3],
+								languagecode: row.values[3],
+								groups: row.values[3],
+								distribution: row.values[3],
+							})
+							.orIgnore();
+					});
+				}
 			},
 		);
-
-		// // worksheet
-		// const deployment = await Deployment.findOne({
-		// 	where: {
-		// 		deploymentnumber: dto.deployment.number,
-		// 		deployment: dto.deployment.name,
-		// 		project_id: dto.project,
-		// 	},
-		// 	relations: { project: true },
-		// });
 
 		// const metadata = new DeploymentMetadata();
 
