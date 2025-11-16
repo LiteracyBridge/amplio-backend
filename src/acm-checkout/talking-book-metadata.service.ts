@@ -140,13 +140,10 @@ export class TalkingBookMetadataService {
 					const csv = `${tmpdir()}/${randomUUID()}.csv`;
 					writeFileSync(csv, dto.contentInPackages);
 
-					console.log(csv);
 					const workbook = new Excel.Workbook();
 					const worksheet = await workbook.csv.readFile(csv);
 
 					worksheet.eachRow(async (row: Excel.Row, rowNumber: number) => {
-						console.log(row.values, rowNumber);
-
 						if (rowNumber === 1) return;
 
 						await manager
@@ -159,6 +156,54 @@ export class TalkingBookMetadataService {
 								contentid: row.values[3],
 								categoryid: row.values[4],
 								position: row.values[5],
+							})
+							.orIgnore();
+					});
+				}
+
+				// Save contents In package
+				if (dto.metadata) {
+					const csv = `${tmpdir()}/${randomUUID()}.csv`;
+					writeFileSync(csv, dto.metadata);
+
+					console.log(csv);
+					const workbook = new Excel.Workbook();
+					const worksheet = await workbook.csv.readFile(csv);
+
+					worksheet.eachRow(async (row: Excel.Row, rowNumber: number) => {
+						console.log(row.values, rowNumber);
+
+						if (rowNumber === 1) return;
+
+						await manager
+							.createQueryBuilder()
+							.insert()
+							.into(ContentMetadata)
+							.values({
+								title: row.values[1],
+								dc_publisher: row.values[2],
+								content_id: row.values[3],
+								source: row.values[4],
+								language_code: row.values[5],
+								related_id: row.values[6],
+								dtb_revision: row.values[7],
+								duration_sec: row.values[8],
+								format: row.values[9],
+								audience: row.values[10],
+								recorded_at: row.values[11],
+								keywords: row.values[12],
+								timing: row.values[13],
+								speaker: row.values[14],
+								goal: row.values[15],
+								transcription: row.values[16],
+								notes: row.values[17],
+								community: row.values[18],
+								status: row.values[19],
+								categories: row.values[20],
+								quality: row.values[21],
+								project: row.values[22],
+								sdg_goals: row.values[23],
+								sdg_targets: row.values[24],
 							})
 							.orIgnore();
 					});
