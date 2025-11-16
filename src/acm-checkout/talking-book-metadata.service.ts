@@ -85,6 +85,36 @@ export class TalkingBookMetadataService {
 					const csv = `${tmpdir()}/${randomUUID()}.csv`;
 					writeFileSync(csv, dto.packagesInDeployment);
 
+					const workbook = new Excel.Workbook();
+					const worksheet = await workbook.csv.readFile(csv);
+
+					worksheet.eachRow(async (row: Excel.Row, rowNumber: number) => {
+						if (rowNumber === 1) return;
+
+						await manager
+							.createQueryBuilder()
+							.insert()
+							.into(PackageInDeployment)
+							.values({
+								project_code: row.values[1],
+								deployment_code: row.values[2],
+								contentpackage: row.values[3],
+								packagename: row.values[4],
+								startdate: row.values[5],
+								enddate: row.values[6],
+								languagecode: row.values[7],
+								groups: row.values[8],
+								distribution: row.values[9],
+							})
+							.orIgnore();
+					});
+				}
+
+				// Save categories In package
+				if (dto.categoriesInPackage) {
+					const csv = `${tmpdir()}/${randomUUID()}.csv`;
+					writeFileSync(csv, dto.categoriesInPackage);
+
 					console.log(csv);
 					const workbook = new Excel.Workbook();
 					const worksheet = await workbook.csv.readFile(csv);
@@ -97,17 +127,12 @@ export class TalkingBookMetadataService {
 						await manager
 							.createQueryBuilder()
 							.insert()
-							.into(PackageInDeployment)
+							.into(CategoryInPackage)
 							.values({
-								project_code: row.values[1],
-								deployment_code: row.values[2],
-								contentpackage: row.values[3],
-								packagename: row.values[3],
-								startdate: row.values[3],
-								enddate: row.values[3],
-								languagecode: row.values[3],
-								groups: row.values[3],
-								distribution: row.values[3],
+								project: row.values[1],
+								contentpackage: row.values[2],
+								categoryid: row.values[3],
+								position: row.values[4],
 							})
 							.orIgnore();
 					});
