@@ -19,6 +19,7 @@ import { writeFile, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 import { ProjectLanguage } from "src/entities/language.entity";
+import { Logger } from "src/logger";
 
 @Injectable()
 export class TalkingBookMetadataService {
@@ -30,7 +31,7 @@ export class TalkingBookMetadataService {
 	}) {
 		const { dto, currentUser } = opts;
 
-		await DeploymentMetadata.getRepository().manager.transaction(
+		const err = await DeploymentMetadata.getRepository().manager.transaction(
 			async (manager) => {
 				// Save languages
 				if (dto.languages) {
@@ -41,7 +42,7 @@ export class TalkingBookMetadataService {
 					const worksheet = await workbook.csv.readFile(csv);
 
 					worksheet.eachRow(async (row: Excel.Row, rowNumber: number) => {
-						if (rowNumber === 1) return;
+						if (rowNumber === 1) return null;
 
 						await manager
 							.createQueryBuilder()
@@ -50,9 +51,10 @@ export class TalkingBookMetadataService {
 							.values({
 								code: row.values[1],
 								name: row.values[2],
-								project: row.values[3],
+								projectcode: row.values[3],
 							})
-							.orIgnore();
+							.orIgnore()
+							.execute();
 					});
 				}
 
@@ -76,7 +78,8 @@ export class TalkingBookMetadataService {
 								name: row.values[2],
 								project_code: row.values[3],
 							})
-							.orIgnore();
+							.orIgnore()
+							.execute();
 					});
 				}
 
@@ -106,7 +109,8 @@ export class TalkingBookMetadataService {
 								groups: row.values[8],
 								distribution: row.values[9],
 							})
-							.orIgnore();
+							.orIgnore()
+							.execute();
 					});
 				}
 
@@ -131,7 +135,8 @@ export class TalkingBookMetadataService {
 								categoryid: row.values[3],
 								position: row.values[4],
 							})
-							.orIgnore();
+							.orIgnore()
+							.execute();
 					});
 				}
 
@@ -157,7 +162,8 @@ export class TalkingBookMetadataService {
 								categoryid: row.values[4],
 								position: row.values[5],
 							})
-							.orIgnore();
+							.orIgnore()
+							.execute();
 					});
 				}
 
@@ -171,11 +177,11 @@ export class TalkingBookMetadataService {
 					const worksheet = await workbook.csv.readFile(csv);
 
 					worksheet.eachRow(async (row: Excel.Row, rowNumber: number) => {
-						console.log(row.values, rowNumber);
+						// console.log(row.values, rowNumber);
 
 						if (rowNumber === 1) return;
 
-						await manager
+						const query = await manager
 							.createQueryBuilder()
 							.insert()
 							.into(ContentMetadata)
@@ -204,12 +210,50 @@ export class TalkingBookMetadataService {
 								project: row.values[22],
 								sdg_goals: row.values[23],
 								sdg_targets: row.values[24],
-							})
-							.orIgnore();
+							});
+
+						// Rewrite the sql query with update on conflict.
+						// .orIgnore() with sql statements doesn't work. Don't ask me wh :)
+						const sql = `
+              ${query.getSql()}
+
+              ON CONFLICT ON CONSTRAINT contentmetadata2_pkey DO UPDATE SET
+                title=EXCLUDED.title,
+                dc_publisher=EXCLUDED.dc_publisher,
+                source=EXCLUDED.source,
+                languagecode=EXCLUDED.languagecode,
+                relatedid=EXCLUDED.relatedid,
+                dtb_revision=EXCLUDED.dtb_revision,
+                duration_sec=EXCLUDED.duration_sec,
+                format=EXCLUDED.format,
+                targetaudience=EXCLUDED.targetaudience,
+                daterecorded=EXCLUDED.daterecorded,
+                keywords=EXCLUDED.keywords,
+                timing=EXCLUDED.timing,
+                speaker=EXCLUDED.speaker,
+                goal=EXCLUDED.goal,
+                transcription=EXCLUDED.transcription,
+                notes=EXCLUDED.notes,
+                community=EXCLUDED.community,
+                status=EXCLUDED.status,
+                categories=EXCLUDED.categories,
+                quality=EXCLUDED.quality,
+                sdg_goals=EXCLUDED.sdg_goals,
+                sdg_targets=EXCLUDED.sdg_targets
+              `;
+
+						const params = query.getParameters();
+						await manager.query(sql, Object.values(params));
 					});
+
+					new Logger().log(
+						`Saved ${worksheet.rowCount} metadata records to db`,
+					);
 				}
 			},
 		);
+
+		console.log(err);
 
 		// const metadata = new DeploymentMetadata();
 
@@ -288,193 +332,193 @@ export class TalkingBookMetadataService {
 	/**
 	 * Creates categories, categoriesinpackage and contentsinpackage records
 	 */
-	private async _saveCategories(
-		manager: EntityManager,
-		dto: DeploymentMetadataDto,
-	) {
-		// Save project categories
-		await manager
-			.createQueryBuilder()
-			.insert()
-			.into(Category)
-			.values(
-				dto.categories.map((c) => {
-					const cat = new Category();
-					cat.id = c.id;
-					cat.name = c.name;
-					cat.project_code = c.project;
-					return cat;
-				}),
-			)
-			.orIgnore()
-			.execute();
+	// private async _saveCategories(
+	// 	manager: EntityManager,
+	// 	dto: DeploymentMetadataDto,
+	// ) {
+	// 	// Save project categories
+	// 	await manager
+	// 		.createQueryBuilder()
+	// 		.insert()
+	// 		.into(Category)
+	// 		.values(
+	// 			dto.categories.map((c) => {
+	// 				const cat = new Category();
+	// 				cat.id = c.id;
+	// 				cat.name = c.name;
+	// 				cat.project_code = c.project;
+	// 				return cat;
+	// 			}),
+	// 		)
+	// 		.orIgnore()
+	// 		.execute();
 
-		for (const key in dto.contents) {
-			let order = 1;
-			const contents = dto.contents[key];
-			const existingData = await manager.find<CategoryInPackage>(
-				CategoryInPackage,
-				{
-					where: { project: dto.project, contentpackage: contents.packageName },
-				},
-			);
+	// 	for (const key in dto.contents) {
+	// 		let order = 1;
+	// 		const contents = dto.contents[key];
+	// 		const existingData = await manager.find<CategoryInPackage>(
+	// 			CategoryInPackage,
+	// 			{
+	// 				where: { project: dto.project, contentpackage: contents.packageName },
+	// 			},
+	// 		);
 
-			const categoryNames: Array<string | undefined> =
-				contents.messages.flatMap((m) => m.category);
+	// 		const categoryNames: Array<string | undefined> =
+	// 			contents.messages.flatMap((m) => m.category);
 
-			// Save categories in packages
-			for (const name of categoryNames) {
-				// Skip if category id is not found
-				const categoryId = dto.categories.find((c) => c.name === name)?.id;
-				if (categoryId == null) continue;
+	// 		// Save categories in packages
+	// 		for (const name of categoryNames) {
+	// 			// Skip if category id is not found
+	// 			const categoryId = dto.categories.find((c) => c.name === name)?.id;
+	// 			if (categoryId == null) continue;
 
-				// Skip duplicates
-				const exists = existingData.find((m) => m.categoryid === categoryId);
-				if (exists != null) continue;
+	// 			// Skip duplicates
+	// 			const exists = existingData.find((m) => m.categoryid === categoryId);
+	// 			if (exists != null) continue;
 
-				const row = new CategoryInPackage();
-				row.project = dto.project;
-				row.position = order++;
-				row.categoryid = categoryId;
-				row.contentpackage = contents.packageName;
+	// 			const row = new CategoryInPackage();
+	// 			row.project = dto.project;
+	// 			row.position = order++;
+	// 			row.categoryid = categoryId;
+	// 			row.contentpackage = contents.packageName;
 
-				await manager.save(CategoryInPackage, row);
-			}
+	// 			await manager.save(CategoryInPackage, row);
+	// 		}
 
-			// Save content in package
-			order = 1;
-			for (const m of contents.messages) {
-				const categoryId = dto.categories.find(
-					(c) => c.name === m.category,
-				)?.id;
-				if (categoryId == null) continue;
+	// 		// Save content in package
+	// 		order = 1;
+	// 		for (const m of contents.messages) {
+	// 			const categoryId = dto.categories.find(
+	// 				(c) => c.name === m.category,
+	// 			)?.id;
+	// 			if (categoryId == null) continue;
 
-				const pkg = new ContentInPackage();
-				pkg.project_id = dto.project;
-				pkg.contentpackage = contents.packageName;
-				pkg.contentid = m.contentId;
-				pkg.categoryid = categoryId;
-				pkg.position = order++;
+	// 			const pkg = new ContentInPackage();
+	// 			pkg.project_id = dto.project;
+	// 			pkg.contentpackage = contents.packageName;
+	// 			pkg.contentid = m.contentId;
+	// 			pkg.categoryid = categoryId;
+	// 			pkg.position = order++;
 
-				await manager
-					.createQueryBuilder()
-					.insert()
-					.into(ContentInPackage)
-					.values(pkg)
-					.orIgnore()
-					.execute();
-			}
-		}
-	}
+	// 			await manager
+	// 				.createQueryBuilder()
+	// 				.insert()
+	// 				.into(ContentInPackage)
+	// 				.values(pkg)
+	// 				.orIgnore()
+	// 				.execute();
+	// 		}
+	// 	}
+	// }
 
-	private async saveMetadata(
-		type: ContentType,
-		deployment: Deployment,
-		data: MessageMetadataDto,
-		languageOrVariant: string,
-		metadata: DeploymentMetadata,
-		manager: EntityManager,
-	) {
-		await this.saveContentMetadata(
-			type,
-			deployment,
-			data,
-			languageOrVariant,
-			metadata,
-			manager,
-		);
+	// private async saveMetadata(
+	// 	type: ContentType,
+	// 	deployment: Deployment,
+	// 	data: MessageMetadataDto,
+	// 	languageOrVariant: string,
+	// 	metadata: DeploymentMetadata,
+	// 	manager: EntityManager,
+	// ) {
+	// 	await this.saveContentMetadata(
+	// 		type,
+	// 		deployment,
+	// 		data,
+	// 		languageOrVariant,
+	// 		metadata,
+	// 		manager,
+	// 	);
 
-		// await this.saveContentPackages(deployment, data, metadata, manager);
-	}
+	// 	// await this.saveContentPackages(deployment, data, metadata, manager);
+	// }
 
-	private async saveContentMetadata(
-		type: ContentType,
-		deployment: Deployment,
-		data: MessageMetadataDto,
-		languageOrVariant: string,
-		metadata: DeploymentMetadata,
-		manager: EntityManager,
-	) {
-		const content = new ContentMetadata();
-		content.type = type;
-		content.deployment_metadata_id = metadata.id;
-		content.title = data.title;
-		content.content_id = data.contentId;
-		content.relative_path = data.path;
-		content.language_code = data.language;
-		content.size = data.size;
-		content.position = data.position;
-		content.dc_publisher = data.publisher;
-		content.source = data.source!;
-		content.related_id = data.relatedId;
-		content.dtb_revision = data.dtbRevision;
-		content.recorded_at = data.recordedAt;
-		content.keywords = data.keywords;
-		content.timing = data.timing;
-		content.speaker = data.speaker;
-		content.goal = data.goal;
-		content.transcription = data.transcription;
-		content.notes = data.notes;
-		content.status = data.status;
-		content.categories = data.category;
-		content.project = deployment.project_id;
+	// private async saveContentMetadata(
+	// 	type: ContentType,
+	// 	deployment: Deployment,
+	// 	data: MessageMetadataDto,
+	// 	languageOrVariant: string,
+	// 	metadata: DeploymentMetadata,
+	// 	manager: EntityManager,
+	// ) {
+	// 	const content = new ContentMetadata();
+	// 	content.type = type;
+	// 	content.deployment_metadata_id = metadata.id;
+	// 	content.title = data.title;
+	// 	content.content_id = data.contentId;
+	// 	content.relative_path = data.path;
+	// 	content.language_code = data.language;
+	// 	content.size = data.size;
+	// 	content.position = data.position;
+	// 	content.dc_publisher = data.publisher;
+	// 	content.source = data.source!;
+	// 	content.related_id = data.relatedId;
+	// 	content.dtb_revision = data.dtbRevision;
+	// 	content.recorded_at = data.recordedAt;
+	// 	content.keywords = data.keywords;
+	// 	content.timing = data.timing;
+	// 	content.speaker = data.speaker;
+	// 	content.goal = data.goal;
+	// 	content.transcription = data.transcription;
+	// 	content.notes = data.notes;
+	// 	content.status = data.status;
+	// 	content.categories = data.category;
+	// 	content.project = deployment.project_id;
 
-		if (languageOrVariant.indexOf("-") > -1) {
-			content.variant = languageOrVariant;
-		}
+	// 	if (languageOrVariant.indexOf("-") > -1) {
+	// 		content.variant = languageOrVariant;
+	// 	}
 
-		if (type === ContentType.message || type === ContentType.playlist_prompt) {
-			content.playlist_id = (
-				await Playlist.findOne({
-					where: {
-						title: data.playlist,
-						deployment_id: deployment.id,
-					},
-				})
-			)?._id;
-		}
+	// 	if (type === ContentType.message || type === ContentType.playlist_prompt) {
+	// 		content.playlist_id = (
+	// 			await Playlist.findOne({
+	// 				where: {
+	// 					title: data.playlist,
+	// 					deployment_id: deployment.id,
+	// 				},
+	// 			})
+	// 		)?._id;
+	// 	}
 
-		// Parse duration
-		if (data.duration != null) {
-			const [duration, quality] = data.duration.split(/\s+/g); // eg. "05:46  l"
-			const [minutes, seconds] = duration.split(":"); // eg. 05:46
+	// 	// Parse duration
+	// 	if (data.duration != null) {
+	// 		const [duration, quality] = data.duration.split(/\s+/g); // eg. "05:46  l"
+	// 		const [minutes, seconds] = duration.split(":"); // eg. 05:46
 
-			content.duration_sec = (+minutes * 60 + +seconds).toString();
-			content.quality = quality;
-		}
+	// 		content.duration_sec = (+minutes * 60 + +seconds).toString();
+	// 		content.quality = quality;
+	// 	}
 
-		await manager
-			.createQueryBuilder()
-			.insert()
-			.into(ContentMetadata)
-			.values(content)
-			.orIgnore()
-			.execute();
-	}
+	// 	await manager
+	// 		.createQueryBuilder()
+	// 		.insert()
+	// 		.into(ContentMetadata)
+	// 		.values(content)
+	// 		.orIgnore()
+	// 		.execute();
+	// }
 
-	private async saveDeploymentPackage(
-		deployment: Deployment,
-		opts: { package: string; languageOrVariant: string },
-		manager: EntityManager,
-	) {
-		const pkg = new PackageInDeployment();
-		pkg.project_code = deployment.project_id;
-		pkg.deployment_code = deployment.deploymentname ?? deployment.deployment;
-		pkg.contentpackage = opts.package;
-		pkg.packagename = opts.package;
-		pkg.startdate = deployment.start_date;
-		pkg.enddate = deployment.end_date;
-		pkg.enddate = deployment.end_date;
-		pkg.distribution = deployment.distribution;
-		pkg.groups = `default,${opts.languageOrVariant}`;
-		pkg.languagecode = opts.languageOrVariant;
+	// private async saveDeploymentPackage(
+	// 	deployment: Deployment,
+	// 	opts: { package: string; languageOrVariant: string },
+	// 	manager: EntityManager,
+	// ) {
+	// 	const pkg = new PackageInDeployment();
+	// 	pkg.project_code = deployment.project_id;
+	// 	pkg.deployment_code = deployment.deploymentname ?? deployment.deployment;
+	// 	pkg.contentpackage = opts.package;
+	// 	pkg.packagename = opts.package;
+	// 	pkg.startdate = deployment.start_date;
+	// 	pkg.enddate = deployment.end_date;
+	// 	pkg.enddate = deployment.end_date;
+	// 	pkg.distribution = deployment.distribution;
+	// 	pkg.groups = `default,${opts.languageOrVariant}`;
+	// 	pkg.languagecode = opts.languageOrVariant;
 
-		await manager
-			.createQueryBuilder()
-			.insert()
-			.into(PackageInDeployment)
-			.values(pkg)
-			.orIgnore()
-			.execute();
-	}
+	// 	await manager
+	// 		.createQueryBuilder()
+	// 		.insert()
+	// 		.into(PackageInDeployment)
+	// 		.values(pkg)
+	// 		.orIgnore()
+	// 		.execute();
+	// }
 }
