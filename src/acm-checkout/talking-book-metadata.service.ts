@@ -37,18 +37,12 @@ export class TalkingBookMetadataService {
 					const csv = `${tmpdir()}/${randomUUID()}.csv`;
 					writeFileSync(csv, dto.languages);
 
-					console.log(csv);
 					const workbook = new Excel.Workbook();
 					const worksheet = await workbook.csv.readFile(csv);
 
 					worksheet.eachRow(async (row: Excel.Row, rowNumber: number) => {
 						if (rowNumber === 1) return;
 
-						console.log({
-								code: row.values[1],
-								name: row.values[2],
-								project: row.values[3],
-							});
 						await manager
 							.createQueryBuilder()
 							.insert()
@@ -59,10 +53,33 @@ export class TalkingBookMetadataService {
 								project: row.values[3],
 							})
 							.orIgnore();
-						// console.log(row.model, rowNumber);
 					});
-					// for(const idex of worksheet.eachRow)
-					// console.log(worksheet.columns[0].values);
+				}
+
+				// Save categories
+				if (dto.categories) {
+					const csv = `${tmpdir()}/${randomUUID()}.csv`;
+					writeFileSync(csv, dto.categories);
+
+					console.log(csv);
+					const workbook = new Excel.Workbook();
+					const worksheet = await workbook.csv.readFile(csv);
+
+					worksheet.eachRow(async (row: Excel.Row, rowNumber: number) => {
+						if (rowNumber === 1) return;
+
+						console.log(row.values, rowNumber);
+						await manager
+							.createQueryBuilder()
+							.insert()
+							.into(Category)
+							.values({
+								id: row.values[1],
+								name: row.values[2],
+								project_code: row.values[3],
+							})
+							.orIgnore();
+					});
 				}
 			},
 		);
