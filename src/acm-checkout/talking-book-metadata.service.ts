@@ -115,6 +115,31 @@ export class TalkingBookMetadataService {
 					const csv = `${tmpdir()}/${randomUUID()}.csv`;
 					writeFileSync(csv, dto.categoriesInPackage);
 
+					const workbook = new Excel.Workbook();
+					const worksheet = await workbook.csv.readFile(csv);
+
+					worksheet.eachRow(async (row: Excel.Row, rowNumber: number) => {
+						if (rowNumber === 1) return;
+
+						await manager
+							.createQueryBuilder()
+							.insert()
+							.into(CategoryInPackage)
+							.values({
+								project: row.values[1],
+								contentpackage: row.values[2],
+								categoryid: row.values[3],
+								position: row.values[4],
+							})
+							.orIgnore();
+					});
+				}
+
+				// Save contents In package
+				if (dto.contentInPackages) {
+					const csv = `${tmpdir()}/${randomUUID()}.csv`;
+					writeFileSync(csv, dto.contentInPackages);
+
 					console.log(csv);
 					const workbook = new Excel.Workbook();
 					const worksheet = await workbook.csv.readFile(csv);
@@ -127,12 +152,13 @@ export class TalkingBookMetadataService {
 						await manager
 							.createQueryBuilder()
 							.insert()
-							.into(CategoryInPackage)
+							.into(ContentInPackage)
 							.values({
-								project: row.values[1],
+								project_id: row.values[1],
 								contentpackage: row.values[2],
-								categoryid: row.values[3],
-								position: row.values[4],
+								contentid: row.values[3],
+								categoryid: row.values[4],
+								position: row.values[5],
 							})
 							.orIgnore();
 					});
