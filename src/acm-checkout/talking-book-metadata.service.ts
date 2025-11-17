@@ -76,13 +76,13 @@ export class TalkingBookMetadataService {
 					const csv = `${tmpdir()}/${randomUUID()}.csv`;
 					writeFileSync(csv, dto.metadata);
 
-					await this.saveContentMetadata(csv, manager);
+					await this.saveContentsMetadata(csv, manager);
 				}
 			},
 		);
 	}
 
-	private async saveLanguages(csv: string, manager: EntityManager) {
+	async saveLanguages(csv: string, manager: EntityManager) {
 		const workbook = new Excel.Workbook();
 		const worksheet = await workbook.csv.readFile(csv);
 
@@ -103,7 +103,7 @@ export class TalkingBookMetadataService {
 		});
 	}
 
-	private async saveCategories(csv: string, manager: EntityManager) {
+	async saveCategories(csv: string, manager: EntityManager) {
 		const workbook = new Excel.Workbook();
 		const worksheet = await workbook.csv.readFile(csv);
 
@@ -124,7 +124,7 @@ export class TalkingBookMetadataService {
 		});
 	}
 
-	private async savePackagesInDeployment(csv: string, manager: EntityManager) {
+	async savePackagesInDeployment(csv: string, manager: EntityManager) {
 		const workbook = new Excel.Workbook();
 		const worksheet = await workbook.csv.readFile(csv);
 
@@ -151,7 +151,7 @@ export class TalkingBookMetadataService {
 		});
 	}
 
-	private async saveContentInPackages(csv: string, manager: EntityManager) {
+	async saveContentInPackages(csv: string, manager: EntityManager) {
 		const workbook = new Excel.Workbook();
 		const worksheet = await workbook.csv.readFile(csv);
 
@@ -174,7 +174,7 @@ export class TalkingBookMetadataService {
 		});
 	}
 
-	private async saveCategoriesInPackage(csv: string, manager: EntityManager) {
+	async saveCategoriesInPackage(csv: string, manager: EntityManager) {
 		const workbook = new Excel.Workbook();
 		const worksheet = await workbook.csv.readFile(csv);
 
@@ -196,7 +196,7 @@ export class TalkingBookMetadataService {
 		});
 	}
 
-	private async saveContentMetadata(csv: string, manager: EntityManager) {
+	async saveContentsMetadata(csv: string, manager: EntityManager) {
 		const workbook = new Excel.Workbook();
 		const worksheet = await workbook.csv.readFile(csv);
 

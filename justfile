@@ -42,6 +42,9 @@ prod: venv
 new-acm *args='': venv
 	npm run console new-acm -- "$@"
 
+import-acm-metadata *args='': venv
+	npm run console import-acm-metadata -- "$@"
+
 tableau-geo *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/tableau/tableau_geo_importer.py "$@"
 
