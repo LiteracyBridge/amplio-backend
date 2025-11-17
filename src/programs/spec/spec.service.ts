@@ -659,7 +659,7 @@ export class ProgramSpecService {
 					deploymentname: deployment.deploymentname,
 					start_date: deployment.startdate,
 					end_date: deployment.enddate,
-					deployment: deployment.deployment,
+					deployment: `${program.program_id}-${deployment.deploymentnumber}`,
 				});
 			}
 		}
