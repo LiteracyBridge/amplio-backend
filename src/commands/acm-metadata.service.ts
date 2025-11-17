@@ -25,7 +25,8 @@ export class ACMMetadataService {
 	) {}
 
 	@Command({
-		command: "import-acm-metadata", description: "Imports ACM metadata into database",
+		command: "import-acm-metadata",
+		description: "Imports ACM metadata into database",
 		options: [
 			{
 				flags: "-n, --name <value>",
@@ -45,23 +46,21 @@ export class ACMMetadataService {
 		console.log(`\Importing metadata for ${name}.\n`);
 
 		await this.dataSource.manager.transaction(async (manager) => {
-			if (name === "categories") {
-				await this.service.saveCategories(path, manager);
-			}
-			if (name === "languages") {
-				await this.service.saveLanguages(path, manager);
-			}
-			if (name === "packages-in-deployment") {
-				await this.service.savePackagesInDeployment(path, manager);
-			}
-			if (name === "categories-in-package") {
-				await this.service.saveCategoriesInPackage(path, manager);
-			}
-			if (name === "content-in-packages") {
-				await this.service.saveContentInPackages(path, manager);
-			}
-			if (name === "contents-metadata") {
-				await this.service.saveContentsMetadata(path, manager);
+			switch (name) {
+				case "categories":
+					return await this.service.saveCategories(path, manager);
+				case "languages":
+					return await this.service.saveLanguages(path, manager);
+				case "packages-in-deployment":
+					return await this.service.savePackagesInDeployment(path, manager);
+				case "categories-in-package":
+					return await this.service.saveCategoriesInPackage(path, manager);
+				case "content-in-packages":
+					return await this.service.saveContentInPackages(path, manager);
+				case "contents-metadata":
+					return await this.service.saveContentsMetadata(path, manager);
+				default:
+					console.error(`Name must be one of: ${METADATA_NAMES.join(", ")}.`);
 			}
 		});
 	}
