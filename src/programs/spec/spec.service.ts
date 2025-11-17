@@ -605,7 +605,6 @@ export class ProgramSpecService {
 			"deploymentname",
 			"startdate",
 			"enddate",
-			"deployment",
 		];
 
 		for (const deployment of deployments) {
