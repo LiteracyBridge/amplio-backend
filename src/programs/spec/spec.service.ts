@@ -683,9 +683,30 @@ export class ProgramSpecService {
 		await manager.upsert(Program, general, ["program_id"]);
 	}
 
+    // ----------------------------------
+	/// old way of sanitizing strings
+	// ----------------------------------
+
+	// private sanitazeString(input: string) {
+	// 	const invalidChars = /[^\d\w\s]/g;
+	// 	// Replace invalid characters with a space
+	// 	return input.replace(invalidChars, " ");
+	// }
+
 	private sanitazeString(input: string) {
-		const invalidChars = /[^\d\w\s]/g;
+
+		// disallow special chars. including underscore
+		const invalidChars = /[^a-zA-Z0-9\s]/g;
+		
 		// Replace invalid characters with a space
-		return input.replace(invalidChars, " ");
-	}
+		let sanitized = input.replace(invalidChars, " ");
+		
+		// Remove consecutive spaces. 2 or more
+		sanitized = sanitized.replace(/\s{2,}/g, " ");	
+		
+		// Trim leading/trailing spaces
+		sanitized = sanitized.trim();
+		
+		return sanitized;
+	  }
 }
