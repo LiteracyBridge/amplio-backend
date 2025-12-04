@@ -39,6 +39,16 @@ export class SurveyService {
         sections: true,
         questions: { choices: { sub_options: true } },
       },
+
+      order: {
+        questions: {
+          order: 'ASC' 
+        },
+        sections: {
+          id: 'ASC' 
+        }
+      }
+
     });
 
     if (survey == null) {
@@ -55,7 +65,7 @@ export class SurveyService {
 
     // Fetch existing questions in the database
     const existingQuestions = await Question.find({
-        where: { survey_id: survey.id }
+      where: { survey_id: survey.id }
     });
 
     // Create a Set of question IDs from the new data
@@ -66,47 +76,47 @@ export class SurveyService {
 
     // Delete removed questions from the database
     for (const removedQuestion of removedQuestions) {
-        await removedQuestion.remove();
+      await removedQuestion.remove();
     }
 
     // Handle sections
     for (let i = 0; i < dto.sections.length; i++) {
-        const section_dto = dto.sections[i];
+      const section_dto = dto.sections[i];
 
-        // Delete removed sections from db
-        if (section_dto.is_deleted === true) {
-            await SurveySection.findOne({
-                where: { _id: section_dto._id, survey_id: survey.id },
-            }).then((section) => section?.softRemove());
+      // Delete removed sections from db
+      if (section_dto.is_deleted === true) {
+        await SurveySection.findOne({
+          where: { _id: section_dto._id, survey_id: survey.id },
+        }).then((section) => section?.softRemove());
 
-            dto.sections.splice(i, 1); // Remove from dto
-            continue;
+        dto.sections.splice(i, 1); // Remove from dto
+        continue;
+      }
+
+      const created = await this.createSection(
+        { id: section_dto._id, name: section_dto.name },
+        surveyId
+      );
+
+      dto.sections[i] = section_dto;
+      dto.questions = dto.questions.map(q => {
+        if (q.section_id === created._id || q.section_id === created.id) {
+          q.section_id = created.id;
         }
-
-        const created = await this.createSection(
-            { id: section_dto._id, name: section_dto.name },
-            surveyId
-        );
-
-        dto.sections[i] = section_dto;
-        dto.questions = dto.questions.map(q => {
-            if (q.section_id === created._id || q.section_id === created.id) {
-                q.section_id = created.id;
-            }
-            return q;
-        });
+        return q;
+      });
     }
 
     // Create/update questions
     for (let i = 0; i < dto.questions.length; i++) {
-        const question_dto = dto.questions[i];
+      const question_dto = dto.questions[i];
 
-        question_dto.order = i;
-        await this.createQuestion(surveyId, question_dto).then((q) => q.id);
+      question_dto.order = i;
+      await this.createQuestion(surveyId, question_dto).then((q) => q.id);
     }
 
     return this.findById(surveyId);
-}
+  }
 
 
   private async createQuestion(survey_id: number, dto: QuestionItemDto) {

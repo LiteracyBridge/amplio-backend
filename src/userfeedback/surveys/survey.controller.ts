@@ -12,11 +12,31 @@ export class SurveyController {
   async getAll(
     @Param('project') project: string
   ) {
+    const surveys = await Survey.find({
+      where: { project_code: project },
+      relations: {
+        deployment: true,
+        sections: true,
+        questions: {
+          choices: {
+            sub_options: true
+          }
+        }
+      },
+      // when the survey is fetched, also we fetch the questions and sections in a specific order
+      // this helps to get the same order as they were created from the frontend
+      order: {
+        questions: {
+          order: 'ASC'
+        },
+        sections: {
+          id: 'ASC'
+        }
+      }
+    });
+
     return ApiResponse.Success({
-      data: await Survey.find({
-        where: { project_code: project },
-        relations: { deployment: true, sections: true, questions: { choices: { sub_options: true } } }
-      })
+      data: surveys
     })
   }
 

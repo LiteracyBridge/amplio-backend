@@ -205,6 +205,17 @@ export class ProgramSpecService {
 						for (const code of newLanguages) {
 							if (code === "") continue;
 
+							// Clear previous entries
+							await manager
+								.createQueryBuilder()
+								.delete()
+								.from(MessageLanguages)
+								.where("language_code = :code", { code: code })
+								.andWhere("message_id = :id", { id: insertedMsg.raw[0].id })
+								// .orIgnore()
+								.execute();
+
+							// Save new entry
 							await manager
 								.createQueryBuilder()
 								.insert()
@@ -254,14 +265,13 @@ export class ProgramSpecService {
 					row.id = Recipient.generateId(row as any);
 				}
 
-			
-				if (!row.group_size){
-					row.group_size = 0; 
-				}  
+				if (!row.group_size) {
+					row.group_size = 0;
+				}
 
 				if (!row.support_entity) {
-					row.support_entity = '';
-				  }
+					row.support_entity = "";
+				}
 
 				// Save recipients
 				const [query, params] = await manager
@@ -291,7 +301,7 @@ export class ProgramSpecService {
 							"access_code",
 							"deployments",
 						],
-						["recipientid", "project"] 
+						["recipientid", "project"],
 						//  "recipients_uniqueness_key"
 					)
 					.getQueryAndParameters();
@@ -542,41 +552,41 @@ export class ProgramSpecService {
 		};
 
 		const client = new S3Client({
-			 region: appConfig().aws.region,
-			 credentials: {
+			region: appConfig().aws.region,
+			credentials: {
 				accessKeyId: appConfig().aws.accessKeyId!,
 				secretAccessKey: appConfig().aws.secretId!,
-			  },
-			});
+			},
+		});
 
 		// try {
-			// Upload excel file
-			if (opts.format === "xlsx") {
+		// Upload excel file
+		if (opts.format === "xlsx") {
+			await client.send(
+				new PutObjectCommand({
+					Bucket: appConfig().buckets.programSpec,
+					Key: `${opts.projectCode}/pub_progspec.xlsx`,
+					Body: Buffer.from(await opts.xlsx.xlsx.writeBuffer()),
+					Metadata: metadata,
+				}),
+			);
+		}
+
+		// Upload csv files
+		if (opts.format === "csv") {
+			for (const k in names) {
 				await client.send(
 					new PutObjectCommand({
 						Bucket: appConfig().buckets.programSpec,
-						Key: `${opts.projectCode}/pub_progspec.xlsx`,
-						Body: Buffer.from(await opts.xlsx.xlsx.writeBuffer()),
+						Key: `${opts.projectCode}/${names[k]}`,
+						Body: Buffer.from(
+							await opts.xlsx.csv.writeBuffer({ sheetName: k }),
+						),
 						Metadata: metadata,
 					}),
 				);
 			}
-
-			// Upload csv files
-			if (opts.format === "csv") {
-				for (const k in names) {
-					await client.send(
-						new PutObjectCommand({
-							Bucket: appConfig().buckets.programSpec,
-							Key: `${opts.projectCode}/${names[k]}`,
-							Body: Buffer.from(
-								await opts.xlsx.csv.writeBuffer({ sheetName: k }),
-							),
-							Metadata: metadata,
-						}),
-					);
-				}
-			}
+		}
 		// } catch (error) {
 		// 	throw new InternalServerErrorException(
 		// 		"Failed to upload excel file to S3",
@@ -589,20 +599,23 @@ export class ProgramSpecService {
 		deployments: Record<string, any>[],
 		program: Program,
 	) {
-
-		
 		// validate required fields
-    const requiredFields = ['deploymentnumber', 'deploymentname', 'startdate', 'enddate', 'deployment'];
-    
-    for (const deployment of deployments) {
-        for (const field of requiredFields) {
-            if (!deployment[field]) {
-                throw new BadRequestException(
-                    `Field '${field}' is required for deployment ${deployment.deploymentnumber || ''}`
-                );
-            }
-        }
-    }
+		const requiredFields = [
+			"deploymentnumber",
+			"deploymentname",
+			"startdate",
+			"enddate",
+		];
+
+		for (const deployment of deployments) {
+			for (const field of requiredFields) {
+				if (!deployment[field]) {
+					throw new BadRequestException(
+						`Field '${field}' is required for deployment ${deployment.deploymentnumber || ""}`,
+					);
+				}
+			}
+		}
 
 		// Step 1: Fetch existing deployments from the database
 		const existingDeployments = await manager
@@ -646,7 +659,7 @@ export class ProgramSpecService {
 					deploymentname: deployment.deploymentname,
 					start_date: deployment.startdate,
 					end_date: deployment.enddate,
-					deployment: deployment.deployment,
+					deployment: `${program.program_id}-${deployment.deploymentnumber}`,
 				});
 			}
 		}
@@ -683,9 +696,30 @@ export class ProgramSpecService {
 		await manager.upsert(Program, general, ["program_id"]);
 	}
 
+    // ----------------------------------
+	/// old way of sanitizing strings
+	// ----------------------------------
+
+	// private sanitazeString(input: string) {
+	// 	const invalidChars = /[^\d\w\s]/g;
+	// 	// Replace invalid characters with a space
+	// 	return input.replace(invalidChars, " ");
+	// }
+
 	private sanitazeString(input: string) {
-		const invalidChars = /[^\d\w\s]/g;
+
+		// disallow special chars. including underscore
+		const invalidChars = /[^a-zA-Z0-9\s]/g;
+		
 		// Replace invalid characters with a space
-		return input.replace(invalidChars, " ");
-	}
+		let sanitized = input.replace(invalidChars, " ");
+		
+		// Remove consecutive spaces. 2 or more
+		sanitized = sanitized.replace(/\s{2,}/g, " ");	
+		
+		// Trim leading/trailing spaces
+		sanitized = sanitized.trim();
+		
+		return sanitized;
+	  }
 }

@@ -55,6 +55,8 @@ import { CategoryInPackage } from "./entities/category_in_package.entity";
 import { PlayStatistic } from "./entities/playstatistics.entity";
 import { PlayedEvent } from "./entities/played_event.entity";
 import { RecipientMetadata } from "./entities/recipient-metadata.entity";
+import { TalkingBookSurveyResponse } from "./entities/tb_survey_response.entity";
+import { TalkingBookSurvey } from "./entities/tb_survey.entity";
 
 config();
 
@@ -115,6 +117,8 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 				PlayStatistic,
 				PlayedEvent,
 				RecipientMetadata,
+				TalkingBookSurvey,
+				TalkingBookSurveyResponse,
 			],
 			subscribers: [
 				PlaylistSubscriber,

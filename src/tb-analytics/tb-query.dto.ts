@@ -19,6 +19,10 @@ export class SummaryAnalyticsQueryDto {
 
   @IsOptional()
   @IsString()
+  languageCode?: string;
+
+  @IsOptional()
+  @IsString()
   language?: string;
 
   @IsOptional()

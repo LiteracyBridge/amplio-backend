@@ -9,14 +9,19 @@ import { Recipient } from "src/entities/recipient.entity";
 import os from "node:os";
 import fs from "node:fs";
 import { execSync } from "node:child_process";
-import { zipDirectory, unzipFile, s3Sync } from "src/utilities";
+import { zipDirectory, unzipFile, s3Sync, s3Client } from "src/utilities";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import {
 	S3Client,
 	GetObjectCommand,
 	PutObjectCommand,
+	ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
-import { CompanionStatisticsDto, RecipientDto } from "./companion.dto";
+import {
+	CompanionStatisticsDto,
+	RecipientDto,
+	SurveyResponseDto,
+} from "./companion.dto";
 import { PlayedEvent } from "src/entities/played_event.entity";
 import { DateTime } from "luxon";
 import { isNotEmpty } from "class-validator";
@@ -26,6 +31,9 @@ import { TalkingBookLoaderId } from "src/entities/tbloader-ids.entity";
 import path from "node:path";
 import { UserFeedbackMessage } from "src/entities/uf_message.entity";
 import { RecipientMetadata } from "src/entities/recipient-metadata.entity";
+import { TalkingBookSurvey } from "src/entities/tb_survey.entity";
+import { TalkingBookSurveyResponse } from "src/entities/tb_survey_response.entity";
+import { randomUUID } from "node:crypto";
 
 @Injectable()
 export class CompanionAppService {
@@ -134,6 +142,68 @@ export class CompanionAppService {
 		return promptsCache;
 	}
 
+	/**
+	 * Download all survey files as a zip
+	 *
+	 */
+	async downloadSurveys(metadataId: string) {
+		const metadata = await DeploymentMetadata.findOne({
+			where: { id: metadataId, published: true },
+			relations: { project: true, deployment: { playlists: true } },
+		});
+
+		if (metadata == null) {
+			throw new NotFoundException("Invalid deployment ID");
+		}
+
+		// Download system prompts
+		const key = `${metadata.project.code}/programspec/`;
+
+		const result = await s3Client().send(
+			new ListObjectsV2Command({
+				Bucket: `${appConfig().buckets.content}`,
+				Prefix: key,
+			}),
+		);
+		const surveyKeys: string[] = [];
+
+		for (const c of result.Contents ?? []) {
+			if (!c.Key?.endsWith(".survey")) continue;
+
+			// Retrieve the file name from key
+			const name = c.Key.split("/").at(-1)!.replace(".survey", ""); // AMPBUZ-DEV/programspec/Health.survey -> Health
+
+			// The survey name must also be a playlist title in this  deployment
+			const exists = metadata.deployment.playlists.find(
+				(p) => p.title === name,
+			);
+			if (exists == null) continue;
+
+			surveyKeys.push(c.Key);
+		}
+
+		// No cache exists, download from s3
+		const dir = `${os.tmpdir()}/surveys-${metadata.revision}`;
+		const cache = `${dir}.zip`;
+		if (fs.existsSync(cache)) {
+			return cache;
+		}
+
+		if (!fs.existsSync(dir)) {
+			fs.mkdirSync(dir);
+		}
+
+		await s3Sync({
+			s3Key: surveyKeys,
+			destinationDir: dir,
+			bucket: appConfig().buckets.content,
+		});
+
+		await zipDirectory(dir, cache);
+
+		return cache;
+	}
+
 	async downloadContent(opts: {
 		id: string;
 		language: string;
@@ -162,19 +232,12 @@ export class CompanionAppService {
 		}
 
 		// Generates a presigned url
-		const client = new S3Client({
-			region: appConfig().aws.region,
-			credentials: {
-				accessKeyId: appConfig().aws.accessKeyId!,
-				secretAccessKey: appConfig().aws.secretId!,
-			},
-		});
 		const command = new GetObjectCommand({
 			Bucket: `${appConfig().buckets.content}`,
 			Key: `${this.getRevisionPath(metadata)}/${msg.path}`,
 		});
 		// @ts-ignore
-		const url = await getSignedUrl(client, command, { expiresIn: 604800 });
+		const url = await getSignedUrl(s3Client(), command, { expiresIn: 604800 });
 
 		return url;
 	}
@@ -318,6 +381,66 @@ export class CompanionAppService {
 		}
 	}
 
+	async saveSurveyResponses(responses: SurveyResponseDto[]) {
+		if (responses.length === 0) return;
+
+		const grouped = groupBy(responses, (r) => r.surveyId);
+		const collectionId = randomUUID();
+		const deployment = await DeploymentMetadata.findOne({
+			where: {
+				project: { code: responses[0].project },
+				revision: responses[0].revision,
+			},
+		});
+		await TalkingBookSurvey.getRepository().manager.transaction(
+			async (manager) => {
+				// Save played event for each stats
+				for (const surveyId in grouped) {
+					const data = grouped[surveyId];
+
+					const survey = new TalkingBookSurvey();
+					survey.survey_uuid = surveyId;
+					survey.talkingBookId = data[0].deviceName;
+					survey.programId = data[0].project;
+					survey.surveyId = data[0].playlist;
+					survey.recipientId = data[0].recipientId;
+					survey.timestamp = DateTime.fromISO(data[0].createdAt).toJSDate();
+					survey.collection_uuid = collectionId;
+					survey.deployment_uuid = deployment!.id;
+
+					await manager
+						.createQueryBuilder()
+						.insert()
+						.into(TalkingBookSurvey)
+						.values(survey)
+						.orIgnore()
+						.execute();
+
+					// Save responses
+					await manager
+						.createQueryBuilder()
+						.insert()
+						.into(TalkingBookSurveyResponse)
+						.values(
+							data.map((d) => {
+								const resp = new TalkingBookSurveyResponse();
+								resp.survey_uuid = d.surveyId;
+								resp.question = d.questionNo;
+								resp.response = (d.response || d.recordingPath)!;
+								return resp;
+							}),
+						)
+						.orIgnore()
+						.execute();
+
+					// TODO: save recorded responses
+				}
+			},
+		);
+
+    return true;
+	}
+
 	/**
 	 * Saves user feedback messages to database and S3
 	 *
@@ -358,7 +481,9 @@ export class CompanionAppService {
 		console.log(files);
 
 		// Group files by (audio, metadata) by the file name
-		const grouped = groupBy(files, (f) => f.replace(/\.(json|wav|flac|m4a|ogg|opus)/, ""));
+		const grouped = groupBy(files, (f) =>
+			f.replace(/\.(json|wav|flac|m4a|ogg|opus)/, ""),
+		);
 		const collectionTime = DateTime.now().toISO();
 		const AUDIO_EXT = ".wav";
 

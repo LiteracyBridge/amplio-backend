@@ -42,6 +42,9 @@ prod: venv
 new-acm *args='': venv
 	npm run console new-acm -- "$@"
 
+import-acm-metadata *args='': venv
+	npm run console import-acm-metadata -- "$@"
+
 tableau-geo *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/tableau/tableau_geo_importer.py "$@"
 
@@ -168,6 +171,7 @@ deploy-testing:
     docker run --publish 127.0.0.1:6000:6000 \
         --restart always \
         --env-file .env.staging \
+        --name test-api \
         --detach test-api-server
 
 [group('deploy')]

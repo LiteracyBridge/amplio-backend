@@ -54,6 +54,7 @@ views/api-docs/slate/css/screen.css
 src/storage
 documentation
 
+acm-stats
 backups
 central-api-server.code-workspace
 insurerity-docs

@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
+import { DateTime } from "luxon";
 import { isNonNullish } from "remeda";
 import { DataSource } from "typeorm";
 
@@ -41,7 +42,7 @@ export class UsageQueryService {
 		columns: string;
 		group: string;
 		deployment_number?: number;
-		date?: string;
+		date?: string | string[];
 	}) {
 		const { programid, deployment_number, columns, group } = opts;
 
@@ -53,14 +54,29 @@ export class UsageQueryService {
 		}
 
 		let query = `SELECT DISTINCT ${columns} FROM ${TEMP_VIEW}`;
+		const dateFilter = opts.date;
 		if (
-			opts.date !== "undefined" &&
-			opts.date !== "null" &&
-			isNonNullish(opts.date) &&
-			!keywordRegex.test(opts.date!)
+			dateFilter !== "undefined" &&
+			dateFilter !== "null" &&
+			isNonNullish(dateFilter)
 		) {
-			query += ` WHERE timestamp::DATE = '${opts.date}'`;
+			if (typeof dateFilter === "string") {
+				if (!keywordRegex.test(dateFilter!)) {
+					query += ` WHERE timestamp::DATE = '${DateTime.fromISO(dateFilter).toISODate()}'`;
+				}
+			} else if (
+				Array.isArray(dateFilter) &&
+				dateFilter.filter((d) => !keywordRegex.test(d)).length > 0
+			) {
+				query += ` WHERE (timestamp::DATE >= '${DateTime.fromISO(dateFilter[0]).toISODate()}'`;
+				if (dateFilter[1] != null) {
+					query += ` AND timestamp::DATE <= '${DateTime.fromISO(dateFilter[1]).toISODate()}'`;
+				}
+
+				query += ")"; // close bracket
+			}
 		}
+
 		if (group.length > 0) {
 			query += `\n GROUP BY ${group} ORDER BY ${group};`;
 		}
@@ -74,10 +90,10 @@ export class UsageQueryService {
 		await queryRunner.startTransaction();
 
 		try {
+			console.log(
+				`Program filter: "${VIEW_QUERY + query}" with: ${programid}, ${deployment_number}`,
+			);
 			if (deployment_number) {
-				console.log(
-					`Program filter: "${VIEW_QUERY_DEPL}" with: ${programid}, ${deployment_number}`,
-				);
 				results = await queryRunner.manager.query(VIEW_QUERY_DEPL + query, [
 					programid,
 					deployment_number,
@@ -89,6 +105,7 @@ export class UsageQueryService {
 			}
 
 			await queryRunner.rollbackTransaction();
+		} catch (_err) {
 		} finally {
 			await queryRunner.release();
 		}
