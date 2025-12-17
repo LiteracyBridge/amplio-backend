@@ -151,6 +151,7 @@ def process_s3_imports():
 
     # prefix to concatenate with the global prefix (default is 'collected-data.v2')
     for prefix in args.s3:
+        args.upsert = True
         s3_driver = S3Driver(prefix=prefix, args=args)
         if s3_driver.find_objects():
             s3_driver.process_objects()
