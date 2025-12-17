@@ -14,7 +14,7 @@ class S3Driver:
             self._source_prefix = prefix[1:]
         else:
             self._source_prefix = f"{DEFAULT_SOURCE_PREFIX}/{prefix}"
-        self._args = args
+        # self._args = args
         self._source_bucket = args.source_bucket
         self._s3_objects = []
         self._now = datetime.now()
