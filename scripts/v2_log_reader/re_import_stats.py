@@ -14,21 +14,23 @@ print(ARCHIVE_PREFIX)
 
 
 def run(args: argparse.Namespace):
-    day: str = f"{args.day:02d}"
+    # day: str = f"{args.day:02d}"
     year: str = args.year
     month: str = args.month
 
-    s3_key = f"/{ARCHIVE_PREFIX}/{year}/{month}/{day}"
+    for day in range(7, 24):
+        d: str = f"{day:02d}"
+        s3_key = f"/{ARCHIVE_PREFIX}/{year}/{month}/{d}"
 
-    print(args.year, day, s3_key)
-    args.source_bucket = STATISTICS_BUCKET
-    args.no_archive = True
-    args.upsert = True
-    s3_driver = S3Driver(prefix=s3_key, args=args)
-    if s3_driver.find_objects():
-        # if s3_driver.find_objects():
-        resp = s3_driver.process_objects()
-        print(resp)
+        print(args.year, day, s3_key)
+        args.source_bucket = STATISTICS_BUCKET
+        args.no_archive = True
+        args.upsert = True
+        s3_driver = S3Driver(prefix=s3_key, args=args)
+        if s3_driver.find_objects():
+            # if s3_driver.find_objects():
+            resp = s3_driver.process_objects()
+            print(resp)
     # print(items)
 
 
