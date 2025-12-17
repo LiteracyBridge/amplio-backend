@@ -535,6 +535,7 @@ class S3Importer:
 
             if len(rows) == 0:
                 return
+
             metadata = get_table_metadata(table_name)
             columns = [x.name for x in metadata.columns]
             nullables: List[str] = [x.name for x in metadata.columns if x.nullable]

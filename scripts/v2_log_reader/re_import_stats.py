@@ -1,6 +1,8 @@
 import argparse
 from datetime import datetime
 
+from config import STATISTICS_BUCKET
+from scripts.v2_log_reader.S3Data import S3Driver
 from scripts.v2_log_reader.S3Data.S3Importer import ARCHIVE_PREFIX
 
 print(ARCHIVE_PREFIX)
@@ -11,15 +13,23 @@ print(ARCHIVE_PREFIX)
 # 5. create tmp sql insert for preview
 
 
-def run(args):
+def run(args: argparse.Namespace):
     day: str = f"{args.day:02d}"
     year: str = args.year
     month: str = args.month
 
-    s3_key = f"{ARCHIVE_PREFIX}/{year}/{month}/{day}"
+    s3_key = f"/{ARCHIVE_PREFIX}/{year}/{month}/{day}"
 
     print(args.year, day, s3_key)
-    pass
+    args.source_bucket = STATISTICS_BUCKET
+    args.no_archive = True
+    args.upsert = True
+    s3_driver = S3Driver(prefix=s3_key, args=args)
+    if s3_driver.find_objects():
+        # if s3_driver.find_objects():
+        resp = s3_driver.process_objects()
+        print(resp)
+    # print(items)
 
 
 if __name__ == "__main__":
@@ -73,6 +83,14 @@ if __name__ == "__main__":
         required=False,
         type=str,
         help="Re-import stats collected by this TB-Loader. eg. 00be",
+    )
+    arg_parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store",
+        required=False,
+        default=False,
+        type=bool,
     )
 
     arglist = None
