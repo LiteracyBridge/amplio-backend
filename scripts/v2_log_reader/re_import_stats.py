@@ -18,7 +18,7 @@ def run(args: argparse.Namespace):
     year: str = args.year
     month: str = args.month
 
-    for day in range(7, 24):
+    for day in range(6, 24):
         d: str = f"{day:02d}"
         s3_key = f"/{ARCHIVE_PREFIX}/{year}/{month}/{d}"
 
