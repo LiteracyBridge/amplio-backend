@@ -18,17 +18,7 @@ def run():
         )
     ).fetchall()
 
-    # print(contents)
     headers: list[str] = [c[0] for c in contents]
-    # for c in contents:
-    #     headers[c[0]] = []
-
-    # print(headers)
-    # with open('eggs.csv', 'w', newline='') as csvfile:
-    #     spamwriter = csv.writer(csvfile, delimiter=' ',
-    #                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    #     spamwriter.writerow(['Spam'] * 5 + ['Baked Beans'])
-    #     spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
 
     statistics = db.execute(
         sa.text(
@@ -45,21 +35,16 @@ def run():
         ),
     ).fetchall()
     statistics = list(statistics)
-    # print(results)
 
-    # Write rows
-    # for item in results:
-    size = len(statistics)
-    idx = 0
     csv_rows: list[list[str | int | float]] = []
     while True:
         if len(statistics) == 0:
             break
 
         stats = statistics[0]
-        # size:int =  len(item) + len(headers)
         row: list[str | int | float] = [stats[i] for i in range(0, 4)]
 
+        # Summary listening duration for each group
         for title in headers:
             results = list(
                 filter(
@@ -73,18 +58,17 @@ def run():
             )
             duration = sum(x[5] for x in results)
             row.append(round(duration / 60))
-            # print(duration, results)
 
             for x in results:
                 statistics.remove(x)
-            # pass
+
         csv_rows.append(row)
 
     # Create csv file
     with open("report.csv", "w", newline="") as csvfile:
         writer = csv.writer(
             csvfile,
-        )  # delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        )
 
         # Write header
         writer.writerow(
@@ -92,14 +76,6 @@ def run():
         )
         for idx, row in enumerate(csv_rows):
             writer.writerow([idx + 1] + row)
-        # :
-
-        # writer.writerow(['Spam'] * 5 + ['Baked Beans'])
-        # writer.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
-        #     print(len(row), row)
-        # # for i in range(0, size):
-        #     pass
-    pass
 
 
 if __name__ == "__main__":
