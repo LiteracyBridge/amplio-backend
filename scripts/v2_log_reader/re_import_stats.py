@@ -5,33 +5,20 @@ from config import STATISTICS_BUCKET
 from scripts.v2_log_reader.S3Data import S3Driver
 from scripts.v2_log_reader.S3Data.S3Importer import ARCHIVE_PREFIX
 
-print(ARCHIVE_PREFIX)
-# 1. Inputs: day, month, year, project, deployment and tbloaderId (optional)
-# 2. Download archived.v2 data from s3
-# 3. unzip file to tmp directory (same name as deployment-project)
-# 4. extract tbscollected data from zip file
-# 5. create tmp sql insert for preview
-
 
 def run(args: argparse.Namespace):
-    # day: str = f"{args.day:02d}"
+    day: str = f"{args.day:02d}"
     year: str = args.year
     month: str = args.month
 
-    for day in range(6, 24):
-        d: str = f"{day:02d}"
-        s3_key = f"/{ARCHIVE_PREFIX}/{year}/{month}/{d}"
+    s3_key = f"/{ARCHIVE_PREFIX}/{year}/{month}/{day}"
 
-        print(args.year, day, s3_key)
-        args.source_bucket = STATISTICS_BUCKET
-        args.no_archive = True
-        args.upsert = True
-        s3_driver = S3Driver(prefix=s3_key, args=args)
-        if s3_driver.find_objects():
-            # if s3_driver.find_objects():
-            resp = s3_driver.process_objects()
-            print(resp)
-    # print(items)
+    args.source_bucket = STATISTICS_BUCKET
+    args.no_archive = True
+    args.upsert = True
+    s3_driver = S3Driver(prefix=s3_key, args=args)
+    if s3_driver.find_objects():
+        s3_driver.process_objects()
 
 
 if __name__ == "__main__":
