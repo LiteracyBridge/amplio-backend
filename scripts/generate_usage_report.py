@@ -4,7 +4,7 @@ import csv
 
 
 def completions_report():
-    start_date = "2025-06-01"
+    start_date = "2025-02-01"
     end_date = "2026-01-04"
 
     db = next(get_db())
@@ -12,7 +12,7 @@ def completions_report():
     contents = db.execute(
         sa.text(
             f"""
-        SELECT  EXTRACT(MONTH FROM u.timestamp) AS month FROM usage_info u
+        SELECT  to_char(u.timestamp, 'Month') AS month FROM usage_info u
         WHERE u.deployment = 'TS-KENYA-26-2' AND u.timestamp::date >= '{start_date}'
                 AND u.timestamp::date <= '{end_date}' AND u.contentid != 'LB-2_2vcgpwb573_2l'
         GROUP BY month;
@@ -31,7 +31,7 @@ def completions_report():
         SELECT c.title,
              SUM(ps.played_seconds)/60 AS played_minutes,
              SUM(ps.completions) AS completions,
-             EXTRACT(MONTH FROM ps.timestamp) AS month
+             to_char(ps.timestamp, 'Month') AS month
         FROM usage_info ps
         INNER JOIN recipients r ON r.recipientid = ps.recipientid
         INNER JOIN contentmetadata2 c ON c.contentid = ps.contentid
@@ -43,20 +43,6 @@ def completions_report():
     ).fetchall()
 
     statistics = list(statistics)
-    print(
-        f"""
-        SELECT c.title,
-             SUM(ps.played_seconds)/60 AS played_minutes,
-             SUM(ps.completions) AS completions,
-             EXTRACT(MONTH FROM ps.timestamp) AS month
-        FROM usage_info ps
-        INNER JOIN recipients r ON r.recipientid = ps.recipientid
-        INNER JOIN contentmetadata2 c ON c.contentid = ps.contentid
-        WHERE ps.deployment = 'TS-KENYA-26-2' AND ps.timestamp::date >= '{start_date}'
-            AND ps.timestamp::date <= '{end_date}' AND ps.contentid != 'LB-2_2vcgpwb573_2l'
-        GROUP BY c.title, month;
-            """
-    )
     csv_rows: list[list[str | int | float]] = []
     # for x in statistics:
     #     csv_rows.append(x)
