@@ -58,41 +58,25 @@ def completions_report():
         results = list(
             filter(
                 lambda x: x[0] == stats[0],
-                # and x[3] == stats[3],
-                # and x[2] == stats[2]
-                # and x[3] == stats[3]
-                # and x[4] == title,
                 statistics,
             )
         )
-        # duration = sum(x[5] for x in results)
-        # row.append(duration)
 
         row[0] = stats[0]  # title
         for idx, month in enumerate([c[0] for c in contents]):
             rs = list(
                 filter(
                     lambda x: x[3] == month,
-                    # and x[3] == stats[3],
-                    # and x[2] == stats[2]
-                    # and x[3] == stats[3]
-                    # and x[4] == title,
                     results,
                 )
             )
 
-            # if stats[3] == month:
-            #     continue
-
             for _, y in enumerate(rs):
                 _pos = idx + idx
-                print(y, row)
                 row[_pos + 1] = y[1]  # minutes
-                # print(rs[2])
                 row[_pos + 2] = y[2]  # completions
 
         for x in results:
-
             statistics.remove(x)
 
         csv_rows.append(row)
@@ -131,14 +115,14 @@ def run():
 
     statistics = db.execute(
         sa.text(
-            """
+            f"""
         SELECT r.region,  r.district, r.communityname, r.groupname, c.title,
              SUM(ps.played_seconds)/60 AS played_minutes
         FROM playstatistics ps
         INNER JOIN recipients r ON r.recipientid = ps.recipientid
         INNER JOIN contentmetadata2 c ON c.contentid = ps.contentid
-                WHERE ps.deployment = 'TS-KENYA-25-1' AND ps.timestamp::date >= '2025-10-03'
-                    AND ps.timestamp::date <= '2025-10-23' AND ps.contentid != 'LB-2_2vcgpwb573_2l'
+        WHERE ps.deployment = 'TS-KENYA-26-2' AND ps.timestamp::date >= '{start_date}'
+            AND ps.timestamp::date <= '{end_date}' AND ps.contentid != 'LB-2_2vcgpwb573_2l'
         GROUP BY r.communityname, r.district, r.groupname, r.region, c.title;
             """
         ),
