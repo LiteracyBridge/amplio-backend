@@ -107,14 +107,21 @@ def completions_report():
         writer.writerow(headers)
         for idx, row in enumerate(csv_rows):
             writer.writerow(row)
+
+
+def run():
     start_date = "2025-11-14"
     end_date = "2026-01-04"
 
     db = next(get_db())
+
+    contents = db.execute(
+        sa.text(
+            f"""
         SELECT  c.title FROM contentmetadata2 c
         INNER JOIN playstatistics ps ON c.contentid = ps.contentid
-                AND ps.deployment = 'TS-KENYA-25-1' AND ps.timestamp::date >= '2025-10-03'
-                AND ps.timestamp::date <= '2025-10-23' AND ps.contentid != 'LB-2_2vcgpwb573_2l'
+                AND ps.deployment = 'TS-KENYA-26-2' AND ps.timestamp::date >= '{start_date}'
+                AND ps.timestamp::date <= '{end_date}' AND ps.contentid != 'LB-2_2vcgpwb573_2l'
         GROUP BY c.title;
     """
         )
