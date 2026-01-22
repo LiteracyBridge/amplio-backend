@@ -4,7 +4,7 @@ import csv
 
 
 def completions_report():
-    start_date = "2025-11-14"
+    start_date = "2025-06-01"
     end_date = "2026-01-04"
 
     db = next(get_db())
@@ -22,9 +22,8 @@ def completions_report():
 
     headers: list[str] = ["Message"]
     for c in contents:
-        # headers.append(c[0])
-        headers.append(f"{c[0]} Completions")
         headers.append(f"{c[0]} Minutes")
+        headers.append(f"{c[0]} Completions")
 
     statistics = db.execute(
         sa.text(
@@ -38,13 +37,26 @@ def completions_report():
         INNER JOIN contentmetadata2 c ON c.contentid = ps.contentid
         WHERE ps.deployment = 'TS-KENYA-26-2' AND ps.timestamp::date >= '{start_date}'
             AND ps.timestamp::date <= '{end_date}' AND ps.contentid != 'LB-2_2vcgpwb573_2l'
-            AND ps.completions > 0
         GROUP BY c.title, month;
             """
         ),
     ).fetchall()
-    statistics = list(statistics)
 
+    statistics = list(statistics)
+    print(
+        f"""
+        SELECT c.title,
+             SUM(ps.played_seconds)/60 AS played_minutes,
+             SUM(ps.completions) AS completions,
+             EXTRACT(MONTH FROM ps.timestamp) AS month
+        FROM usage_info ps
+        INNER JOIN recipients r ON r.recipientid = ps.recipientid
+        INNER JOIN contentmetadata2 c ON c.contentid = ps.contentid
+        WHERE ps.deployment = 'TS-KENYA-26-2' AND ps.timestamp::date >= '{start_date}'
+            AND ps.timestamp::date <= '{end_date}' AND ps.contentid != 'LB-2_2vcgpwb573_2l'
+        GROUP BY c.title, month;
+            """
+    )
     csv_rows: list[list[str | int | float]] = []
     # for x in statistics:
     #     csv_rows.append(x)
@@ -53,43 +65,49 @@ def completions_report():
         if len(statistics) == 0:
             break
 
-        stats = statistics.pop()
-        row: list[str | int | float] = []
+        stats = statistics[0]
+        row: list[str | int | float] = [0 for _ in range(len(headers))]
 
-        # # Summary listening duration for each group
+        # Summary listening duration for each group
+        results = list(
+            filter(
+                lambda x: x[0] == stats[0],
+                # and x[3] == stats[3],
+                # and x[2] == stats[2]
+                # and x[3] == stats[3]
+                # and x[4] == title,
+                statistics,
+            )
+        )
+        # duration = sum(x[5] for x in results)
+        # row.append(duration)
+
+        row[0] = stats[0]  # title
         for idx, month in enumerate([c[0] for c in contents]):
-            if stats[3] != month:
-                continue
+            rs = list(
+                filter(
+                    lambda x: x[3] == month,
+                    # and x[3] == stats[3],
+                    # and x[2] == stats[2]
+                    # and x[3] == stats[3]
+                    # and x[4] == title,
+                    results,
+                )
+            )
 
-            # results = list(
-            #     filter(
-            #         lambda x: x[0] == stats[0]
-            #         # and x[1] == stats[1]
-            #         # and x[2] == stats[2]
-            #         # and x[3] == stats[3]
-            #         and x[3] == month,
-            #         statistics,
-            #     )
-            # )[0] # Result is only 1 item
+            # if stats[3] == month:
+            #     continue
 
-            row.append(stats[0])  # title
+            for _, y in enumerate(rs):
+                _pos = idx + idx
+                print(y, row)
+                row[_pos + 1] = y[1]  # minutes
+                # print(rs[2])
+                row[_pos + 2] = y[2]  # completions
 
-            # row.append(stats[1]) # minutes
-            for y in range(1, idx + 1):
-                row.append(0)
-            row.append(stats[1])  # minutes
+        for x in results:
 
-            for y in range(1, (idx * 2) + 1):
-                row.append(0)
-            row.append(stats[2])  # completions
-            # row.append(stats[])
-            # print(results)
-            print(month)
-            # duration = sum(x[5] for x in results)
-            # row.append(duration)
-
-            # for x in results:
-            #     statistics.remove(x)
+            statistics.remove(x)
 
         csv_rows.append(row)
 
@@ -155,7 +173,7 @@ def completions_report():
                 )
             )
             duration = sum(x[5] for x in results)
-            row.append(round(duration / 60))
+            row.append(duration)
 
             for x in results:
                 statistics.remove(x)
@@ -177,4 +195,4 @@ def completions_report():
 
 
 if __name__ == "__main__":
-    run()
+    completions_report()
