@@ -98,6 +98,13 @@ import-v2-stats *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/v2_log_reader/main.py "$@"
     just update-usage-info
 
+[doc("Re-imports Talking Books v2 statistics into db")]
+re-import-v2-stats *args='': venv
+    # just move-android-collected-data
+
+    {{ PYTHONPATH }} {{ python }} scripts/v2_log_reader/re_import_stats.py "$@"
+    # just update-usage-info
+
 [doc("Restore deleted s3 objects")]
 restore-s3-objects *args='': venv
     {{ PYTHONPATH }} {{ python }} scripts/restore_s3_objects.py "$@"
