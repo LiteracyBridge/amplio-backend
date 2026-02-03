@@ -9,25 +9,21 @@ def completions_report():
 
     db = next(get_db())
 
-    contents = db.execute(
-        sa.text(
-            f"""
+    sql = f"""
         SELECT  to_char(u.timestamp, 'Month') AS month FROM usage_info u
-        WHERE u.deployment = 'TS-KENYA-26-2' AND u.timestamp::date >= '{start_date}'
+        WHERE u.deployment = 'TS-KENYA-25-1' AND u.timestamp::date >= '{start_date}'
                 AND u.timestamp::date <= '{end_date}' AND u.contentid != 'LB-2_2vcgpwb573_2l'
         GROUP BY month;
     """
-        )
-    ).fetchall()
+    print(sql)
+    contents = db.execute( sa.text(sql) ).fetchall()
 
     headers: list[str] = ["Message"]
     for c in contents:
         headers.append(f"{c[0]} Minutes")
         headers.append(f"{c[0]} Completions")
 
-    statistics = db.execute(
-        sa.text(
-            f"""
+    sql = f"""
         SELECT c.title,
              SUM(ps.played_seconds)/60 AS played_minutes,
              SUM(ps.completions) AS completions,
@@ -35,12 +31,12 @@ def completions_report():
         FROM usage_info ps
         INNER JOIN recipients r ON r.recipientid = ps.recipientid
         INNER JOIN contentmetadata2 c ON c.contentid = ps.contentid
-        WHERE ps.deployment = 'TS-KENYA-26-2' AND ps.timestamp::date >= '{start_date}'
-            AND ps.timestamp::date <= '{end_date}' AND ps.contentid != 'LB-2_2vcgpwb573_2l'
+        WHERE ps.deployment = 'TS-KENYA-25-1' AND ps.timestamp::date >= '{start_date}'
+            AND ps.timestamp::date <= '{end_date}' -- AND ps.contentid != 'LB-2_2vcgpwb573_2l'
         GROUP BY c.title, month;
             """
-        ),
-    ).fetchall()
+    print(sql)
+    statistics = db.execute( sa.text(sql), ).fetchall()
 
     statistics = list(statistics)
     csv_rows: list[list[str | int | float]] = []
