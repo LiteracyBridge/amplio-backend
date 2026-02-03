@@ -117,6 +117,8 @@ export class ProgramSpecService {
 				.getRepository(Deployment)
 				.find({ where: { project_id: project.code } });
 
+			const requestPlaylistIds: number[] = [];
+			
 			for (const d of dto.deployments) {
 				// Handle playlists data
 				for (const pl of d.playlists) {
@@ -147,6 +149,18 @@ export class ProgramSpecService {
 						.getQueryAndParameters();
 
 					const [resp] = await manager.query(query, params);
+
+					// remove messages in playlist
+					const playlistId = resp?.id;
+					if (playlistId) {
+						requestPlaylistIds.push(playlistId);
+						await this.removedMessages(
+							manager,
+							playlistId,
+							project.code,
+							pl.messages ?? [],
+						);
+					}
 
 					// handle playlist messages
 					// const existingMessageIds = new Set(pl.messages.flatMap((m) => m._id));
@@ -722,4 +736,35 @@ export class ProgramSpecService {
 		
 		return sanitized;
 	  }
+
+	private async removedMessages(
+		manager: EntityManager,
+		playlistId: number,
+		programId: string,
+		messages: any[],
+	) {
+		// Extract the Ids of messages that should remain
+		const remainingIds = messages
+			.map((m) => m._id)
+			.filter((id) => id != null) as string[];
+
+			console.log("***************************")
+			console.log("remailing messages")
+			console.log(remainingIds);
+
+		// Build delete condition - exclude remaining messages if any exist
+		const deleteCondition: any = {
+			playlist_id: playlistId,
+			program_id: programId,
+		};
+		console.log("***************************")
+		console.log("delete conditions")
+		console.log(deleteCondition)
+
+		if (remainingIds.length > 0) {
+			deleteCondition._id = Not(In(remainingIds));
+		}
+
+		await manager.delete(Message, deleteCondition);
+	}
 }
