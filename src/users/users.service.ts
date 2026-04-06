@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
+import {
+	BadRequestException,
+	ConflictException,
+	Injectable,
+} from "@nestjs/common";
 import { User, UserStatus } from "src/entities/user.entity";
 import { InvitationDto } from "./invitation.dto";
 import appConfig from "src/app.config";
@@ -12,7 +16,6 @@ import { ProgramUser } from "src/entities/program_user.entity";
 @Injectable()
 export class UsersService {
 	async me(email: string): Promise<User | null> {
-		// TODO: load permissions
 		const user = await User.findOne({
 			where: { email: email },
 			relations: {
@@ -30,7 +33,10 @@ export class UsersService {
 			where: { user_id: user.id },
 			relations: {
 				program: {
-					project: { deployments: true, languages: true },
+					project: {
+						deployments: { playlists: { messages: true } },
+						languages: true,
+					},
 					organisations: { organisation: true },
 				},
 			},
@@ -40,9 +46,8 @@ export class UsersService {
 	}
 
 	async createInvitation(dto: InvitationDto, user: User) {
-
 		// Check if user already exists
-		 const existingUser = await User.findOne({ where: { email: dto.email } });
+		const existingUser = await User.findOne({ where: { email: dto.email } });
 		if (existingUser) {
 			throw new ConflictException("User with this email already exists");
 		}

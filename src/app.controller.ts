@@ -11,8 +11,4 @@ export class AppController {
 	async getCategories() {
 		return ApiResponse.Success({ data: await Language.find() });
 	}
-
-	getHello(): string {
-		return this.appService.getHello();
-	  }
 }
