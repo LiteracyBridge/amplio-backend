@@ -51,7 +51,8 @@ export class CustomSurveyReportService {
 						delete row[p.question]; // Remove the old key
 					}
 
-          delete row.survey_uuid;
+					delete row.survey_uuid;
+
 					return row;
 				});
 			}
