@@ -6,7 +6,6 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { CognitoJwtVerifier } from "aws-jwt-verify";
-import axios from "axios";
 import { Request } from "express";
 import appConfig from "src/app.config";
 import { UsersService } from "src/users/users.service";
@@ -45,10 +44,11 @@ export class AuthGuard implements CanActivate {
 
 		// Verifier that expects valid access tokens:
 		try {
-			const jwksResponse = await axios.get(
-				`https://cognito-idp.${appConfig().aws.region}.amazonaws.com/${appConfig().aws.poolId}/.well-known/jwks.json/`,
-				{ timeout: 1000000000 },
-			);
+      const response = await fetch(
+        `https://cognito-idp.${appConfig().aws.region}.amazonaws.com/${appConfig().aws.poolId}/.well-known/jwks.json/`,
+        { signal: AbortSignal.timeout(1000000000) },
+      );
+      const jwksResponse = { data: await response.json() };
 			// const response = await fetch(url); // Increase timeout to 10 seconds
 
 			const verifier = CognitoJwtVerifier.create({
