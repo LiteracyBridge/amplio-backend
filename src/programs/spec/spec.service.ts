@@ -197,50 +197,53 @@ export class ProgramSpecService {
 							.returning("id")
 							.execute();
 
-							const messageId = insertedMsg.raw?.[0]?.id;
- 
-          // Delete all existing language rows for this message
-          await manager
-            .createQueryBuilder()
-            .delete()
-            .from(MessageLanguages)
-			// .where("language_code = :code", { code: code })
-            .where("message_id = :id", { id: messageId })
-            .execute();
+						const newLanguages = new Set<string>();
+						if (Array.isArray(m.languages)) {
+							for (const l of m.languages) {
+								// type is like MessageLanguage object, retrieve only the
+								if (typeof l === "object") {
+									newLanguages.add(l.language_code);
+								} else {
+									// string
+									newLanguages.add(l);
+								}
+							}
+						} else {
+							// string
+							// biome-ignore lint/complexity/noForEach: <explanation>
+							(m.languages?.split(",") ?? []).forEach((l) =>
+								newLanguages.add(l.trim()),
+							);
+						}
 
+						for (const code of newLanguages) {
+							if (code === "") continue;
 
-          // Build language set from request payload
-          const newLanguages = new Set<string>();
-          if (Array.isArray(m.languages)) {
-            for (const l of m.languages) {
-              newLanguages.add(typeof l === "object" ? l.language_code : l);
-            }
-          } else {
-            (m.languages?.split(",") ?? []).forEach((l) =>
-              newLanguages.add(l.trim()),
-            );
-          }
+							// Clear previous entries
+							await manager
+								.createQueryBuilder()
+								.delete()
+								.from(MessageLanguages)
+								.where("language_code = :code", { code: code })
+								.andWhere("message_id = :id", { id: insertedMsg.raw[0].id })
+								// .orIgnore()
+								.execute();
 
-
-
-		  
-          // Insert current set
-          for (const code of newLanguages) {
-            if (!code) continue;
-            await manager
-              .createQueryBuilder()
-              .insert()
-              .into(MessageLanguages)
-              .values({
-                language_code: code,
-                message_id: messageId,
-              })
-              .orIgnore()
-              .execute();
-          }
-        }
-      }
-    }
+							// Save new entry
+							await manager
+								.createQueryBuilder()
+								.insert()
+								.into(MessageLanguages)
+								.values({
+									language_code: code as string,
+									message_id: insertedMsg.raw[0].id,
+								})
+								.orIgnore()
+								.execute();
+						}
+					}
+				}
+			}
 			// Delete playlists not in request data from db
 			await manager.delete(Playlist, {
 				_id: Not(
