@@ -75,7 +75,7 @@ const routes: Routes = [{ path: "/user-feedback", module: UserfeedbackModule }];
 			password: process.env.DB_PASSWORD,
 			database: process.env.DB_NAME,
 			type: "postgres",
-			maxQueryExecutionTime: 50,
+			// maxQueryExecutionTime: 50,
 			autoLoadEntities: true,
 			logNotifications: false,
 			logging: false,
