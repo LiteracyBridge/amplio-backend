@@ -26,6 +26,8 @@ export class UfMessagesController {
 		@Query("language") language: string,
 		@Query("skipped_messages") skipped_messages: string,
 		@Query("survey_id") survey_id: number,
+		@Query("location_type") locationType?: "group" | "community" | "district" | "region",
+		@Query("location_value") locationValue?: string,
 	) {
 		if (deployment == null && language == null) {
 			throw new BadRequestException("Deployment and language are required");
@@ -38,6 +40,8 @@ export class UfMessagesController {
 				language,
 				skipped_messages,
 				survey_id,
+				locationType,
+				locationValue,
 			}),
 		});
 	}

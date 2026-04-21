@@ -43,8 +43,10 @@ export class AnalysisService {
 		language: string;
 		skipped_messages: string;
 		survey_id: number;
+		locationType?: "group" | "community" | "district" | "region";
+		locationValue?: string;
 	}) {
-		const { programId, deployment, language, skipped_messages } = opts;
+		const { programId, deployment, language, skipped_messages, locationType, locationValue } = opts;
 		if (deployment == null && language == null) {
 			throw new BadRequestException("Deployment and language are required");
 		}
@@ -91,8 +93,37 @@ export class AnalysisService {
 				"content_metadata",
 				"uf_messages.relation = content_metadata.contentid",
 			)
-			.orderBy("uf_messages.message_uuid")
-			.limit(1);
+
+			 // location filter (exact match on correct field)
+
+			
+
+			 if (locationType && locationValue) {
+				const fieldMap: Record<string, string> = {
+					group: "group_name",
+					community: "community_name",
+					district: "district",
+					region: "region",
+				};
+			
+				const field = fieldMap[locationType];
+				
+				if (field) {
+					
+					result = result
+						.innerJoin(
+							Recipient,
+							"recipient_filter",
+							"uf_messages.recipientid = recipient_filter.recipientid",
+						)
+						.andWhere(`recipient_filter.${field} = :locValue`, {
+							locValue: locationValue.trim(),
+						});
+				}
+			}
+			
+			result = result.orderBy("uf_messages.message_uuid").limit(1);
+
 
 		const data = (await result.getMany()).map((m) => {
 			return {
