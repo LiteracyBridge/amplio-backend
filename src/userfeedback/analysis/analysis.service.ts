@@ -96,8 +96,7 @@ export class AnalysisService {
 
 			 // location filter (exact match on correct field)
 
-			 console.log("_________________________________________________________");
-			 console.log(locationType, locationValue);
+			
 
 			 if (locationType && locationValue) {
 				const fieldMap: Record<string, string> = {
@@ -106,14 +105,11 @@ export class AnalysisService {
 					district: "district",
 					region: "region",
 				};
-				console.log("_________________________________________________________");
-				console.log(fieldMap);
+			
 				const field = fieldMap[locationType];
-				console.log("_________________________________________________________");
-				console.log(field);
+				
 				if (field) {
-					console.log("_________________________________________________________");
-					console.log(field);
+					
 					result = result
 						.innerJoin(
 							Recipient,
