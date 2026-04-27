@@ -96,7 +96,7 @@ export class AnalysisService {
 
 			 // location filter (exact match on correct field)
 
-			
+
 
 			 if (locationType && locationValue) {
 				const fieldMap: Record<string, string> = {
@@ -105,11 +105,11 @@ export class AnalysisService {
 					district: "district",
 					region: "region",
 				};
-			
+
 				const field = fieldMap[locationType];
-				
+
 				if (field) {
-					
+
 					result = result
 						.innerJoin(
 							Recipient,
@@ -121,7 +121,7 @@ export class AnalysisService {
 						});
 				}
 			}
-			
+
 			result = result.orderBy("uf_messages.message_uuid").limit(1);
 
 
@@ -232,7 +232,7 @@ export class AnalysisService {
           WITH analysis AS (
               SELECT DISTINCT a.message_uuid, a.analyst_email, m.is_useless FROM uf_analysis a
               INNER JOIN uf_messages m ON m.message_uuid = a.message_uuid AND NOT m.test_deployment
-                  AND m.language = $1 AND m.deploymentnumber = $4
+                  AND m.language = $1 AND m.deploymentnumber = $4 AND m.programid = $5
               INNER JOIN uf_questions q ON q.survey_id = $3 AND q.id = a.question_id
           )
           SELECT
@@ -240,7 +240,7 @@ export class AnalysisService {
               (SELECT count(*) FROM analysis) AS total_analysed,
               (
                   SELECT COUNT(*) FROM uf_messages m WHERE NOT m.test_deployment
-                  AND m.language = $1 AND m.deploymentnumber = $4 AND is_useless
+                  AND m.language = $1 AND m.deploymentnumber = $4 AND m.programid = $5 AND is_useless
               ) AS total_useless,
               (
                   SELECT COUNT(*) FROM uf_messages m WHERE NOT m.test_deployment
