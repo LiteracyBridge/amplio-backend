@@ -226,6 +226,7 @@ export class AnalysisService {
 		email: string;
 		language?: string;
 		deployment: string;
+		program_id: string;
 	}) {
 		const query = `
           WITH analysis AS (
@@ -243,7 +244,7 @@ export class AnalysisService {
               ) AS total_useless,
               (
                   SELECT COUNT(*) FROM uf_messages m WHERE NOT m.test_deployment
-                  AND m.language = $1 AND m.deploymentnumber = $4
+                  AND m.language = $1 AND m.deploymentnumber = $4 AND m.programid = $5
               ) AS total_messages;
       `;
 		const results = await Analysis.query(query, [
@@ -251,6 +252,7 @@ export class AnalysisService {
 			opts.email,
 			opts.survey_id,
 			opts.deployment ?? 1,
+			opts.program_id,
 		]);
 
 		// console.log(results);

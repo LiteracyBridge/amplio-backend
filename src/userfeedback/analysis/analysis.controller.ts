@@ -108,6 +108,7 @@ export class AnalysisController {
 		@Query("email") email: string,
 		@Query("language") language: string,
 		@Query("deployment") deployment: string,
+		@Query("program_id") program_id: string,
 	) {
 		return ApiResponse.Success({
 			data: await this.analysisService.stats({
@@ -115,6 +116,7 @@ export class AnalysisController {
 				email,
 				language,
 				deployment,
+				program_id,
 			}),
 		});
 	}

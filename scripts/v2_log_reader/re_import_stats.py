@@ -9,7 +9,7 @@ from scripts.v2_log_reader.S3Data.S3Importer import ARCHIVE_PREFIX
 def run(args: argparse.Namespace):
     day: str = f"{args.day:02d}"
     year: str = args.year
-    month: str = args.month
+    month: str = f"{args.month:02d}"
 
     s3_key = f"/{ARCHIVE_PREFIX}/{year}/{month}/{day}"
 
