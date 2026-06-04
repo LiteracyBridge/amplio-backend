@@ -561,17 +561,14 @@ class S3Importer:
                     and sv.get("recipientid", None) is not None
                 ):
                     filtered.append(sv)
-            #  list(
-            #     filter(
-            #         lambda sv: sv["survey_uuid"] is not None
-            #         and sv["recipientid"] is not None,
-            #         surveys.values(),
-            #     ),
-            # )
+
             insert_rows(filtered, SURVEYS_TABLE)
             survey_data = []
             for survey in surveys.values():
-                uuid = survey["survey_uuid"]
+                uuid = survey.get("survey_uuid", None)
+                if uuid is None:
+                    continue
+
                 rows = [
                     {"survey_uuid": uuid, "question": key, "response": value}
                     for key, value in survey.items()
