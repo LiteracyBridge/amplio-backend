@@ -557,9 +557,9 @@ class S3Importer:
             filtered = list(
                 filter(
                     lambda sv: sv["survey_uuid"] is not None
-                    and sv["recipientid"] is not None
+                    and sv["recipientid"] is not None,
+                    surveys.values(),
                 ),
-                surveys.values(),
             )
             insert_rows(filtered, SURVEYS_TABLE)
             survey_data = []
