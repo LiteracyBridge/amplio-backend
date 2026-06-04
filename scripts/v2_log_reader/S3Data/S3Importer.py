@@ -554,7 +554,14 @@ class S3Importer:
             surveys_columns = [
                 s.name for s in get_table_metadata(SURVEYS_TABLE).columns
             ]
-            insert_rows(surveys.values(), SURVEYS_TABLE)
+            filtered = list(
+                filter(
+                    lambda sv: sv["survey_uuid"] is not None
+                    and sv["recipientid"] is not None
+                ),
+                surveys.values(),
+            )
+            insert_rows(filtered, SURVEYS_TABLE)
             survey_data = []
             for survey in surveys.values():
                 uuid = survey["survey_uuid"]
