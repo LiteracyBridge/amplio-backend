@@ -37,7 +37,8 @@ export class CustomSurveyReportService {
           r.region AS "Region",
           ctv.*
         FROM ct_view ctv
-        INNER JOIN surveys ss on ss.survey_uuid = ctv.survey_uuid AND ss.timestamp >= '2026-05-01'
+        INNER JOIN surveys ss on ss.survey_uuid = ctv.survey_uuid
+        INNER JOIN tbscollected tbc ON tbc.collection_uuid = ss.collection_uuid AND DATE(tbc.collectedtimestamp) >= '2026-05-01'
         INNER JOIN recipients r ON r.recipientid = ss.recipientid;
       `);
 
