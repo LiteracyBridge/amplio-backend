@@ -36,6 +36,9 @@ export class UserFeedbackMessage extends BaseEntity {
 	transcription?: string;
 
 	@Column({ type: "varchar", nullable: true })
+	ai_transcription?: string;
+
+	@Column({ type: "varchar", nullable: true })
 	deployment_tbcdid?: string;
 
 	@Column({ type: "varchar", nullable: true })

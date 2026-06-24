@@ -112,16 +112,22 @@ export class TalkingBookAnalyticsService {
     ),
     installed_tbs AS (
         SELECT
-          COUNT(DISTINCT tbd.talkingbookid ) AS "installed",
-          COUNT(distinct ps.stats_timestamp) AS "reporting_stats"
+          COUNT(DISTINCT tbd.talkingbookid ) AS "installed"
         FROM tbsdeployed tbd
         JOIN recipients r ON tbd.recipientid = r.recipientid
         JOIN deployments d ON tbd.deployment = d.deployment
-        LEFT JOIN playstatistics ps ON tbd.talkingbookid = ps.talkingbookid AND tbd.deployment = ps.deployment AND tbd.recipientid = ps.recipientid AND tbd.deployedtimestamp = ps.deployment_timestamp
         WHERE tbd.project = '${programId}' ${f_tbsdeployed}
     )
-    SELECT  it.installed, it.reporting_stats, usage.*, active_tbs.*
-    FROM installed_tbs it, usage, active_tbs
+    collected_tbs AS (
+        SELECT
+          COUNT(DISTINCT tbd.talkingbookid ) AS "reporting_stats"
+        FROM tbscollected tbd
+        JOIN recipients r ON tbd.recipientid = r.recipientid
+        JOIN deployments d ON tbd.deployment = d.deployment
+        WHERE tbd.project = '${programId}' ${f_tbsdeployed}
+    )
+    SELECT  it.installed, collected_tbs.reporting_stats, usage.*, active_tbs.*
+    FROM installed_tbs it, usage, active_tbs, collected_tbs
     `);
 
     const content = await TalkingBookDeployed.query(
