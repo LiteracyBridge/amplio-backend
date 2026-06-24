@@ -70,7 +70,7 @@ export class TalkingBookAnalyticsService {
   }
 
   async summaries(programId: string, dto: SummaryAnalyticsQueryDto) {
-    let filter = { recipient: [] as string[], tbsdeployed: [] as string[], usg: [] as string[] }
+    const filter = { recipient: [] as string[], tbsdeployed: [] as string[], usg: [] as string[] }
     if (dto.community) {
       filter.recipient.push(`r.communityname = '${dto.community}'`)
       filter.usg.push(` usg.communityname = '${dto.community}'`)
