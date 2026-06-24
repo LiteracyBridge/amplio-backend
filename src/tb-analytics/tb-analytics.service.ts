@@ -117,7 +117,7 @@ export class TalkingBookAnalyticsService {
         JOIN recipients r ON tbd.recipientid = r.recipientid
         JOIN deployments d ON tbd.deployment = d.deployment
         WHERE tbd.project = '${programId}' ${f_tbsdeployed}
-    )
+    ),
     collected_tbs AS (
         SELECT
           COUNT(DISTINCT tbd.talkingbookid ) AS "reporting_stats"
