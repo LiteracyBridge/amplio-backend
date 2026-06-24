@@ -126,7 +126,7 @@ export class TalkingBookAnalyticsService {
         JOIN deployments d ON tbd.deployment = d.deployment
         WHERE tbd.project = '${programId}' ${f_tbsdeployed}
     )
-    SELECT  it.installed, collected_tbs.reporting_stats, usage.*, active_tbs.*
+    SELECT  it.installed, collected_tbs.*, usage.*, active_tbs.*
     FROM installed_tbs it, usage, active_tbs, collected_tbs
     `);
 
