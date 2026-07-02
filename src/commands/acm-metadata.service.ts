@@ -45,23 +45,23 @@ export class ACMMetadataService {
 
 		console.log(`\Importing metadata for ${name}.\n`);
 
-		await this.dataSource.manager.transaction(async (manager) => {
+		// await this.dataSource.manager.transaction(async (manager) => {
 			switch (name) {
 				case "categories":
-					return await this.service.saveCategories(path, manager);
+					return await this.service.saveCategories(path);
 				case "languages":
-					return await this.service.saveLanguages(path, manager);
+					return await this.service.saveLanguages(path);
 				case "packages-in-deployment":
-					return await this.service.savePackagesInDeployment(path, manager);
+					return await this.service.savePackagesInDeployment(path);
 				case "categories-in-package":
-					return await this.service.saveCategoriesInPackage(path, manager);
+					return await this.service.saveCategoriesInPackage(path);
 				case "content-in-packages":
-					return await this.service.saveContentInPackages(path, manager);
+					return await this.service.saveContentInPackages(path);
 				case "contents-metadata":
-					return await this.service.saveContentsMetadata(path, manager);
+					return await this.service.saveContentsMetadata(path);
 				default:
 					console.error(`Name must be one of: ${METADATA_NAMES.join(", ")}.`);
 			}
-		});
+		// });
 	}
 }
