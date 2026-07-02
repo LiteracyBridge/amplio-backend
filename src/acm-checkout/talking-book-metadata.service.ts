@@ -29,13 +29,16 @@ export class TalkingBookMetadataService {
 	}) {
 		const { dto } = opts;
 
-    console.log(dto)
+		console.log(dto);
 		await DeploymentMetadata.getRepository().manager.transaction(
 			async (manager) => {
 				// Save languages
 				if (dto.languages) {
 					const csv = `${tmpdir()}/${randomUUID()}.csv`;
-					writeFileSync(csv, dto.languages);
+					const content = Array.isArray(dto.languages)
+						? dto.languages.join("\n")
+						: String(dto.languages);
+					writeFileSync(csv, content);
 
 					await this.saveLanguages(csv, manager);
 				}
@@ -43,7 +46,10 @@ export class TalkingBookMetadataService {
 				// Save categories
 				if (dto.categories) {
 					const csv = `${tmpdir()}/${randomUUID()}.csv`;
-					writeFileSync(csv, dto.categories);
+					const content = Array.isArray(dto.categories)
+						? dto.categories.join("\n")
+						: String(dto.categories);
+					writeFileSync(csv, content);
 
 					await this.saveCategories(csv, manager);
 				}
@@ -51,7 +57,10 @@ export class TalkingBookMetadataService {
 				// Save packages In Deployment
 				if (dto.packagesInDeployment) {
 					const csv = `${tmpdir()}/${randomUUID()}.csv`;
-					writeFileSync(csv, dto.packagesInDeployment);
+					const content = Array.isArray(dto.packagesInDeployment)
+						? dto.packagesInDeployment.join("\n")
+						: String(dto.packagesInDeployment);
+					writeFileSync(csv, content);
 
 					await this.savePackagesInDeployment(csv, manager);
 				}
@@ -59,7 +68,10 @@ export class TalkingBookMetadataService {
 				// Save categories In package
 				if (dto.categoriesInPackage) {
 					const csv = `${tmpdir()}/${randomUUID()}.csv`;
-					writeFileSync(csv, dto.categoriesInPackage);
+					const content = Array.isArray(dto.categoriesInPackage)
+						? dto.categoriesInPackage.join("\n")
+						: String(dto.categoriesInPackage);
+					writeFileSync(csv, content);
 
 					await this.saveCategoriesInPackage(csv, manager);
 				}
@@ -67,7 +79,10 @@ export class TalkingBookMetadataService {
 				// Save contents In package
 				if (dto.contentInPackages) {
 					const csv = `${tmpdir()}/${randomUUID()}.csv`;
-					writeFileSync(csv, dto.contentInPackages);
+					const content = Array.isArray(dto.contentInPackages)
+						? dto.contentInPackages.join("\n")
+						: String(dto.contentInPackages);
+					writeFileSync(csv, content);
 
 					await this.saveContentInPackages(csv, manager);
 				}
@@ -75,7 +90,10 @@ export class TalkingBookMetadataService {
 				// Save contents In package
 				if (dto.metadata) {
 					const csv = `${tmpdir()}/${randomUUID()}.csv`;
-					writeFileSync(csv, dto.metadata);
+					const content = Array.isArray(dto.metadata)
+						? dto.metadata.join("\n")
+						: String(dto.metadata);
+					writeFileSync(csv, content);
 
 					await this.saveContentsMetadata(csv, manager);
 				}
