@@ -30,8 +30,8 @@ export class TalkingBookMetadataService {
 		const { dto } = opts;
 
 		console.log(dto);
-		await DeploymentMetadata.getRepository().manager.transaction(
-			async (manager) => {
+		// await DeploymentMetadata.getRepository().manager.transaction(
+		// 	async (manager) => {
 				// Save languages
 				if (dto.languages) {
 					const csv = `${tmpdir()}/${randomUUID()}.csv`;
@@ -40,7 +40,7 @@ export class TalkingBookMetadataService {
 						: String(dto.languages);
 					writeFileSync(csv, content);
 
-					await this.saveLanguages(csv, manager);
+					await this.saveLanguages(csv);
 				}
 
 				// Save categories
@@ -51,7 +51,7 @@ export class TalkingBookMetadataService {
 						: String(dto.categories);
 					writeFileSync(csv, content);
 
-					await this.saveCategories(csv, manager);
+					await this.saveCategories(csv);
 				}
 
 				// Save packages In Deployment
@@ -62,7 +62,7 @@ export class TalkingBookMetadataService {
 						: String(dto.packagesInDeployment);
 					writeFileSync(csv, content);
 
-					await this.savePackagesInDeployment(csv, manager);
+					await this.savePackagesInDeployment(csv);
 				}
 
 				// Save categories In package
@@ -73,7 +73,7 @@ export class TalkingBookMetadataService {
 						: String(dto.categoriesInPackage);
 					writeFileSync(csv, content);
 
-					await this.saveCategoriesInPackage(csv, manager);
+					await this.saveCategoriesInPackage(csv);
 				}
 
 				// Save contents In package
@@ -84,7 +84,7 @@ export class TalkingBookMetadataService {
 						: String(dto.contentInPackages);
 					writeFileSync(csv, content);
 
-					await this.saveContentInPackages(csv, manager);
+					await this.saveContentInPackages(csv);
 				}
 
 				// Save contents In package
@@ -95,20 +95,20 @@ export class TalkingBookMetadataService {
 						: String(dto.metadata);
 					writeFileSync(csv, content);
 
-					await this.saveContentsMetadata(csv, manager);
+					await this.saveContentsMetadata(csv);
 				}
-			},
-		);
+		// 	},
+		// );
 	}
 
-	async saveLanguages(csv: string, manager: EntityManager) {
+	async saveLanguages(csv: string) {
 		const workbook = new Excel.Workbook();
 		const worksheet = await workbook.csv.readFile(csv);
 
 		worksheet.eachRow(async (row: Excel.Row, rowNumber: number) => {
 			if (rowNumber === 1) return null;
 
-			await manager
+			await ProjectLanguage
 				.createQueryBuilder()
 				.insert()
 				.into(ProjectLanguage)
@@ -122,14 +122,14 @@ export class TalkingBookMetadataService {
 		});
 	}
 
-	async saveCategories(csv: string, manager: EntityManager) {
+	async saveCategories(csv: string) {
 		const workbook = new Excel.Workbook();
 		const worksheet = await workbook.csv.readFile(csv);
 
 		worksheet.eachRow(async (row: Excel.Row, rowNumber: number) => {
 			if (rowNumber === 1) return;
 
-			await manager
+			await Category
 				.createQueryBuilder()
 				.insert()
 				.into(Category)
@@ -143,14 +143,14 @@ export class TalkingBookMetadataService {
 		});
 	}
 
-	async savePackagesInDeployment(csv: string, manager: EntityManager) {
+	async savePackagesInDeployment(csv: string) {
 		const workbook = new Excel.Workbook();
 		const worksheet = await workbook.csv.readFile(csv);
 
 		worksheet.eachRow(async (row: Excel.Row, rowNumber: number) => {
 			if (rowNumber === 1) return;
 
-			await manager
+			await PackageInDeployment
 				.createQueryBuilder()
 				.insert()
 				.into(PackageInDeployment)
@@ -170,14 +170,14 @@ export class TalkingBookMetadataService {
 		});
 	}
 
-	async saveContentInPackages(csv: string, manager: EntityManager) {
+	async saveContentInPackages(csv: string) {
 		const workbook = new Excel.Workbook();
 		const worksheet = await workbook.csv.readFile(csv);
 
 		worksheet.eachRow(async (row: Excel.Row, rowNumber: number) => {
 			if (rowNumber === 1) return;
 
-			await manager
+			await ContentInPackage
 				.createQueryBuilder()
 				.insert()
 				.into(ContentInPackage)
@@ -193,14 +193,14 @@ export class TalkingBookMetadataService {
 		});
 	}
 
-	async saveCategoriesInPackage(csv: string, manager: EntityManager) {
+	async saveCategoriesInPackage(csv: string) {
 		const workbook = new Excel.Workbook();
 		const worksheet = await workbook.csv.readFile(csv);
 
 		worksheet.eachRow(async (row: Excel.Row, rowNumber: number) => {
 			if (rowNumber === 1) return;
 
-			await manager
+			await CategoryInPackage
 				.createQueryBuilder()
 				.insert()
 				.into(CategoryInPackage)
@@ -215,7 +215,7 @@ export class TalkingBookMetadataService {
 		});
 	}
 
-	async saveContentsMetadata(csv: string, manager: EntityManager) {
+	async saveContentsMetadata(csv: string) {
 		const workbook = new Excel.Workbook();
 		const worksheet = await workbook.csv.readFile(csv);
 
@@ -223,7 +223,7 @@ export class TalkingBookMetadataService {
 			// console.log(row.values, rowNumber);
 			if (rowNumber === 1) return;
 
-			const query = await manager
+			const query = await ContentMetadata
 				.createQueryBuilder()
 				.insert()
 				.into(ContentMetadata)
@@ -285,7 +285,7 @@ export class TalkingBookMetadataService {
         `;
 
 			const params = query.getParameters();
-			await manager.query(sql, Object.values(params));
+			await ContentMetadata.query(sql, Object.values(params));
 		});
 
 		new Logger().log(`Saved ${worksheet.rowCount} metadata records to db`);
