@@ -33,6 +33,7 @@ export class CompanionAppController {
 	@SkipJwtAuth()
 	@Post("recipients")
 	async getRecipient(@Body("code") code: string) {
+    console.log("Login recieved", code)
 		return ApiResponse.Success({
 			data: await this.service.verifyRecipientCode(code),
 		});
