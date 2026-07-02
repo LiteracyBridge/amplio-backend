@@ -1,24 +1,8 @@
-import {
-	Body,
-	Controller,
-	Get,
-	Post,
-	Put,
-	Query,
-	Req,
-	Res,
-	UploadedFile,
-	UseInterceptors,
-} from "@nestjs/common";
+import { Body, Controller, Get, Post, Put, Query } from "@nestjs/common";
 import { ProgramSpecService } from "./spec.service";
 import { ApiResponse } from "src/utilities/api_response";
 import { CurrentUser } from "src/decorators/user.decorator";
 import { User } from "src/entities/user.entity";
-import { FileInterceptor } from "@nestjs/platform-express";
-import { SkipJwtAuth } from "src/decorators/skip-jwt-auth.decorator";
-import { Request, Response } from "express";
-import { createReadStream } from "node:fs";
-import { tmpdir } from "node:os";
 
 @Controller("program-spec")
 export class SpecController {
@@ -49,6 +33,13 @@ export class SpecController {
 	) {
 		return ApiResponse.Success({
 			data: await this.service.updateProgram(dto as any, code),
+		});
+	}
+
+	@Get("generate-access-code")
+	async generateAccessCode(@Query("programid") programId: string) {
+		return ApiResponse.Success({
+			data: { code: await this.service.generateAccessCode(programId) },
 		});
 	}
 

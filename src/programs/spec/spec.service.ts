@@ -118,7 +118,7 @@ export class ProgramSpecService {
 				.find({ where: { project_id: project.code } });
 
 			const requestPlaylistIds: number[] = [];
-			
+
 			for (const d of dto.deployments) {
 				// Handle playlists data
 				for (const pl of d.playlists) {
@@ -363,6 +363,23 @@ export class ProgramSpecService {
 			projectCode: project.code,
 		});
 		return project;
+	}
+
+	async generateAccessCode(programCode: string): Promise<string> {
+    // Access code is unique on program basis
+		let code = "";
+		for (let i = 0; i < 5; i++) {
+			code += Math.floor(Math.random() * 11);
+		}
+
+    code = code.substring(0,4)
+		const rs = await Recipient.findOne({ where: { access_code: code, program_id: Not(programCode) } });
+
+		if (rs == null) {
+			return code; // unique code
+		}
+
+		return this.generateAccessCode(programCode);
 	}
 
 	private async createExcel(project: Project, isExcel: boolean = true) {
@@ -710,7 +727,7 @@ export class ProgramSpecService {
 		await manager.upsert(Program, general, ["program_id"]);
 	}
 
-    // ----------------------------------
+	// ----------------------------------
 	/// old way of sanitizing strings
 	// ----------------------------------
 
@@ -721,21 +738,20 @@ export class ProgramSpecService {
 	// }
 
 	private sanitazeString(input: string) {
-
 		// disallow special chars. including underscore
 		const invalidChars = /[^a-zA-Z0-9\s]/g;
-		
+
 		// Replace invalid characters with a space
 		let sanitized = input.replace(invalidChars, " ");
-		
+
 		// Remove consecutive spaces. 2 or more
-		sanitized = sanitized.replace(/\s{2,}/g, " ");	
-		
+		sanitized = sanitized.replace(/\s{2,}/g, " ");
+
 		// Trim leading/trailing spaces
 		sanitized = sanitized.trim();
-		
+
 		return sanitized;
-	  }
+	}
 
 	private async removedMessages(
 		manager: EntityManager,
@@ -748,18 +764,18 @@ export class ProgramSpecService {
 			.map((m) => m._id)
 			.filter((id) => id != null) as string[];
 
-			console.log("***************************")
-			console.log("remailing messages")
-			console.log(remainingIds);
+		console.log("***************************");
+		console.log("remailing messages");
+		console.log(remainingIds);
 
 		// Build delete condition - exclude remaining messages if any exist
 		const deleteCondition: any = {
 			playlist_id: playlistId,
 			program_id: programId,
 		};
-		console.log("***************************")
-		console.log("delete conditions")
-		console.log(deleteCondition)
+		console.log("***************************");
+		console.log("delete conditions");
+		console.log(deleteCondition);
 
 		if (remainingIds.length > 0) {
 			deleteCondition._id = Not(In(remainingIds));
