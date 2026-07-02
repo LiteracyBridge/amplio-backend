@@ -184,9 +184,10 @@ deploy-testing:
 [group('deploy')]
 [doc("Deploy Nestjs app in production mode")]
 deploy-prod:
+    docker build --tag prod-api-server .
+
     docker stop $(docker ps -q --filter ancestor=prod-api-server)
 
-    docker build --tag prod-api-server .
     docker run --publish 127.0.0.1:5000:5000 \
         --restart always \
         --env-file .env \
