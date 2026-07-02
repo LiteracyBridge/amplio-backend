@@ -29,6 +29,7 @@ export class TalkingBookMetadataService {
 	}) {
 		const { dto } = opts;
 
+    console.log(dto)
 		await DeploymentMetadata.getRepository().manager.transaction(
 			async (manager) => {
 				// Save languages
