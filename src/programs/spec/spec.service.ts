@@ -366,14 +366,13 @@ export class ProgramSpecService {
 	}
 
 	async generateAccessCode(programCode: string): Promise<string> {
-    // Access code is unique on program basis
 		let code = "";
 		for (let i = 0; i < 7; i++) {
 			code += Math.floor(Math.random() * 11);
 		}
 
-    code = code.substring(0,5)
-		const rs = await Recipient.findOne({ where: { access_code: code, program_id: Not(programCode) } });
+		code = code.substring(0, 5);
+		const rs = await Recipient.findOne({ where: { access_code: code } });
 
 		if (rs == null) {
 			return code; // unique code
