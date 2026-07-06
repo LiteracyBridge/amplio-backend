@@ -93,9 +93,9 @@ export class AcmCheckoutController {
 	async deploymentMetadata(
 		@Body() body,
 		@CurrentUser() user: User,
-		@Query("type") type: "talking-book" | "app",
+		@Query("platform") platform: "talking-book" | "app",
 	) {
-		if (type === "app") {
+		if (platform === "app") {
 			return await this.metadataService.save({
 				dto: body,
 				currentUser: user,
